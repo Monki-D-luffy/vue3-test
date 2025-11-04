@@ -3,7 +3,21 @@
 
         <div class="page-header">
             <h1 class="title">设备明细</h1>
-            <el-button type="primary">申领数据中心</el-button>
+
+            <el-dropdown type="primary" split-button @command="handleCenterChange">
+                {{ dataCenterMap[selectedCenter] }}
+                <template #dropdown>
+                    <el-dropdown-menu>
+                        <el-dropdown-item command="CN">中国数据中心</el-dropdown-item>
+                        <el-dropdown-item command="US-WEST">美西数据中心</el-dropdown-item>
+                        <el-dropdown-item command="EU-CENTRAL">中欧数据中心</el-dropdown-item>
+                        <el-dropdown-item command="IN">印度数据中心</el-dropdown-item>
+                        <el-dropdown-item command="US-EAST">美东数据中心</el-dropdown-item>
+                        <el-dropdown-item command="EU-WEST">西欧数据中心</el-dropdown-item>
+                        <el-dropdown-item command="SG">新加坡数据中心</el-dropdown-item>
+                    </el-dropdown-menu>
+                </template>
+            </el-dropdown>
         </div>
 
         <el-row :gutter="20" class="summary-cards">
@@ -98,6 +112,16 @@ const summary = ref({
     activated: 0,
     online: 0
 })
+// 选择的数据中心
+const dataCenterMap = {
+    'CN': '中国数据中心',
+    'US-WEST': '美西数据中心',
+    'EU-CENTRAL': '中欧数据中心',
+    'IN': '印度数据中心',
+    'US-EAST': '美东数据中心',
+    'EU-WEST': '西欧数据中心',
+    'SG': '新加坡数据中心',
+}
 
 // 筛选表单数据
 const filters = reactive({
@@ -110,19 +134,26 @@ const filters = reactive({
 // 表格数据
 const deviceList = ref([])
 const loading = ref(true) // 表格加载状态
+const selectedCenter = ref('CN')
 
 // --- API 请求函数 ---
 
 // 获取顶部统计数据
 const fetchSummary = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/devices/summary`)
+        // ▼▼▼ 添加 params，把 selectedCenter 的值传出去 ▼▼▼
+        const response = await axios.get(`${API_BASE_URL}/devices/summary`, {
+            params: {
+                dataCenter: selectedCenter.value
+            }
+        })
         summary.value = response.data.data
     } catch (error) {
         ElMessage.error('获取统计数据失败')
         console.error(error)
     }
 }
+
 
 // 获取设备列表数据
 const fetchDevices = async () => {
@@ -140,7 +171,8 @@ const fetchDevices = async () => {
             keyword,
             // 3. 只有当 dateRange 有值 (不是空字符串或null) 且是一个数组时，我们才处理它
             startDate: dateRange && dateRange[0] ? dateRange[0].toISOString().split('T')[0] : '',
-            endDate: dateRange && dateRange[1] ? dateRange[1].toISOString().split('T')[0] : ''
+            endDate: dateRange && dateRange[1] ? dateRange[1].toISOString().split('T')[0] : '',
+            dataCenter: selectedCenter.value
         }
 
         // 4. 使用 axios 的 { params: ... } 配置，
@@ -156,7 +188,16 @@ const fetchDevices = async () => {
         loading.value = false
     }
 }
+// 切换数据中心
+const handleCenterChange = (command) => {
+    console.log('数据中心切换为:', command)
+    selectedCenter.value = command
 
+    // 一旦切换了数据中心，我们就应该重新获取数据
+    // (我们也会在 onMounted 中调用它，以加载默认数据中心的数据)
+    fetchDevices()
+    fetchSummary()
+}
 // --- 事件处理函数 ---
 
 const handleSearch = () => {

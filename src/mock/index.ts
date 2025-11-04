@@ -30,48 +30,86 @@ function formatDate(date: Date): string {
   const s = date.getSeconds().toString().padStart(2, '0');
   return `${y}-${m}-${d} ${h}:${i}:${s}`;
 }
+// (辅助函数 formatDate ... 保持不变)
 
-const deviceList = [];
-const count = Mock.Random.integer(15, 60);
+// ▼▼▼ 替换旧代码 ▼▼▼
 
-// 定义时间范围的时间戳
-const startTimeStamp = new Date('2022-01-01 00:00:00').getTime();
-const nowTimeStamp = new Date().getTime(); // 当前时间的时间戳
+// 1. 创建一个“主数据库”，用于存放所有数据中心的数据
+// 使用 Record 工具类型，表示“一个键为string，值为any[]的对象”
+let masterDeviceDatabase: Record<string, any[]> = {};
 
-for (let i = 0; i < count; i++) {
-  const baseItem = Mock.mock(baseTemplate);
+// 2. 创建一个函数，用于获取或“动态生成”指定数据中心的数据
+const getOrGenerateDataCenterDB = (dataCenter: string) => {
+  // 2.1 如果这个数据中心的数据已经生成过了，就直接返回
+  if (masterDeviceDatabase[dataCenter]) {
+    return masterDeviceDatabase[dataCenter];
+  }
   
-  // 1. 在 '2022-01-01' 和 '现在' 之间生成一个“激活时间戳”
-  const gmtActiveTimeStamp = Mock.Random.integer(startTimeStamp, nowTimeStamp);
+  // 2.2 如果没生成过，就现在生成
+  console.log(`--- [Mock] 首次生成 ${dataCenter} 的模拟数据 ---`);
+  const deviceList = [];
   
-  // 2. 在 '激活时间戳' 和 '现在' 之间生成一个“最近上线时间戳”
-  const gmtLastOnlineTimeStamp = Mock.Random.integer(gmtActiveTimeStamp, nowTimeStamp);
+  // 不同的数据中心，我们给它不同数量的设备
+  let count;
+  switch (dataCenter) {
+    case 'CN':
+      count = Mock.Random.integer(50, 70); break;
+    case 'US-WEST':
+      count = Mock.Random.integer(30, 40); break;
+    case 'EU-CENTRAL':
+      count = Mock.Random.integer(20, 25); break;
+    default:
+      count = Mock.Random.integer(5, 15);
+  }
   
-  // 3. 格式化时间戳为日期字符串
-  const gmtActive = formatDate(new Date(gmtActiveTimeStamp));
-  const gmtLastOnline = formatDate(new Date(gmtLastOnlineTimeStamp));
+  const startTimeStamp = new Date('2022-01-01 00:00:00').getTime();
+  const nowTimeStamp = new Date().getTime(); 
+
+  for (let i = 0; i < count; i++) {
+    const baseItem = Mock.mock(baseTemplate);
+    const gmtActiveTimeStamp = Mock.Random.integer(startTimeStamp, nowTimeStamp);
+    const gmtLastOnlineTimeStamp = Mock.Random.integer(gmtActiveTimeStamp, nowTimeStamp);
+    const gmtActive = formatDate(new Date(gmtActiveTimeStamp));
+    const gmtLastOnline = formatDate(new Date(gmtLastOnlineTimeStamp));
+    
+    deviceList.push({
+      ...baseItem,
+      gmtActive,
+      gmtLastOnline
+    });
+  }
   
-  deviceList.push({
-    ...baseItem,
-    gmtActive,
-    gmtLastOnline
-  });
+  // 2.3 存入主数据库并返回
+  masterDeviceDatabase[dataCenter] = deviceList;
+  return deviceList;
 }
 
-// 这就是我们的“模拟数据库”
-let deviceDatabase = deviceList;
+// ▲▲▲ 替换旧代码 ▲▲▲
 
 
 // ------------------------------------
 // --- 定义 API 拦截规则 (重要：注意顺序！) ---
 // ------------------------------------
+// 1. Mock.js 通过 options.url 来获取完整的请求URL，包括参数
+//    我们需要一个辅助函数来解析 URL 参数
+const getQueryParam = (url:any, param:any) => {
+  const reg = new RegExp(`[?&]${param}=([^&]*)`)
+  const result = url.match(reg)
+  return result ? decodeURIComponent(result[1]) : null
+}
 
 // 规则 1：[GET] /summary (最具体的 GET 规则，必须放最前面)
-Mock.mock(/\/api\/devices\/summary$/, 'get', () => {
+Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
   console.log('--- [Mock API] GET /api/devices/summary (卡片数据) ---')
-  const total = deviceDatabase.length
-  const online = deviceDatabase.filter((item: { status: string; }) => item.status === '在线').length
-  
+
+// 1. 获取 dataCenter 参数，如果不存在，默认为 'CN'
+  const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
+  // 2. 获取对应数据中心的数据库
+  const currentDB = getOrGenerateDataCenterDB(dataCenter);
+
+  // 3. 从当前数据库计算
+  const total = currentDB.length
+  const online = currentDB.filter(item => item.status === '在线').length
   return Mock.mock({
     code: 200,
     message: '获取成功',
@@ -86,13 +124,25 @@ Mock.mock(/\/api\/devices\/summary$/, 'get', () => {
 // 规则 2：[POST] /devices (POST 规则，也很具体)
 Mock.mock(/\/api\/devices$/, 'post', (options) => {
   console.log('--- [Mock API] POST /api/devices (添加设备) ---')
+// 1. 获取 dataCenter 参数
+  const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
+  // 2. 获取对应数据中心的数据库
+  const currentDB = getOrGenerateDataCenterDB(dataCenter);
+  
+  // ( ... 保持 savedDevice 的生成逻辑不变 ... )
   const newDevice = JSON.parse(options.body)
+  const gmtActive = formatDate(new Date()); 
+  const gmtLastOnline = gmtActive; 
   const savedDevice = {
-    ...newDevice,
-    ...Mock.mock(baseTemplate), 
-    id: '@id'
+    ...Mock.mock(baseTemplate),
+    ...newDevice, 
+    gmtActive,
+    gmtLastOnline,
+    status: '在线' 
   }
-  deviceDatabase.push(savedDevice)
+  
+  // 3. 将新设备添加到“当前”数据库
+  currentDB.push(savedDevice)
   
   return Mock.mock({
     code: 200,
@@ -106,25 +156,21 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
 Mock.mock(/\/api\/devices/, 'get', (options) => {
   console.log('--- [Mock API] GET /api/devices (表格数据) ---')
   
-  // 1. Mock.js 通过 options.url 来获取完整的请求URL，包括参数
-  //    我们需要一个辅助函数来解析 URL 参数
-  const getQueryParam = (url:any, param:any) => {
-    const reg = new RegExp(`[?&]${param}=([^&]*)`)
-    const result = url.match(reg)
-    return result ? decodeURIComponent(result[1]) : null
-  }
-
-  // 2. 从请求 URL 中解析出我们关心的参数
+// 1. 解析所有参数，包括 dataCenter
   const { url } = options
+  const dataCenter = getQueryParam(url, 'dataCenter') || 'CN';
   const startDate = getQueryParam(url, 'startDate')
   const endDate = getQueryParam(url, 'endDate')
   const keyword = getQueryParam(url, 'keyword')
-const isBoundParam = getQueryParam(url, 'isBound')
+  const isBoundParam = getQueryParam(url, 'isBound')
 
-  console.log('收到的筛选参数:', { startDate, endDate, keyword })
+  console.log('收到的筛选参数:', { dataCenter, startDate, endDate, keyword, isBound: isBoundParam }) 
 
-  // 3. 复制一份“数据库”数据，准备进行过滤
-  let filteredData = [...deviceDatabase]
+  // 2. 获取对应数据中心的数据库
+  const currentDB = getOrGenerateDataCenterDB(dataCenter);
+
+  // 3. 将筛选目标从 deviceDatabase 改为 currentDB
+  let filteredData = [...currentDB]
 
   // 4. 执行日期筛选逻辑
   if (startDate && endDate) {
