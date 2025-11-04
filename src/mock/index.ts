@@ -102,6 +102,17 @@ const getQueryParam = (url:any, param:any) => {
 Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
   console.log('--- [Mock API] GET /api/devices/summary (卡片数据) ---')
 
+  // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
+  const token = getQueryParam(options.url, 'token');
+  if (!token) {
+    console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
+    return Mock.mock({
+      "code": 401,
+      "message": "未授权：请先登录 (Mock)",
+      "data": null,
+      "success": false
+    })
+  }
 // 1. 获取 dataCenter 参数，如果不存在，默认为 'CN'
   const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
   // 2. 获取对应数据中心的数据库
@@ -168,6 +179,19 @@ Mock.mock(/\/api\/auth\/login$/, 'post', (options) => {
 // 规则 2：[POST] /devices (POST 规则，也很具体)
 Mock.mock(/\/api\/devices$/, 'post', (options) => {
   console.log('--- [Mock API] POST /api/devices (添加设备) ---')
+
+  // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
+  const token = getQueryParam(options.url, 'token');
+  if (!token) {
+    console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
+    return Mock.mock({
+      "code": 401,
+      "message": "未授权：请先登录 (Mock)",
+      "data": null,
+      "success": false
+    })
+  }
+
 // 1. 获取 dataCenter 参数
   const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
   // 2. 获取对应数据中心的数据库
@@ -200,6 +224,20 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
 Mock.mock(/\/api\/devices/, 'get', (options) => {
   console.log('--- [Mock API] GET /api/devices (表格数据) ---')
   
+  // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
+  const token = getQueryParam(options.url, 'token');
+  if (!token) 
+  // if (!(options as any).headers || !(options as any).headers.Authorization)
+{
+    console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
+    return Mock.mock({
+      "code": 401,
+      "message": "未授权：请先登录 (Mock)",
+      "data": null,
+      "success": false
+    })
+  }
+
 // 1. 解析所有参数，包括 dataCenter
   const { url } = options
   const dataCenter = getQueryParam(url, 'dataCenter') || 'CN';
