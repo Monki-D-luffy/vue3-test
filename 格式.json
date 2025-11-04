@@ -1,0 +1,17 @@
+{
+    "code": 200,
+    "message": "登录成功",
+    "data": {
+        "expired": 1762248989,
+        "phone": "",
+        "country": null,
+        "iconUrl": "",
+        "registerType": "Email",
+        "nickname": "Qin",
+        "userId": "c09e98c1-e353-48be-82eb-c209b42f180a",
+        "account": "1067360038@qq.com",
+        "email": "1067360038@qq.com",
+        "token": "eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiJjMDllOThjMS1lMzUzLTQ4YmUtODJlYi1jMjA5YjQyZjE4MGEiLCJleHAiOjE3NjIyNDg5ODksImlzcyI6ImlkZW50aXR5LXNlcnZpY2UiLCJhdWQiOiJpZGVudGl0eS1jbGllbnRzIn0.As6xzctjQyvNE4GcGUH3uAJWlh9BaG3fTIyy2GWEvnc"
+    },
+    "success": true
+}

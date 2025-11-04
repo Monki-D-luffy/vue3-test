@@ -5,7 +5,7 @@ Mock.setup({
   timeout: '500-1000'
 })
 
-// --- 1. 定义我们的“基础”数据模板 ---
+// --- 定义我们的“基础”数据模板 ---
 //    (我们把日期字段拿出来了)
 const baseTemplate = {
   'id': '@id',
@@ -18,7 +18,7 @@ const baseTemplate = {
   'isBound': '@boolean'
 };
 
-// --- 2. 修复：使用时间戳来生成日期 ---
+// --- 修复：使用时间戳来生成日期 ---
 
 // 辅助函数：用于格式化日期
 function formatDate(date: Date): string {
@@ -34,11 +34,11 @@ function formatDate(date: Date): string {
 
 // ▼▼▼ 替换旧代码 ▼▼▼
 
-// 1. 创建一个“主数据库”，用于存放所有数据中心的数据
+//  创建一个“主数据库”，用于存放所有数据中心的数据
 // 使用 Record 工具类型，表示“一个键为string，值为any[]的对象”
 let masterDeviceDatabase: Record<string, any[]> = {};
 
-// 2. 创建一个函数，用于获取或“动态生成”指定数据中心的数据
+//  创建一个函数，用于获取或“动态生成”指定数据中心的数据
 const getOrGenerateDataCenterDB = (dataCenter: string) => {
   // 2.1 如果这个数据中心的数据已经生成过了，就直接返回
   if (masterDeviceDatabase[dataCenter]) {
@@ -119,6 +119,50 @@ Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
       online: online
     }
   })
+})
+
+// 规则 1.5：[POST] /auth/login (登录接口)
+Mock.mock(/\/api\/auth\/login$/, 'post', (options) => {
+  console.log('--- [Mock API] POST /api/auth/login (登录请求) ---')
+  
+  // 1. 从请求体中解析出账号和密码
+  const body = JSON.parse(options.body)
+  const { account, password } = body
+  console.log('收到的登录信息:', { account, password })
+
+  // 2. 简单的登录逻辑校验
+  //    (我们只校验您提供的测试账号)
+  if (account === '1067360038@qq.com' && password === '123456') {
+    
+    // 3. 登录成功：返回您提供的“成功”数据结构
+    return Mock.mock({
+      "code": 200,
+      "message": "登录成功",
+      "data": {
+        "expired": 1762248989,
+        "phone": "",
+        "country": null,
+        "iconUrl": "",
+        "registerType": "Email",
+        "nickname": "Qin",
+        "userId": "c09e98c1-e353-48be-82eb-c209b42f180a",
+        "account": "1067360038@qq.com",
+        "email": "1067360038@qq.com",
+        "token": "eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiJjMDllOThjMS1lMzUzLTQ4YmUtODJlYi1jMjA5YjQyZjE4MGEiLCJleHAiOjE3NjIyNDg5ODksImlzcyI6ImlkZW50aXR5LXNlcnZpY2UiLCJhdWQiOiJpZGVudGl0eS1jbGllbnRzIn0.As6xzctjQyvNE4GcGUH3uAJWlh9BaG3fTIyy2GWEvnc"
+      },
+      "success": true
+    })
+    
+  } else {
+    
+    // 4. 登录失败：返回一个“失败”的数据结构
+    return Mock.mock({
+      "code": 401,
+      "message": "账号或密码错误",
+      "data": null,
+      "success": false
+    })
+  }
 })
 
 // 规则 2：[POST] /devices (POST 规则，也很具体)

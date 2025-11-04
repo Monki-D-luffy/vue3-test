@@ -101,10 +101,11 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
-import axios from 'axios'
+// import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import api from '@/api'
 
-const API_BASE_URL = 'http://192.168.1.100/api' // 保持和 mock 一致
+// const API_BASE_URL = 'http://192.168.1.100/api' // 保持和 mock 一致
 
 // 顶部卡片数据
 const summary = ref({
@@ -142,7 +143,7 @@ const selectedCenter = ref('CN')
 const fetchSummary = async () => {
     try {
         // ▼▼▼ 添加 params，把 selectedCenter 的值传出去 ▼▼▼
-        const response = await axios.get(`${API_BASE_URL}/devices/summary`, {
+        const response = await api.get(`/devices/summary`, {
             params: {
                 dataCenter: selectedCenter.value
             }
@@ -178,7 +179,7 @@ const fetchDevices = async () => {
         // 4. 使用 axios 的 { params: ... } 配置，
         //    axios 会自动将 params 对象转换成 URL 查询字符串
         //    例如：.../api/devices?startDate=2025-11-01&endDate=2025-11-04
-        const response = await axios.get(`${API_BASE_URL}/devices`, { params: params })
+        const response = await api.get(`/devices`, { params: params })
 
         deviceList.value = response.data.data
     } catch (error) {

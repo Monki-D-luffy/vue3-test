@@ -5,6 +5,7 @@ import HomeView from '../views/HomeView.vue'
 import DeviceManager from '@/views/DeviceManager.vue'
 import DeviceDashboard from '@/views/DeviceDashboard.vue'
 import DebugSelect from '../views/DebugSelect.vue'
+import LoginView from '../views/Login.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,6 +31,11 @@ const router = createRouter({
       path: '/debug',
       name: 'debug',
       component: DebugSelect
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView
     }
   ],
 })
