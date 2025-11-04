@@ -1,44 +1,64 @@
 // src/mock/index.ts
-console.log('--- MOCK SERVER IS RUNNING! ---');
-
 import Mock from 'mockjs'
-// 模拟网络延迟 500ms - 1000ms
+
 Mock.setup({
   timeout: '500-1000'
 })
 
-// --- 模拟我们的“后端数据库” ---
-// 我们用 Mock.js 的数据生成功能先创建几条假数据
-// const initialData = Mock.mock({
-//   'list|10': [{ // 随机生成 3 条数据
-//     'id|+1': 1,
-//     'name': '@ctitle(3, 7)', // 随机中文标题
-//     'deviceId': 'ESP32-@string("upper", 6)', // 随机字符串
-//     'status': '@pick(["在线", "离线"])', // 从列表中随机选一个
-//     'lastOnline': '@datetime("yyyy-MM-dd HH:mm:ss")' // 随机日期时间
-//   }]
-// })
-// --- 1. 定义我们的“涂鸦”数据模板 ---
-const deviceTemplate = {
+// --- 1. 定义我们的“基础”数据模板 ---
+//    (我们把日期字段拿出来了)
+const baseTemplate = {
   'id': '@id',
-  'name': '@ctitle(3, 7)', // 随机中文标题
+  'name': '@ctitle(3, 7)',
   'status': '@pick(["在线", "离线", "未激活", "故障"])',
   'puuid': '@guid',
   'productInfo': '@ctitle(2, 4) / PID_@string("upper", 8)',
   'deviceType': '@pick(["智能插座", "温湿度计", "摄像头", "智能灯泡", "NB-IoT水表"])',
   'sn': 'SN_@string("upper", 12)',
-  'gmtActive': '@datetime("yyyy-MM-dd HH:mm:ss")',
-  'gmtLastOnline': '@datetime("yyyy-MM-dd HH:mm:ss")'
 };
 
-// --- 2. 生成我们的“模拟数据库” ---
-// 'list|5-10' 表示 list 数组将包含 5 到 10 条数据
-// 每一条数据都遵循 deviceTemplate 的规则
-const mockData = Mock.mock({
-  'list|50-100': [deviceTemplate]
-})
-// 这就是我们的“模拟数据库”，它可以被修改
-let deviceDatabase = mockData.list
+// --- 2. 修复：使用时间戳来生成日期 ---
+
+// 辅助函数：用于格式化日期
+function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const d = date.getDate().toString().padStart(2, '0');
+  const h = date.getHours().toString().padStart(2, '0');
+  const i = date.getMinutes().toString().padStart(2, '0');
+  const s = date.getSeconds().toString().padStart(2, '0');
+  return `${y}-${m}-${d} ${h}:${i}:${s}`;
+}
+
+const deviceList = [];
+const count = Mock.Random.integer(15, 60);
+
+// 定义时间范围的时间戳
+const startTimeStamp = new Date('2022-01-01 00:00:00').getTime();
+const nowTimeStamp = new Date().getTime(); // 当前时间的时间戳
+
+for (let i = 0; i < count; i++) {
+  const baseItem = Mock.mock(baseTemplate);
+  
+  // 1. 在 '2022-01-01' 和 '现在' 之间生成一个“激活时间戳”
+  const gmtActiveTimeStamp = Mock.Random.integer(startTimeStamp, nowTimeStamp);
+  
+  // 2. 在 '激活时间戳' 和 '现在' 之间生成一个“最近上线时间戳”
+  const gmtLastOnlineTimeStamp = Mock.Random.integer(gmtActiveTimeStamp, nowTimeStamp);
+  
+  // 3. 格式化时间戳为日期字符串
+  const gmtActive = formatDate(new Date(gmtActiveTimeStamp));
+  const gmtLastOnline = formatDate(new Date(gmtLastOnlineTimeStamp));
+  
+  deviceList.push({
+    ...baseItem,
+    gmtActive,
+    gmtLastOnline
+  });
+}
+
+// 这就是我们的“模拟数据库”
+let deviceDatabase = deviceList;
 
 
 // ------------------------------------
@@ -68,7 +88,7 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
   const newDevice = JSON.parse(options.body)
   const savedDevice = {
     ...newDevice,
-    ...Mock.mock(deviceTemplate), 
+    ...Mock.mock(baseTemplate), 
     id: '@id'
   }
   deviceDatabase.push(savedDevice)
