@@ -128,11 +128,26 @@ const fetchSummary = async () => {
 const fetchDevices = async () => {
     loading.value = true
     try {
-        // 真实项目中，我们会把 filters 作为参数传给后端
-        // const response = await axios.get(`${API_BASE_URL}/devices`, { params: filters })
+        // 1. 准备要发送给后端的参数
+        //    我们从 reactive 的 filters 中解构出需要的值
+        const { isBound, productId, dateRange, keyword } = filters
 
-        // mock.js 暂时不支持这么复杂的参数，我们先请求所有数据
-        const response = await axios.get(`${API_BASE_URL}/devices`)
+        // 2. Element Plus 的 el-date-picker 返回的是一个数组 [Date, Date]
+        //    我们需要将其转换成后端更喜欢的格式，比如 '2025-11-01'
+        const params = {
+            isBound,
+            productId,
+            keyword,
+            // 3. 只有当 dateRange 有值 (不是空字符串或null) 且是一个数组时，我们才处理它
+            startDate: dateRange && dateRange[0] ? dateRange[0].toISOString().split('T')[0] : '',
+            endDate: dateRange && dateRange[1] ? dateRange[1].toISOString().split('T')[0] : ''
+        }
+
+        // 4. 使用 axios 的 { params: ... } 配置，
+        //    axios 会自动将 params 对象转换成 URL 查询字符串
+        //    例如：.../api/devices?startDate=2025-11-01&endDate=2025-11-04
+        const response = await axios.get(`${API_BASE_URL}/devices`, { params: params })
+
         deviceList.value = response.data.data
     } catch (error) {
         ElMessage.error('获取设备列表失败')

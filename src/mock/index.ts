@@ -40,69 +40,95 @@ const mockData = Mock.mock({
 // 这就是我们的“模拟数据库”，它可以被修改
 let deviceDatabase = mockData.list
 
-// ------------------------------------
-// --- 定义 API 拦截规则 ---
-// ------------------------------------
-
-// 1. 拦截 [GET] /api/devices (获取设备列表)
-//    正则表达式匹配所有以 /api/devices 结尾的URL
-Mock.mock(/\/api\/devices$/, 'get', () => {
-  console.log('--- [Mock API] GET /api/devices ---')
-  console.log('当前数据库:', deviceDatabase)
-
-  // 返回 mockjs 风格的数据结构
-  return Mock.mock({
-    code: 200,
-    message: '获取成功',
-    data: deviceDatabase // 返回我们“数据库”中的所有数据
-  })
-})
-
-// 2. 拦截 [POST] /api/devices (添加新设备)
-Mock.mock(/\/api\/devices/, 'post', (options:any) => {
-  console.log('--- [Mock API] POST /api/devices ---')
-  console.log('收到的请求体:', options.body)
-  
-  // options.body 是一个 JSON 字符串，我们需要把它转成对象
-  const newDevice = JSON.parse(options.body)
-  
-  // 模拟后端的处理：给新设备一个ID和默认状态
-  const savedDevice = {
-    ...newDevice,
-    id: deviceDatabase.length + 1,
-    status: '在线',
-    lastOnline: new Date().toLocaleString()
-  }
-  
-  // 将新设备存入“数据库”
-  deviceDatabase.push(savedDevice)
-  
-  return Mock.mock({
-    code: 200,
-    message: '添加成功',
-    data: savedDevice // 把保存后的设备信息返回
-  })
-})
 
 // ------------------------------------
-// --- 新增 API：获取统计数据 ---
+// --- 定义 API 拦截规则 (重要：注意顺序！) ---
 // ------------------------------------
 
-// 3. 拦截 [GET] /api/devices/summary (获取统计信息)
+// 规则 1：[GET] /summary (最具体的 GET 规则，必须放最前面)
 Mock.mock(/\/api\/devices\/summary$/, 'get', () => {
-  console.log('--- [Mock API] GET /api/devices/summary ---')
-  
-  // 我们根据“数据库”的实时数据来计算
+  console.log('--- [Mock API] GET /api/devices/summary (卡片数据) ---')
   const total = deviceDatabase.length
-  const online = deviceDatabase.filter((item:any) => item.status === '在线').length
+  const online = deviceDatabase.filter((item: { status: string; }) => item.status === '在线').length
   
   return Mock.mock({
     code: 200,
     message: '获取成功',
     data: {
       total: total,
-      activated: total, // 暂时假设 激活 = 总数
+      activated: total, 
       online: online
     }
+  })
+})
+
+// 规则 2：[POST] /devices (POST 规则，也很具体)
+Mock.mock(/\/api\/devices$/, 'post', (options) => {
+  console.log('--- [Mock API] POST /api/devices (添加设备) ---')
+  const newDevice = JSON.parse(options.body)
+  const savedDevice = {
+    ...newDevice,
+    ...Mock.mock(deviceTemplate), 
+    id: '@id'
+  }
+  deviceDatabase.push(savedDevice)
+  
+  return Mock.mock({
+    code: 200,
+    message: '添加成功',
+    data: savedDevice
+  })
+})
+
+// 1. 拦截 [GET] /api/devices (获取设备列表)
+//    正则表达式匹配所有以 /api/devices 结尾的URL
+// 新的 GET /api/devices 规则 (带筛选逻辑)
+Mock.mock(/\/api\/devices/, 'get', (options) => {
+  console.log('--- [Mock API] GET /api/devices (表格数据) ---')
+  
+  // 1. Mock.js 通过 options.url 来获取完整的请求URL，包括参数
+  //    我们需要一个辅助函数来解析 URL 参数
+  const getQueryParam = (url:any, param:any) => {
+    const reg = new RegExp(`[?&]${param}=([^&]*)`)
+    const result = url.match(reg)
+    return result ? decodeURIComponent(result[1]) : null
+  }
+
+  // 2. 从请求 URL 中解析出我们关心的参数
+  const { url } = options
+  const startDate = getQueryParam(url, 'startDate')
+  const endDate = getQueryParam(url, 'endDate')
+  // (您也可以在这里添加对 keyword 等其他参数的解析)
+
+  console.log('收到的筛选参数:', { startDate, endDate })
+
+  // 3. 复制一份“数据库”数据，准备进行过滤
+  let filteredData = [...deviceDatabase]
+
+  // 4. 执行日期筛选逻辑
+  if (startDate && endDate) {
+    // 将字符串日期转换为 Date 对象以便比较
+    const start = new Date(startDate)
+    // 结束日期我们通常希望包含当天，所以设置到 23:59:59
+    const end = new Date(endDate)
+    end.setHours(23, 59, 59, 999) 
+
+    filteredData = filteredData.filter(item => {
+      // 假设我们按“首次激活时间” (gmtActive) 筛选
+      const itemDate = new Date(item.gmtActive)
+      return itemDate >= start && itemDate <= end
+    })
+  }
+  
+  // (您可以在这里添加更多 filter 逻辑，比如按 keyword 筛选)
+  // if (keyword) { ... }
+
+  console.log('筛选后的数据量:', filteredData.length)
+
+  // 5. 返回筛选后的数据
+  return Mock.mock({
+    code: 200,
+    message: '获取成功',
+    data: filteredData 
   })
 })
