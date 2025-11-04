@@ -42,13 +42,14 @@ api.interceptors.request.use(
       // 'Authorization' 是后端API的标准“通行证”字段
       // 'Bearer ' 是 Token 的标准前缀
       config.headers.Authorization = `Bearer ${token}`
-    } else {
-      // 8. 如果连 localStorage 里都没有 Token，
-      //    (可选) 可以在这里直接阻止请求，并提示用户
-      ElMessage.error('您尚未登录，无法执行此操作')
-      // 抛出一个错误，阻止这个请求被发送
-      return Promise.reject(new Error('未找到Token'))
-    }
+    } 
+    // else {
+    //   // 8. 如果连 localStorage 里都没有 Token，
+    //   //    (可选) 可以在这里直接阻止请求，并提示用户
+    //   ElMessage.error('您尚未登录，无法执行此操作')
+    //   // 抛出一个错误，阻止这个请求被发送
+    //   return Promise.reject(new Error('未找到Token'))
+    // }
 
     // 9. 放行“加工”过的请求
     return config
