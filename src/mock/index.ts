@@ -15,6 +15,7 @@ const baseTemplate = {
   'productInfo': '@ctitle(2, 4) / PID_@string("upper", 8)',
   'deviceType': '@pick(["智能插座", "温湿度计", "摄像头", "智能灯泡", "NB-IoT水表"])',
   'sn': 'SN_@string("upper", 12)',
+  'isBound': '@boolean'
 };
 
 // --- 2. 修复：使用时间戳来生成日期 ---
@@ -118,6 +119,7 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
   const startDate = getQueryParam(url, 'startDate')
   const endDate = getQueryParam(url, 'endDate')
   const keyword = getQueryParam(url, 'keyword')
+const isBoundParam = getQueryParam(url, 'isBound')
 
   console.log('收到的筛选参数:', { startDate, endDate, keyword })
 
@@ -160,10 +162,18 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
       return nameMatch || idMatch || snMatch || productMatch || puuidMatch
     })
   }
-
+  //6. isBoundParam 会是 "true" (字符串), "false" (字符串), 或 null
+  if (isBoundParam !== '') {
+    // 将URL参数 "true" 或 "false" 转换回布尔值
+    const isBoundValue = (isBoundParam === 'true'); 
+    
+    filteredData = filteredData.filter(item => {
+      return item.isBound === isBoundValue
+    })
+  }
   console.log('筛选后的数据量:', filteredData.length)
 
-  // 5. 返回筛选后的数据
+  // 返回筛选后的数据
   return Mock.mock({
     code: 200,
     message: '获取成功',

@@ -35,10 +35,10 @@
 
         <el-card class="filter-card" shadow="never">
             <el-form :inline="true" :model="filters" class="filter-form">
-                <el-form-item label="是否绑定">
-                    <el-select v-model="filters.isBound" placeholder="全部" clearable>
-                        <el-option label="已绑定" :value="true" />
-                        <el-option label="未绑定" :value="false" />
+                <el-form-item>
+                    <el-select v-model="filters.isBound" placeholder="是否绑定" clearable>
+                        <el-option label="已绑定" :value="'true'" />
+                        <el-option label="未绑定" :value="'false'" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="全部产品">
@@ -50,7 +50,7 @@
                         start-placeholder="开始日期" end-placeholder="结束日期" />
                 </el-form-item>
                 <el-form-item class="search-input">
-                    <el-input v-model="filters.keyword" placeholder="设备ID/名称/PUUID/SN码" clearable />
+                    <el-input v-model="filters.keyword" placeholder="设备ID / 名称 / PUUID / SN码" clearable />
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -231,5 +231,22 @@ onMounted(() => {
 /* 让搜索框在行内表单中不换行 */
 .filter-form .search-input {
     min-width: 200px;
+}
+
+/* 这段代码的意思是：
+  找到 class 为 "filter-form" 的元素 (我们的表单),
+  然后找到它里面的 "el-form-item",
+  再找到它里面的 "el-select" (我们的下拉框),
+  然后把它们的宽度统一设置为 150px。
+*/
+.filter-form .el-form-item .el-select {
+    width: 150px;
+}
+
+/* 您可能还想让“设备ID/设备名称”输入框也长一点，
+  可以用类似的方法：
+*/
+.filter-form .el-form-item .el-input {
+    width: 500px;
 }
 </style>

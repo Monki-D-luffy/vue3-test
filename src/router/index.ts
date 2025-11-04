@@ -4,6 +4,7 @@ import HomeView from '../views/HomeView.vue'
 // 导入创建的组件
 import DeviceManager from '@/views/DeviceManager.vue'
 import DeviceDashboard from '@/views/DeviceDashboard.vue'
+import DebugSelect from '../views/DebugSelect.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +26,11 @@ const router = createRouter({
       name: 'dashboard',
       component: DeviceDashboard
     },
+    {
+      path: '/debug',
+      name: 'debug',
+      component: DebugSelect
+    }
   ],
 })
 
