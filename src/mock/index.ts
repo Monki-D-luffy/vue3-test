@@ -100,9 +100,8 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
   })
 })
 
-// 1. 拦截 [GET] /api/devices (获取设备列表)
+// 规则 3：[GET] /devices (带筛选)
 //    正则表达式匹配所有以 /api/devices 结尾的URL
-// 新的 GET /api/devices 规则 (带筛选逻辑)
 Mock.mock(/\/api\/devices/, 'get', (options) => {
   console.log('--- [Mock API] GET /api/devices (表格数据) ---')
   
@@ -118,9 +117,9 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
   const { url } = options
   const startDate = getQueryParam(url, 'startDate')
   const endDate = getQueryParam(url, 'endDate')
-  // (您也可以在这里添加对 keyword 等其他参数的解析)
+  const keyword = getQueryParam(url, 'keyword')
 
-  console.log('收到的筛选参数:', { startDate, endDate })
+  console.log('收到的筛选参数:', { startDate, endDate, keyword })
 
   // 3. 复制一份“数据库”数据，准备进行过滤
   let filteredData = [...deviceDatabase]
@@ -140,8 +139,27 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
     })
   }
   
-  // (您可以在这里添加更多 filter 逻辑，比如按 keyword 筛选)
-  // if (keyword) { ... }
+// 5. ▼▼▼ 新增：关键字筛选逻辑 ▼▼▼
+  //    只有当 keyword 存在且不是空字符串时才执行
+  if (keyword && keyword.trim() !== '') {
+    const lowerKeyword = keyword.toLowerCase().trim()
+    
+    filteredData = filteredData.filter(item => {
+      // 检查所有相关字段是否包含关键字 (不区分大小写)
+      
+      // 设备ID/设备名称 (来自UI)
+      const nameMatch = item.name.toLowerCase().includes(lowerKeyword)
+      const idMatch = item.id.toLowerCase().includes(lowerKeyword)
+      
+      // 您新要求的字段
+      const snMatch = item.sn.toLowerCase().includes(lowerKeyword)
+      const productMatch = item.productInfo.toLowerCase().includes(lowerKeyword)
+      const puuidMatch = item.puuid.toLowerCase().includes(lowerKeyword)
+
+      // 只要有一个字段匹配，就返回 true
+      return nameMatch || idMatch || snMatch || productMatch || puuidMatch
+    })
+  }
 
   console.log('筛选后的数据量:', filteredData.length)
 

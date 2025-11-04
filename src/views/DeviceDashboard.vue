@@ -50,7 +50,7 @@
                         start-placeholder="开始日期" end-placeholder="结束日期" />
                 </el-form-item>
                 <el-form-item class="search-input">
-                    <el-input v-model="filters.keyword" placeholder="设备ID/设备名称" clearable />
+                    <el-input v-model="filters.keyword" placeholder="设备ID/名称/PUUID/SN码" clearable />
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="handleSearch">搜索</el-button>
