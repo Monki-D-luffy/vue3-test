@@ -177,7 +177,6 @@ const fetchDevices = async () => {
         // 2. ✨ 关键修改：创建一个新对象，只存入有值的参数 ✨
         const params = {}
         for (const key in rawParams) {
-            // 只有当值不是 null, undefined, 也不是空字符串时，才加到 params 里
             if (rawParams[key] !== null && rawParams[key] !== undefined && rawParams[key] !== '') {
                 params[key] = rawParams[key]
             }
