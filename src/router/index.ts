@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import HomeView from '../views/HomeView.vue'
 
 // 导入创建的组件
-import DeviceManager from '@/views/DeviceManager.vue'
 import DeviceDashboard from '@/views/DeviceDashboard.vue'
 import DebugSelect from '../views/DebugSelect.vue'
 import LoginView from '../views/Login.vue'
@@ -15,11 +13,11 @@ const router = createRouter({
       name: 'home',
       component: LoginView,
     },
-    // 添加新路由
     {
-      path: '/devices', // 访问的 URL
-      name: 'devices',  // 路由的名字
-      component: DeviceManager // 对应的组件
+      // 不能删除登录页路由,后面的导航守卫需要用到
+      path: '/login',
+      name: 'login',
+      component: LoginView
     },
     {
       path: '/dashboard', // 这是新页面的 URL
@@ -30,11 +28,6 @@ const router = createRouter({
       path: '/debug',
       name: 'debug',
       component: DebugSelect
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: LoginView
     }
   ],
 })
