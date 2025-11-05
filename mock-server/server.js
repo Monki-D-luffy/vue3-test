@@ -24,7 +24,19 @@ function getRandomTimeStr(startYear, endYear) {
 
   return Y + M + D + h + m + s
 }
-
+// =========================================
+// 辅助函数: 时间格式化
+// =========================================
+function formatTimestamp(timestamp) {
+  const date = new Date(timestamp)
+  const Y = date.getFullYear() + '-'
+  const M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-'
+  const D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' '
+  const h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':'
+  const m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) + ':'
+  const s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds())
+  return Y + M + D + h + m + s
+}
 // =========================================
 // 核心功能 1: 提前自动造数据 (Pre-Seeding)
 // =========================================
@@ -40,12 +52,21 @@ function preSeedDatabase() {
     console.log('--- [Mock Server] 正在生成 2022-2025 年间的 500 条数据... ---')
     const dataCenters = ['CN', 'US-WEST', 'EU-CENTRAL', 'IN', 'US-EAST', 'EU-WEST', 'SG']
     const deviceTypes = ["智能插座", "温湿度计", "摄像头", "智能灯泡", "NB-IoT水表"]
+    // 定义时间边界 (时间戳)
+    const minTime = new Date('2022-01-01 00:00:00').getTime()
+    const maxTime = new Date('2025-12-31 23:59:59').getTime()
+
 
     const newDevices = []
     for (let i = 0; i < 500; i++) {
       // 使用我们自定义的函数生成时间
-      const randomTime1 = getRandomTimeStr(2022, 2025)
-      const randomTime2 = getRandomTimeStr(2022, 2025)
+      // const randomTime1 = getRandomTimeStr(2022, 2025)
+      // const randomTime2 = getRandomTimeStr(2022, 2025)
+      // 1. 先生成激活时间 (minTime ~ maxTime 之间)
+      const activeTs = minTime + Math.random() * (maxTime - minTime)
+      // 2. 再生成最近上线时间 (activeTs ~ maxTime 之间)，确保它必定晚于激活时间
+      const lastOnlineTs = activeTs + Math.random() * (maxTime - activeTs)
+
       newDevices.push(Mock.mock({
         'id': '@guid',
         'name': '@ctitle(3, 7)',
@@ -56,8 +77,9 @@ function preSeedDatabase() {
         'sn': /SN_[A-Z0-9]{12}/,
         'isBound|1-2': true,
         'dataCenter|1': dataCenters,
-        'gmtActive': randomTime1,      // 使用生成的固定时间
-        'gmtLastOnline': randomTime2   // 简单起见，最近上线时间设为和激活时间一样
+        // 3. 使用辅助函数格式化时间戳
+        'gmtActive': formatTimestamp(activeTs),
+        'gmtLastOnline': formatTimestamp(lastOnlineTs)   // 简单起见，最近上线时间设为和激活时间一样
       }))
     }
     dbData.devices = newDevices;
