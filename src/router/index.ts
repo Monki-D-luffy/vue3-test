@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+// import HomeView from '../views/HomeView.vue'
 
 // 导入创建的组件
 import DeviceManager from '@/views/DeviceManager.vue'
@@ -13,9 +13,8 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: LoginView,
     },
-
     // 添加新路由
     {
       path: '/devices', // 访问的 URL
@@ -51,7 +50,7 @@ router.beforeEach((to, from, next) => {
     // 情况A：您没有门票 ( !token )，
     // 并且 您想去的还不是登录页 ( to.path !== '/login' )
     // ----------------------------------------------------
-    
+
     // 把您“踢”回登录页
     console.log('导航守卫：未登录，跳转到 /login');
     next('/login');
@@ -61,7 +60,7 @@ router.beforeEach((to, from, next) => {
     // 情况B：您有门票 ( token )，
     // 并且 您还想去登录页 ( to.path === '/login' )
     // ----------------------------------------------------
-    
+
     // 没必要，直接把您“送”回主看板
     console.log('导航守卫：已登录，跳转到 /dashboard');
     next('/dashboard');
@@ -72,7 +71,7 @@ router.beforeEach((to, from, next) => {
     // 1. 您没有门票，但您去的就是登录页 (允许)
     // 2. 您有门票，您去的也不是登录页 (允许)
     // ----------------------------------------------------
-    
+
     // 正常放行
     next();
   }
