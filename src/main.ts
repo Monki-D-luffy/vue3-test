@@ -1,6 +1,4 @@
 
-// import './mock/index.ts'
-
 import './assets/main.css'
 
 import { createApp } from 'vue'
