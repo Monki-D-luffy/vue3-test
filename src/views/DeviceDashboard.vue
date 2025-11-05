@@ -21,27 +21,72 @@
         </div>
 
         <el-row :gutter="20" class="summary-cards">
-            <el-col :span="8">
+            <!-- <el-col :span="8">
                 <el-card shadow="hover">
                     <div class="card-content">
                         <span>设备总数</span>
                         <span class="value">{{ summary.total }}</span>
                     </div>
                 </el-card>
-            </el-col>
+            </el-col> -->
             <el-col :span="8">
+                <el-card shadow="hover" class="stat-card">
+                    <div class="stat-item">
+                        <div class="stat-icon blue-bg">
+                            <el-icon>
+                                <Monitor />
+                            </el-icon>
+                        </div>
+                        <div class="stat-info">
+                            <span class="label">设备总数</span>
+                            <span class="value">{{ summary.total }}</span>
+                        </div>
+                    </div>
+                </el-card>
+            </el-col>
+            <!-- <el-col :span="8">
                 <el-card shadow="hover">
                     <div class="card-content">
                         <span>已激活设备</span>
                         <span class="value">{{ summary.activated }}</span>
                     </div>
                 </el-card>
-            </el-col>
+            </el-col> -->
             <el-col :span="8">
+                <el-card shadow="hover" class="stat-card">
+                    <div class="stat-item">
+                        <div class="stat-icon blue-bg">
+                            <el-icon>
+                                <CircleCheck />
+                            </el-icon>
+                        </div>
+                        <div class="stat-info">
+                            <span class="label">已激活设备</span>
+                            <span class="value">{{ summary.activated }}</span>
+                        </div>
+                    </div>
+                </el-card>
+            </el-col>
+            <!-- <el-col :span="8">
                 <el-card shadow="hover">
                     <div class="card-content">
                         <span>当前在线设备</span>
                         <span class="value">{{ summary.online }}</span>
+                    </div>
+                </el-card>
+            </el-col> -->
+            <el-col :span="8">
+                <el-card shadow="hover" class="stat-card">
+                    <div class="stat-item">
+                        <div class="stat-icon blue-bg">
+                            <el-icon>
+                                <Connection />
+                            </el-icon>
+                        </div>
+                        <div class="stat-info">
+                            <span class="label">当前在线设备</span>
+                            <span class="value">{{ summary.online }}</span>
+                        </div>
                     </div>
                 </el-card>
             </el-col>
@@ -76,6 +121,13 @@
         <el-card class="table-card" shadow="never">
             <el-table :data="deviceList" v-loading="loading">
                 <el-table-column prop="name" label="设备名称/ID" width="180" />
+                <el-table-column prop="status" label="设备状态" width="120">
+                    <template #default="scope">
+                        <el-tag :type="getStatusType(scope.row.status)" effect="light" round>
+                            {{ scope.row.status }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="status" label="设备状态" width="100" />
                 <el-table-column prop="puuid" label="生产PUUID" width="200" />
                 <el-table-column prop="productId" label="所属产品/产品ID" width="180" />
@@ -104,8 +156,9 @@ import { ref, onMounted, reactive } from 'vue'
 // import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+// 引入需要的图标
+import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 
-// const API_BASE_URL = 'http://192.168.1.100/api' // 保持和 mock 一致
 
 // 顶部卡片数据
 const summary = ref({
@@ -154,7 +207,16 @@ const fetchSummary = async () => {
         console.error(error)
     }
 }
-
+// 辅助函数：根据状态返回对应的 Element Plus Tag 类型
+const getStatusType = (status) => {
+    switch (status) {
+        case '在线': return 'success'   // 绿色
+        case '离线': return 'info'      // 灰色
+        case '故障': return 'danger'    // 红色
+        case '未激活': return 'warning' // 黄色
+        default: return ''             // 默认蓝色
+    }
+}
 
 // 获取设备列表数据
 const fetchDevices = async () => {
@@ -293,5 +355,60 @@ onMounted(() => {
 */
 .filter-form .el-form-item .el-input {
     width: 500px;
+}
+
+.stat-card :deep(.el-card__body) {
+    padding: 20px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 20px;
+}
+
+.stat-icon .el-icon {
+    font-size: 30px;
+    color: #fff;
+}
+
+/* 不同颜色的图标背景 */
+.blue-bg {
+    background: linear-gradient(135deg, #36d1dc, #5b86e5);
+}
+
+.green-bg {
+    background: linear-gradient(135deg, #67b26f, #4ca2cd);
+}
+
+.purple-bg {
+    background: linear-gradient(135deg, #f6d365, #fda085);
+    /* 这里其实是橙色渐变，你可以自己改 */
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-info .label {
+    font-size: 14px;
+    color: #909399;
+}
+
+.stat-info .value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #303133;
+    margin-top: 5px;
 }
 </style>
