@@ -51,16 +51,19 @@ export const useAuthStore = defineStore('auth', () => {
         ElMessage.success('登录成功！')
         
         // 8. 登录成功后，跳转到主看板页面
-        router.push('/dashboard')
+        // router.push('/dashboard')
+        return true;
 
       } else {
         // 处理后端返回的“登录失败”
         ElMessage.error(response.data.message || '登录失败')
+        return false;
       }
     } catch (error) {
       // 处理网络错误
       ElMessage.error('登录请求失败，请检查网络或联系管理员')
       console.error(error)
+      return false;
     }
   }
 
@@ -70,7 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
     userInfo.value = null
     localStorage.removeItem('authToken')
     ElMessage.info('您已退出登录')
-    router.push('/login')
+    // router.push('/login')
   }
 
   // --- Getters (计算属性) ---

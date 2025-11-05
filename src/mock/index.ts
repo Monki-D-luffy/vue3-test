@@ -44,11 +44,11 @@ const getOrGenerateDataCenterDB = (dataCenter: string) => {
   if (masterDeviceDatabase[dataCenter]) {
     return masterDeviceDatabase[dataCenter];
   }
-  
+
   // 2.2 如果没生成过，就现在生成
   console.log(`--- [Mock] 首次生成 ${dataCenter} 的模拟数据 ---`);
   const deviceList = [];
-  
+
   // 不同的数据中心，我们给它不同数量的设备
   let count;
   switch (dataCenter) {
@@ -61,9 +61,9 @@ const getOrGenerateDataCenterDB = (dataCenter: string) => {
     default:
       count = Mock.Random.integer(5, 15);
   }
-  
+
   const startTimeStamp = new Date('2022-01-01 00:00:00').getTime();
-  const nowTimeStamp = new Date().getTime(); 
+  const nowTimeStamp = new Date().getTime();
 
   for (let i = 0; i < count; i++) {
     const baseItem = Mock.mock(baseTemplate);
@@ -71,14 +71,14 @@ const getOrGenerateDataCenterDB = (dataCenter: string) => {
     const gmtLastOnlineTimeStamp = Mock.Random.integer(gmtActiveTimeStamp, nowTimeStamp);
     const gmtActive = formatDate(new Date(gmtActiveTimeStamp));
     const gmtLastOnline = formatDate(new Date(gmtLastOnlineTimeStamp));
-    
+
     deviceList.push({
       ...baseItem,
       gmtActive,
       gmtLastOnline
     });
   }
-  
+
   // 2.3 存入主数据库并返回
   masterDeviceDatabase[dataCenter] = deviceList;
   return deviceList;
@@ -92,7 +92,7 @@ const getOrGenerateDataCenterDB = (dataCenter: string) => {
 // ------------------------------------
 // 1. Mock.js 通过 options.url 来获取完整的请求URL，包括参数
 //    我们需要一个辅助函数来解析 URL 参数
-const getQueryParam = (url:any, param:any) => {
+const getQueryParam = (url: any, param: any) => {
   const reg = new RegExp(`[?&]${param}=([^&]*)`)
   const result = url.match(reg)
   return result ? decodeURIComponent(result[1]) : null
@@ -103,8 +103,7 @@ Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
   console.log('--- [Mock API] GET /api/devices/summary (卡片数据) ---')
 
   // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
-  const token = getQueryParam(options.url, 'token');
-  if (!token) {
+  if (!(options as any).headers || !(options as any).headers.Authorization) {
     console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
     return Mock.mock({
       "code": 401,
@@ -113,7 +112,7 @@ Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
       "success": false
     })
   }
-// 1. 获取 dataCenter 参数，如果不存在，默认为 'CN'
+  // 1. 获取 dataCenter 参数，如果不存在，默认为 'CN'
   const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
   // 2. 获取对应数据中心的数据库
   const currentDB = getOrGenerateDataCenterDB(dataCenter);
@@ -126,7 +125,7 @@ Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
     message: '获取成功',
     data: {
       total: total,
-      activated: total, 
+      activated: total,
       online: online
     }
   })
@@ -135,7 +134,7 @@ Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
 // 规则 1.5：[POST] /auth/login (登录接口)
 Mock.mock(/\/api\/auth\/login$/, 'post', (options) => {
   console.log('--- [Mock API] POST /api/auth/login (登录请求) ---')
-  
+
   // 1. 从请求体中解析出账号和密码
   const body = JSON.parse(options.body)
   const { account, password } = body
@@ -144,7 +143,7 @@ Mock.mock(/\/api\/auth\/login$/, 'post', (options) => {
   // 2. 简单的登录逻辑校验
   //    (我们只校验您提供的测试账号)
   if (account === '1067360038@qq.com' && password === '123456') {
-    
+
     // 3. 登录成功：返回您提供的“成功”数据结构
     return Mock.mock({
       "code": 200,
@@ -163,9 +162,9 @@ Mock.mock(/\/api\/auth\/login$/, 'post', (options) => {
       },
       "success": true
     })
-    
+
   } else {
-    
+
     // 4. 登录失败：返回一个“失败”的数据结构
     return Mock.mock({
       "code": 401,
@@ -181,8 +180,7 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
   console.log('--- [Mock API] POST /api/devices (添加设备) ---')
 
   // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
-  const token = getQueryParam(options.url, 'token');
-  if (!token) {
+  if (!(options as any).headers || !(options as any).headers.Authorization) {
     console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
     return Mock.mock({
       "code": 401,
@@ -192,26 +190,26 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
     })
   }
 
-// 1. 获取 dataCenter 参数
+  // 1. 获取 dataCenter 参数
   const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
   // 2. 获取对应数据中心的数据库
   const currentDB = getOrGenerateDataCenterDB(dataCenter);
-  
+
   // ( ... 保持 savedDevice 的生成逻辑不变 ... )
   const newDevice = JSON.parse(options.body)
-  const gmtActive = formatDate(new Date()); 
-  const gmtLastOnline = gmtActive; 
+  const gmtActive = formatDate(new Date());
+  const gmtLastOnline = gmtActive;
   const savedDevice = {
     ...Mock.mock(baseTemplate),
-    ...newDevice, 
+    ...newDevice,
     gmtActive,
     gmtLastOnline,
-    status: '在线' 
+    status: '在线'
   }
-  
+
   // 3. 将新设备添加到“当前”数据库
   currentDB.push(savedDevice)
-  
+
   return Mock.mock({
     code: 200,
     message: '添加成功',
@@ -223,12 +221,9 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
 //    正则表达式匹配所有以 /api/devices 结尾的URL
 Mock.mock(/\/api\/devices/, 'get', (options) => {
   console.log('--- [Mock API] GET /api/devices (表格数据) ---')
-  
+
   // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
-  const token = getQueryParam(options.url, 'token');
-  if (!token) 
-  // if (!(options as any).headers || !(options as any).headers.Authorization)
-{
+  if (!(options as any).headers || !(options as any).headers.Authorization) {
     console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
     return Mock.mock({
       "code": 401,
@@ -238,7 +233,7 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
     })
   }
 
-// 1. 解析所有参数，包括 dataCenter
+  // 1. 解析所有参数，包括 dataCenter
   const { url } = options
   const dataCenter = getQueryParam(url, 'dataCenter') || 'CN';
   const startDate = getQueryParam(url, 'startDate')
@@ -246,7 +241,7 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
   const keyword = getQueryParam(url, 'keyword')
   const isBoundParam = getQueryParam(url, 'isBound')
 
-  console.log('收到的筛选参数:', { dataCenter, startDate, endDate, keyword, isBound: isBoundParam }) 
+  console.log('收到的筛选参数:', { dataCenter, startDate, endDate, keyword, isBound: isBoundParam })
 
   // 2. 获取对应数据中心的数据库
   const currentDB = getOrGenerateDataCenterDB(dataCenter);
@@ -260,7 +255,7 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
     const start = new Date(startDate)
     // 结束日期我们通常希望包含当天，所以设置到 23:59:59
     const end = new Date(endDate)
-    end.setHours(23, 59, 59, 999) 
+    end.setHours(23, 59, 59, 999)
 
     filteredData = filteredData.filter(item => {
       // 假设我们按“首次激活时间” (gmtActive) 筛选
@@ -268,19 +263,19 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
       return itemDate >= start && itemDate <= end
     })
   }
-  
-// 5. ▼▼▼ 新增：关键字筛选逻辑 ▼▼▼
+
+  // 5. ▼▼▼ 新增：关键字筛选逻辑 ▼▼▼
   //    只有当 keyword 存在且不是空字符串时才执行
   if (keyword && keyword.trim() !== '') {
     const lowerKeyword = keyword.toLowerCase().trim()
-    
+
     filteredData = filteredData.filter(item => {
       // 检查所有相关字段是否包含关键字 (不区分大小写)
-      
+
       // 设备ID/设备名称 (来自UI)
       const nameMatch = item.name.toLowerCase().includes(lowerKeyword)
       const idMatch = item.id.toLowerCase().includes(lowerKeyword)
-      
+
       // 您新要求的字段
       const snMatch = item.sn.toLowerCase().includes(lowerKeyword)
       const productMatch = item.productInfo.toLowerCase().includes(lowerKeyword)
@@ -293,8 +288,8 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
   //6. isBoundParam 会是 "true" (字符串), "false" (字符串), 或 null
   if (isBoundParam !== '') {
     // 将URL参数 "true" 或 "false" 转换回布尔值
-    const isBoundValue = (isBoundParam === 'true'); 
-    
+    const isBoundValue = (isBoundParam === 'true');
+
     filteredData = filteredData.filter(item => {
       return item.isBound === isBoundValue
     })
@@ -305,6 +300,6 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
   return Mock.mock({
     code: 200,
     message: '获取成功',
-    data: filteredData 
+    data: filteredData
   })
 })

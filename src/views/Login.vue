@@ -27,18 +27,23 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore' // 1. 导入我们刚创建的 store
-
+import { useRouter } from 'vue-router'
 // 2. 获取 store 实例
 const authStore = useAuthStore()
 
 // 3. 创建 ref 来绑定表单的 v-model
 const email = ref('1067360038@qq.com') // 默认填入您的测试账号
 const password = ref('123456') // 默认填入一个假密码
+const router = useRouter()
 
 // 4. 定义登录按钮的点击事件
-const handleLogin = () => {
+const handleLogin = async () => {
     // 5. 调用 store 中的 login 动作
-    authStore.login(email.value, password.value)
+    const success = await authStore.login(email.value, password.value)
+
+    if (success) {
+        router.push('/dashboard') // <-- 5. 在这里跳转
+    }
 }
 </script>
 
