@@ -160,27 +160,31 @@ const fetchSummary = async () => {
 const fetchDevices = async () => {
     loading.value = true
     try {
-        // 1. 准备要发送给后端的参数
-        //    我们从 reactive 的 filters 中解构出需要的值
+        // 1. 准备原始参数
         const { isBound, productId, dateRange, keyword } = filters
-
-        // 2. Element Plus 的 el-date-picker 返回的是一个数组 [Date, Date]
-        //    我们需要将其转换成后端更喜欢的格式，比如 '2025-11-01'
-        const params = {
+        const rawParams = {
             isBound,
             productId,
-            keyword,
-            // 3. 只有当 dateRange 有值 (不是空字符串或null) 且是一个数组时，我们才处理它
-            startDate: dateRange && dateRange[0] ? dateRange[0].toISOString().split('T')[0] : '',
-            endDate: dateRange && dateRange[1] ? dateRange[1].toISOString().split('T')[0] : '',
+            q: keyword,
+            // 将 startDate 映射为 gmtActive_gte (激活时间 >= 开始日期)
+            gmtActive_gte: dateRange && dateRange[0] ? dateRange[0].toISOString().split('T')[0] + ' 00:00:00' : null,
+            // 将 endDate 映射为 gmtActive_lte (激活时间 <= 结束日期)
+            // 注意：为了包含结束当天的所有时间，我们加上 23:59:59
+            gmtActive_lte: dateRange && dateRange[1] ? dateRange[1].toISOString().split('T')[0] + ' 23:59:59' : null,
             dataCenter: selectedCenter.value
         }
 
-        // 4. 使用 axios 的 { params: ... } 配置，
-        //    axios 会自动将 params 对象转换成 URL 查询字符串
-        //    例如：.../api/devices?startDate=2025-11-01&endDate=2025-11-04
-        const response = await api.get(`/devices`, { params: params })
+        // 2. ✨ 关键修改：创建一个新对象，只存入有值的参数 ✨
+        const params = {}
+        for (const key in rawParams) {
+            // 只有当值不是 null, undefined, 也不是空字符串时，才加到 params 里
+            if (rawParams[key] !== null && rawParams[key] !== undefined && rawParams[key] !== '') {
+                params[key] = rawParams[key]
+            }
+        }
 
+        // 3. 发送请求
+        const response = await api.get(`/devices`, { params })
         deviceList.value = response.data.data
     } catch (error) {
         ElMessage.error('获取设备列表失败')
