@@ -1,9 +1,5 @@
-// 1. 在最顶上添加这一行，来启用 MOCK API
-//    我们只希望它在开发环境下运行，所以加一个判断
-// if (import.meta.env.DEV) {
-//   import('./mock')
-// }
-import './mock/index.ts'
+
+// import './mock/index.ts'
 
 import './assets/main.css'
 

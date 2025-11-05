@@ -1,0 +1,43 @@
+{
+  "devices": [
+    {
+      "id": "d001",
+      "name": "智能电表-01",
+      "status": "在线",
+      "puuid": "PU-2024001",
+      "productInfo": "智能电表 / PID_DJ888",
+      "deviceType": "NB-IoT水表",
+      "sn": "SN_88880001",
+      "isBound": true,
+      "dataCenter": "CN",
+      "gmtActive": "2023-10-01 12:00:00",
+      "gmtLastOnline": "2024-05-20 08:30:00"
+    },
+    {
+      "id": "d002",
+      "name": "北美温湿度传感器",
+      "status": "离线",
+      "puuid": "PU-2024002",
+      "productInfo": "温湿度计 / PID_WS999",
+      "deviceType": "温湿度计",
+      "sn": "SN_99990002",
+      "isBound": false,
+      "dataCenter": "US-WEST",
+      "gmtActive": "2024-01-15 09:00:00",
+      "gmtLastOnline": "2024-05-18 16:20:00"
+    },
+    {
+      "id": "d003",
+      "name": "客厅摄像头",
+      "status": "在线",
+      "puuid": "PU-2024003",
+      "productInfo": "智能摄像头 / PID_CX777",
+      "deviceType": "摄像头",
+      "sn": "SN_77770003",
+      "isBound": true,
+      "dataCenter": "CN",
+      "gmtActive": "2024-03-10 10:00:00",
+      "gmtLastOnline": "2024-05-21 09:05:00"
+    }
+  ]
+}
