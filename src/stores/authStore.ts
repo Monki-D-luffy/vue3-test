@@ -25,7 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
   const userInfo = ref<UserInfo | null>(null)
 
   // --- Actions (动作) ---
-  
+
   // 登录动作
   const login = async (account: any, password: any) => {
     try {
@@ -42,14 +42,14 @@ export const useAuthStore = defineStore('auth', () => {
         //    将 token 和用户信息存入 state
         token.value = response.data.data.token
         userInfo.value = response.data.data
-        
+
         // 7. (可选) 将 token 存入浏览器的 localStorage，以便刷新后保持登录
         if (token.value !== null) {
           localStorage.setItem('authToken', token.value)
         }
-        
+
         ElMessage.success('登录成功！')
-        
+
         // 8. 登录成功后，跳转到主看板页面
         // router.push('/dashboard')
         return true;
@@ -78,12 +78,23 @@ export const useAuthStore = defineStore('auth', () => {
 
   // --- Getters (计算属性) ---
   // (暂时用不到，但可以先留着)
+  const tryAutoLogin = () => {
+    console.log('--- [AuthStore] 检查会话 ---')
+    const storedToken = localStorage.getItem('authToken')
+    if (storedToken) {
+      console.log('--- [AuthStore] 发现Token，正在恢复会话 ---')
+      token.value = storedToken
 
+      // (在真实项目中，您还会在这里用 token 去
+      //  调用一个 "getUserInfo" 接口来恢复 userInfo)
+    }
+  }
   // 5. 将 state 和 actions 暴露出去
   return {
     token,
     userInfo,
     login,
-    logout
+    logout,
+    tryAutoLogin
   }
 })

@@ -1,64 +1,73 @@
 // src/api/index.ts
 import axios from 'axios'
-import { useAuthStore } from '@/stores/authStore'
+// 1. 不再导入 Pinia/authStore！
+// import { useAuthStore } from '@/stores/authStore' 
 import { ElMessage } from 'element-plus'
+import router from '@/router' // 我们需要 router 来实现 "401 踢回登录页"
 
-// 1. 定义我们 API 的基础 URL
 const API_BASE_URL = 'http://192.168.1.100/api'
-
-// 2. 创建一个 axios 的“实例”
-//    我们所有的配置都将基于这个实例
 const api = axios.create({
   baseURL: API_BASE_URL
 })
 
-// 3. ✨✨✨ 添加“请求拦截器”（全局门卫） ✨✨✨
+// 3. ✨✨✨ 全局请求拦截器 (只依赖 localStorage) ✨✨✨
 api.interceptors.request.use(
   (config) => {
-    // 在请求发送出去之前，执行此函数
-
-    // 4. 让登录请求直接通过，不需要Token
+    // 1. 登录请求，直接放行
     if (config.url && config.url.endsWith('/auth/login')) {
       return config
     }
 
-    // 5. 对于其他所有请求，我们要附上Token
-    //    !! 注意: 必须在这里（函数内部）获取 store 实例
-    //    不能在文件顶部获取，否则会因 Pinia 未初始化而报错
-    const authStore = useAuthStore()
-    
-    let token = authStore.token
-    
-    // 6. 如果 Pinia 中没有，尝试从 localStorage 恢复
-    if (!token) {
-      token = localStorage.getItem('authToken')
-      if (token) {
-        authStore.token = token // 顺便恢复到 Pinia 中
-      }
-    }
+    // 2. 对于其他所有请求，只从 localStorage 中读取 token
+    const token = localStorage.getItem('authToken')
 
-    // 7. 如果我们最终找到了 Token，就把它塞进请求头
+    // 3. 如果 token 存在，就附上
     if (token) {
-      // 'Authorization' 是后端API的标准“通行证”字段
-      // 'Bearer ' 是 Token 的标准前缀
       config.headers.Authorization = `Bearer ${token}`
-    } 
-    // else {
-    //   // 8. 如果连 localStorage 里都没有 Token，
-    //   //    (可选) 可以在这里直接阻止请求，并提示用户
-    //   ElMessage.error('您尚未登录，无法执行此操作')
-    //   // 抛出一个错误，阻止这个请求被发送
-    //   return Promise.reject(new Error('未找到Token'))
-    // }
+    }
+    // 4. (重要) 如果 token 不存在，也不要报错，
+    //    让路由守卫 (router/index.ts) 来处理页面跳转，
+    //    让 mock 后端 (mock/index.ts) 来返回 401 错误。
 
-    // 9. 放行“加工”过的请求
     return config
   },
   (error) => {
-    // 处理请求配置时的错误
     return Promise.reject(error)
   }
 )
 
-// 4. 导出这个配置好的 api 实例
+// 5. ✨✨✨ 全局响应拦截器 (用于处理 401) ✨✨✨
+//    (这是新加的，但非常重要)
+api.interceptors.response.use(
+  (response) => {
+    // 2xx 范围内的状态码都会触发该函数
+    // 如果 mockjs 返回的数据 code 不是 200，我们也当作错误处理
+    if (response.data && response.data.code && response.data.code !== 200) {
+      // 登录失败（401）由 mockjs 自己处理，这里只处理其他错误
+      if (response.data.code !== 401) {
+        ElMessage.error(response.data.message || '请求失败')
+      }
+      return Promise.reject(new Error(response.data.message || 'Error'))
+    }
+    return response
+  },
+  (error) => {
+    // 超出 2xx 范围的状态码（比如真实的 401, 500）都会触发该函数
+    if (error.response && error.response.status === 401) {
+      // 401 (未授权) 是后端的标准回答
+      ElMessage.error('会话已过期，请重新登录。')
+
+      // (可选) 清理本地存储
+      localStorage.removeItem('authToken')
+
+      // 跳转到登录页 (假设您的登录页路径是 /login)
+      router.push('/login')
+    } else {
+      // 其他网络错误
+      ElMessage.error(error.message || '网络错误')
+    }
+    return Promise.reject(error)
+  }
+)
+
 export default api
