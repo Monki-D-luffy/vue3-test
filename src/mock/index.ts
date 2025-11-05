@@ -99,11 +99,12 @@ const getQueryParam = (url: any, param: any) => {
 }
 
 // 规则 1：[GET] /summary (最具体的 GET 规则，必须放最前面)
-Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
+Mock.mock(/\/api\/devices\/summary/, 'get', function (this: any) {
   console.log('--- [Mock API] GET /api/devices/summary (卡片数据) ---')
+  console.log('summary get token', this);
 
   // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
-  if (!(options as any).headers || !(options as any).headers.Authorization) {
+  if (!this.requestHeaders || !this.requestHeaders.authorization) {
     console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
     return Mock.mock({
       "code": 401,
@@ -113,7 +114,7 @@ Mock.mock(/\/api\/devices\/summary/, 'get', (options) => {
     })
   }
   // 1. 获取 dataCenter 参数，如果不存在，默认为 'CN'
-  const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
+  const dataCenter = getQueryParam(this.url, 'dataCenter') || 'CN';
   // 2. 获取对应数据中心的数据库
   const currentDB = getOrGenerateDataCenterDB(dataCenter);
 
@@ -176,11 +177,12 @@ Mock.mock(/\/api\/auth\/login$/, 'post', (options) => {
 })
 
 // 规则 2：[POST] /devices (POST 规则，也很具体)
-Mock.mock(/\/api\/devices$/, 'post', (options) => {
+Mock.mock(/\/api\/devices$/, 'post', function (this: any) {
   console.log('--- [Mock API] POST /api/devices (添加设备) ---')
+  console.log('post token', this);
 
   // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
-  if (!(options as any).headers || !(options as any).headers.Authorization) {
+  if (!this.headers || !this.headers.authorization) {
     console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
     return Mock.mock({
       "code": 401,
@@ -191,12 +193,12 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
   }
 
   // 1. 获取 dataCenter 参数
-  const dataCenter = getQueryParam(options.url, 'dataCenter') || 'CN';
+  const dataCenter = getQueryParam(this.url, 'dataCenter') || 'CN';
   // 2. 获取对应数据中心的数据库
   const currentDB = getOrGenerateDataCenterDB(dataCenter);
 
   // ( ... 保持 savedDevice 的生成逻辑不变 ... )
-  const newDevice = JSON.parse(options.body)
+  const newDevice = JSON.parse(this.body)
   const gmtActive = formatDate(new Date());
   const gmtLastOnline = gmtActive;
   const savedDevice = {
@@ -219,11 +221,12 @@ Mock.mock(/\/api\/devices$/, 'post', (options) => {
 
 // 规则 3：[GET] /devices (带筛选)
 //    正则表达式匹配所有以 /api/devices 结尾的URL
-Mock.mock(/\/api\/devices/, 'get', (options) => {
+Mock.mock(/\/api\/devices/, 'get', function (this: any) {
   console.log('--- [Mock API] GET /api/devices (表格数据) ---')
+  console.log('get token', this);
 
   // 假设前端通过 URL 参数传递 token（如 ?token=xxx），否则跳过校验
-  if (!(options as any).headers || !(options as any).headers.Authorization) {
+  if (!this.headers || !this.headers.authorization) {
     console.warn('--- [Mock API] 拦截：请求未携带 Token ---')
     return Mock.mock({
       "code": 401,
@@ -234,7 +237,7 @@ Mock.mock(/\/api\/devices/, 'get', (options) => {
   }
 
   // 1. 解析所有参数，包括 dataCenter
-  const { url } = options
+  const { url } = this
   const dataCenter = getQueryParam(url, 'dataCenter') || 'CN';
   const startDate = getQueryParam(url, 'startDate')
   const endDate = getQueryParam(url, 'endDate')

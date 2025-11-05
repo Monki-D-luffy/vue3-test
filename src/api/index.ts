@@ -28,6 +28,7 @@ api.interceptors.request.use(
     // 4. (重要) 如果 token 不存在，也不要报错，
     //    让路由守卫 (router/index.ts) 来处理页面跳转，
     //    让 mock 后端 (mock/index.ts) 来返回 401 错误。
+    console.log('检查token是否存在: ', config);
 
     return config
   },
