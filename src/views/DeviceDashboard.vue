@@ -120,23 +120,18 @@
                         <el-button link type="danger">删除</el-button>
                     </template>
                 </el-table-column>
-
-                <template>
-                    <el-card class="table-card" shadow="never">
-                        <el-table :data="deviceList" v-loading="loading">
-                            <template #empty>
-                                <el-empty description="暂无激活设备" />
-                            </template>
-                        </el-table>
-
-                        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
-                            :page-sizes="[10, 20, 50]" :total="totalDevices"
-                            layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-                            @current-change="handleCurrentChange" class="pagination-container" />
-                    </el-card>
-
+                <template #empty>
+                    <el-empty description="暂无激活设备" />
                 </template>
+
             </el-table>
+            <div class="pagination-block" v-if="pagination.total > 0">
+                <el-pagination :total="pagination.total" v-model:current-page="pagination.currentPage"
+                    v-model:page-size="pagination.pageSize" :page-sizes="[10, 20, 50, 100]"
+                    layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange" />
+            </div>
+
         </el-card>
     </div>
 </template>
@@ -181,9 +176,11 @@ const loading = ref(true) // 表格加载状态
 const selectedCenter = ref('CN')
 
 // 分页数据
-const currentPage = ref(1) // 当前页码
-const pageSize = ref(20)   // 每页显示条数 (默认为 20)
-const totalDevices = ref(0)  // 总设备数
+const pagination = reactive({
+    currentPage: 1, // 当前页码
+    pageSize: 10,   // 每页显示条数
+    total: 0        // 总条目数
+})
 // --- API 请求函数 ---
 
 // 获取顶部统计数据
@@ -231,8 +228,8 @@ const fetchDevices = async () => {
             dataCenter: selectedCenter.value,
 
             //  新增：为 json-server 添加分页参数
-            _page: currentPage.value,
-            _limit: pageSize.value
+            _page: pagination.currentPage,
+            _limit: pagination.pageSize
         }
 
         // 2. ✨ 关键修改：创建一个新对象，只存入有值的参数 ✨
@@ -248,10 +245,11 @@ const fetchDevices = async () => {
 
         // 4. ✨ 修改：从响应头获取总数
         // json-server 会在 'x-total-count' 响应头中返回总条目数
-        const totalCountHeader = response.headers['x-total-count']
-
-        totalDevices.value = totalCountHeader ? parseInt(totalCountHeader, 10) : 0
-        console.log('总设备数:', totalDevices.value);
+        // ▼▼▼ 3.2 新增：从响应头获取总数 ▼▼▼
+        // json-server 会把总数放在 'x-total-count' 响应头里
+        // 我们需要把它取出来，更新到 pagination.total 状态上
+        pagination.total = Number(response.headers['x-total-count'] || 0)
+        console.log('总设备数:', pagination.total);
         // 5. 更新列表数据
         deviceList.value = response.data.data
     } catch (error) {
@@ -261,28 +259,8 @@ const fetchDevices = async () => {
         loading.value = false
     }
 }
-// 新增分页事件处理函数 ▼▼▼
 
-/**
- * 当用户切换每页显示条数时 (e.g., 20 -> 50)
- */
-const handleSizeChange = (newSize) => {
-    console.log('每页显示条数切换为:', newSize, pageSize.value, currentPage.value);
 
-    pageSize.value = newSize
-    currentPage.value = 1 // 切换条数时，重置回第一页
-    fetchDevices()
-}
-
-/**
- * 当用户点击页码时 (e.g., 1 -> 2)
- */
-const handleCurrentChange = (newPage) => {
-    console.log('每页显示条数切换为:', newSize, pageSize.value, currentPage.value);
-
-    currentPage.value = newPage
-    fetchDevices()
-}
 // --- 事件处理函数 ---
 
 // 切换数据中心
@@ -290,7 +268,7 @@ const handleCenterChange = (command) => {
     console.log('数据中心切换为:', command)
     selectedCenter.value = command
 
-    currentPage.value = 1 //  重置到第一页
+    pagination.currentPage = 1 //  重置到第一页
     // 一旦切换了数据中心，我们就应该重新获取数据
     // (我们也会在 onMounted 中调用它，以加载默认数据中心的数据)
     fetchDevices()
@@ -302,7 +280,7 @@ const handleSearch = () => {
     // 触发搜索，（在真实后端中）会根据 filters 重新获取数据
     ElMessage.success('正在搜索...')
 
-    currentPage.value = 1 //  重置到第一页
+    pagination.currentPage = 1 //  重置到第一页
 
     fetchDevices()
 }
@@ -315,11 +293,29 @@ const handleReset = () => {
     filters.keyword = ''
     ElMessage.info('已重置')
 
-    currentPage.value = 1 //  重置到第一页
+    pagination.currentPage = 1
+    pagination.pageSize = 10 //  重置到第一页
 
     fetchDevices()
 }
 
+// 新增分页事件处理函数
+/** 当每页条数 (pageSize) 改变时触发 */
+const handleSizeChange = (newSize) => {
+    console.log(`每页 ${newSize} 条`)
+    pagination.pageSize = newSize
+    // 切换每页条数时，重置到第1页
+    pagination.currentPage = 1
+    fetchDevices()
+}
+
+/** 当页码 (currentPage) 改变时触发 */
+const handleCurrentChange = (newPage) => {
+    console.log(`翻到第 ${newPage} 页`)
+    pagination.currentPage = newPage
+    // 只需要获取新一页的数据
+    fetchDevices()
+}
 
 // --- 生命周期钩子 ---
 onMounted(() => {
@@ -451,10 +447,64 @@ onMounted(() => {
     margin-top: 5px;
 }
 
-.pagination-container {
-    margin-top: 20px;
+/* 自定义分页样式 */
+.pagination-block {
+    /* 1. 增加一个上边距，和表格拉开距离 */
+    margin-top: 24px;
+
+    /* 2. 增加一个上内边距，让分割线和分页条之间也有距离 */
+    padding-top: 20px;
+
+    /* 3. (现代化) 增加一条浅色上边框作为分割线 */
+    border-top: 1px solid var(--el-border-color-lighter);
+
+    /* 4. (居中) 使用 flex 布局让内部的 el-pagination 组件居中 */
     display: flex;
-    justify-content: flex-end;
-    /* 让分页组件靠右对齐 */
+    justify-content: center;
 }
+
+/* 1. 统一放大字体和图标
+  我们使用 :deep() 深度选择器来修改子组件的样式。
+  --el-font-size-base 是 Element Plus 的基础字号变量，
+  我们把它从 14px 提升到 16px，所有相关文字都会变大。
+*/
+.pagination-block :deep(.el-pagination) {
+    --el-font-size-base: 16px;
+}
+
+/* 2. 让页码按钮更大、更圆润，更易点击
+*/
+.pagination-block :deep(.el-pager li) {
+    min-width: 36px;
+    /* 增加按钮宽度 */
+    height: 36px;
+    /* 增加按钮高度 */
+    line-height: 36px;
+    /* 垂直居中 */
+    border-radius: 6px;
+    /* 增加圆角，看起来更现代 */
+}
+
+/* 3. 增加一个更柔和、现代的 hover 效果 
+*/
+.pagination-block :deep(.el-pager li:not(.is-active):hover) {
+    color: var(--el-color-primary);
+    background-color: var(--el-color-primary-light-9) !important;
+}
+
+/* 4. 左右箭头按钮也应用相同的尺寸和圆角 
+*/
+.pagination-block :deep(.el-pagination button) {
+    min-width: 36px;
+    height: 36px;
+    border-radius: 6px;
+}
+
+/* 5. "前往" 输入框也使用圆角
+*/
+.pagination-block :deep(.el-pagination__jump .el-input__wrapper) {
+    border-radius: 6px;
+}
+
+/* 自定义分页样式结束 */
 </style>
