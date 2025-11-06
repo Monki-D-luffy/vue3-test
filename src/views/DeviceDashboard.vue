@@ -125,12 +125,13 @@
                 </template>
 
             </el-table>
-            <div class="pagination-block" v-if="pagination.total > 0">
-                <el-pagination :total="pagination.total" v-model:current-page="pagination.currentPage"
-                    v-model:page-size="pagination.pageSize" :page-sizes="[10, 20, 50, 100]"
-                    layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-                    @current-change="handleCurrentChange" />
-            </div>
+
+            <!-- 分页功能 -->
+            <el-card class="table-card" shadow="never">
+                <AppPagination v-if="pagination.total > 0" :total="pagination.total"
+                    v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
+                    @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+            </el-card>
 
         </el-card>
     </div>
@@ -143,6 +144,7 @@ import { ElMessage } from 'element-plus'
 import api from '@/api'
 // 引入自己的组件
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
+import AppPagination from '@/components/AppPagination.vue'
 
 // 引入需要的图标
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
@@ -469,66 +471,7 @@ onMounted(() => {
     margin-top: 5px;
 }
 
-/* 自定义分页样式 */
-.pagination-block {
-    /* 1. 增加一个上边距，和表格拉开距离 */
-    margin-top: 24px;
 
-    /* 2. 增加一个上内边距，让分割线和分页条之间也有距离 */
-    padding-top: 20px;
-
-    /* 3. (现代化) 增加一条浅色上边框作为分割线 */
-    border-top: 1px solid var(--el-border-color-lighter);
-
-    /* 4. (居中) 使用 flex 布局让内部的 el-pagination 组件居中 */
-    display: flex;
-    justify-content: center;
-}
-
-/* 1. 统一放大字体和图标
-  我们使用 :deep() 深度选择器来修改子组件的样式。
-  --el-font-size-base 是 Element Plus 的基础字号变量，
-  我们把它从 14px 提升到 16px，所有相关文字都会变大。
-*/
-.pagination-block :deep(.el-pagination) {
-    --el-font-size-base: 16px;
-}
-
-/* 2. 让页码按钮更大、更圆润，更易点击
-*/
-.pagination-block :deep(.el-pager li) {
-    min-width: 36px;
-    /* 增加按钮宽度 */
-    height: 36px;
-    /* 增加按钮高度 */
-    line-height: 36px;
-    /* 垂直居中 */
-    border-radius: 6px;
-    /* 增加圆角，看起来更现代 */
-}
-
-/* 3. 增加一个更柔和、现代的 hover 效果 
-*/
-.pagination-block :deep(.el-pager li:not(.is-active):hover) {
-    color: var(--el-color-primary);
-    background-color: var(--el-color-primary-light-9) !important;
-}
-
-/* 4. 左右箭头按钮也应用相同的尺寸和圆角 
-*/
-.pagination-block :deep(.el-pagination button) {
-    min-width: 36px;
-    height: 36px;
-    border-radius: 6px;
-}
-
-/* 5. "前往" 输入框也使用圆角
-*/
-.pagination-block :deep(.el-pagination__jump .el-input__wrapper) {
-    border-radius: 6px;
-}
-
-/* 自定义分页样式结束 */
 
 /* 抽屉内标题的样式 */
 .card-header {
