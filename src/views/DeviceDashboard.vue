@@ -21,54 +21,9 @@
         </div>
 
         <el-row :gutter="20" class="summary-cards">
-
-            <el-col :span="8">
-                <el-card shadow="hover" class="stat-card">
-                    <div class="stat-item">
-                        <div class="stat-icon blue-bg">
-                            <el-icon>
-                                <Monitor />
-                            </el-icon>
-                        </div>
-                        <div class="stat-info">
-                            <span class="label">设备总数</span>
-                            <span class="value">{{ summary.total }}</span>
-                        </div>
-                    </div>
-                </el-card>
-            </el-col>
-
-            <el-col :span="8">
-                <el-card shadow="hover" class="stat-card">
-                    <div class="stat-item">
-                        <div class="stat-icon blue-bg">
-                            <el-icon>
-                                <CircleCheck />
-                            </el-icon>
-                        </div>
-                        <div class="stat-info">
-                            <span class="label">已激活设备</span>
-                            <span class="value">{{ summary.activated }}</span>
-                        </div>
-                    </div>
-                </el-card>
-            </el-col>
-
-            <el-col :span="8">
-                <el-card shadow="hover" class="stat-card">
-                    <div class="stat-item">
-                        <div class="stat-icon blue-bg">
-                            <el-icon>
-                                <Connection />
-                            </el-icon>
-                        </div>
-                        <div class="stat-info">
-                            <span class="label">当前在线设备</span>
-                            <span class="value">{{ summary.online }}</span>
-                        </div>
-                    </div>
-                </el-card>
-            </el-col>
+            <StatCard label="设备总数" :value="summary.total" :iconComponent="Monitor" colorTheme="blue-bg" />
+            <StatCard label="已激活设备" :value="summary.activated" :iconComponent="CircleCheck" colorTheme="green-bg" />
+            <StatCard label="当前在线设备" :value="summary.online" :iconComponent="Connection" colorTheme="purple-bg" />
         </el-row>
 
         <DeviceFilterBar v-model:filters="filters" @search="handleSearch" @reset="handleReset" />
@@ -122,7 +77,7 @@ import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 import AppPagination from '@/components/AppPagination.vue'
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
-
+import StatCard from '@/components/StatCard.vue'
 
 // --- 状态变量 ---
 // 抽屉状态简化：只需要一个 ref 来存 ID 
@@ -390,84 +345,4 @@ onMounted(() => {
 .summary-cards {
     margin-bottom: 20px;
 }
-
-.card-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.card-content .value {
-    font-size: 28px;
-    font-weight: bold;
-    margin-top: 10px;
-}
-
-
-.stat-card :deep(.el-card__body) {
-    padding: 20px;
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-}
-
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-right: 20px;
-}
-
-.stat-icon .el-icon {
-    font-size: 30px;
-    color: #fff;
-}
-
-/* 不同颜色的图标背景 */
-.blue-bg {
-    background: linear-gradient(135deg, #36d1dc, #5b86e5);
-}
-
-.green-bg {
-    background: linear-gradient(135deg, #67b26f, #4ca2cd);
-}
-
-.purple-bg {
-    background: linear-gradient(135deg, #f6d365, #fda085);
-    /* 这里其实是橙色渐变，你可以自己改 */
-}
-
-.stat-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-info .label {
-    font-size: 14px;
-    color: #909399;
-}
-
-.stat-info .value {
-    font-size: 28px;
-    font-weight: bold;
-    color: #303133;
-    margin-top: 5px;
-}
-
-
-
-/* 抽屉内标题的样式 */
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-/* 抽屉内标题的样式结束 */
 </style>
