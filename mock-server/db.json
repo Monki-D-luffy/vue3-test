@@ -105,19 +105,6 @@
       "gmtLastOnline": "2025-11-19 15:21:03"
     },
     {
-      "id": "CE1De8B7-47bA-C2E6-cA55-EADf25935f7c",
-      "name": "门育世道生气划",
-      "status": "未激活",
-      "puuid": "PU-20246112",
-      "productInfo": "识克者 / PID_GPOUOOPG",
-      "deviceType": "智能灯泡",
-      "sn": "SN_3R14329C54Q5",
-      "isBound": false,
-      "dataCenter": "CN",
-      "gmtActive": "2022-08-05 00:36:44",
-      "gmtLastOnline": "2023-12-29 18:46:33"
-    },
-    {
       "id": "1c4fFA32-d5d2-A44B-E6DA-a911B1EDCF2f",
       "name": "地元始军道",
       "status": "离线",
@@ -948,19 +935,6 @@
       "dataCenter": "CN",
       "gmtActive": "2024-01-21 13:23:36",
       "gmtLastOnline": "2025-06-27 14:16:06"
-    },
-    {
-      "id": "44AEAc54-35BE-E3c1-Ab6D-639d4cECFd26",
-      "name": "技律方命",
-      "status": "未激活",
-      "puuid": "PU-20258315",
-      "productInfo": "同单 / PID_SUXYJENM",
-      "deviceType": "温湿度计",
-      "sn": "SN_0S6QV62O4173",
-      "isBound": true,
-      "dataCenter": "CN",
-      "gmtActive": "2025-09-25 01:52:45",
-      "gmtLastOnline": "2025-09-26 00:56:28"
     },
     {
       "id": "14CEFEfC-E35e-cD2c-A228-d93fadCA7d7e",

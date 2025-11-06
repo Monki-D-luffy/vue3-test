@@ -1,7 +1,5 @@
 // src/api/index.ts
 import axios from 'axios'
-// 1. 不再导入 Pinia/authStore！
-// import { useAuthStore } from '@/stores/authStore' 
 import { ElMessage } from 'element-plus'
 import router from '@/router' // 我们需要 router 来实现 "401 踢回登录页"
 
@@ -26,10 +24,6 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    // 4. (重要) 如果 token 不存在，也不要报错，
-    //    让路由守卫 (router/index.ts) 来处理页面跳转，
-    //    让 mock 后端 (mock/index.ts) 来返回 401 错误。
-    console.log('检查token是否存在: ', config);
 
     return config
   },
@@ -39,7 +33,6 @@ api.interceptors.request.use(
 )
 
 // 5. ✨✨✨ 全局响应拦截器 (用于处理 401) ✨✨✨
-//    (这是新加的，但非常重要)
 api.interceptors.response.use(
   (response) => {
     // 2xx 范围内的状态码都会触发该函数
