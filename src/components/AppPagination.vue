@@ -1,3 +1,4 @@
+<!-- 分页功能 -->
 <template>
     <div class="pagination-block" v-if="props.total > 0">
         <el-pagination :total="props.total" :current-page="currentPage" :page-size="pageSize"

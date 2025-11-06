@@ -71,31 +71,7 @@
             </el-col>
         </el-row>
 
-        <el-card class="filter-card" shadow="never">
-            <el-form :inline="true" :model="filters" class="filter-form">
-                <el-form-item>
-                    <el-select v-model="filters.isBound" placeholder="是否绑定" clearable>
-                        <el-option label="已绑定" :value="'true'" />
-                        <el-option label="未绑定" :value="'false'" />
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="全部产品">
-                    <el-select v-model="filters.productId" placeholder="全部产品" clearable>
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="时间区间">
-                    <el-date-picker v-model="filters.dateRange" type="daterange" range-separator="至"
-                        start-placeholder="开始日期" end-placeholder="结束日期" unlink-panels />
-                </el-form-item>
-                <el-form-item class="search-input">
-                    <el-input v-model="filters.keyword" placeholder="设备ID / 名称 / PUUID / SN码" clearable />
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" @click="handleSearch">搜索</el-button>
-                    <el-button @click="handleReset">重置</el-button>
-                </el-form-item>
-            </el-form>
-        </el-card>
+        <DeviceFilterBar v-model:filters="filters" @search="handleSearch" @reset="handleReset" />
 
         <el-card class="table-card" shadow="never">
             <el-table :data="deviceList" v-loading="loading">
@@ -127,11 +103,9 @@
             </el-table>
 
             <!-- 分页功能 -->
-            <el-card class="table-card" shadow="never">
-                <AppPagination v-if="pagination.total > 0" :total="pagination.total"
-                    v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
-                    @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-            </el-card>
+            <AppPagination v-if="pagination.total > 0" :total="pagination.total"
+                v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
+                @size-change="handleSizeChange" @current-change="handleCurrentChange" />
 
         </el-card>
     </div>
@@ -147,7 +121,7 @@ import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 // 引入自己的组件
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 import AppPagination from '@/components/AppPagination.vue'
-
+import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 
 
 // --- 状态变量 ---
@@ -428,37 +402,6 @@ onMounted(() => {
     margin-top: 10px;
 }
 
-.filter-card,
-.table-card {
-    margin-bottom: 20px;
-}
-
-.filter-form .el-form-item {
-    margin-bottom: 10px;
-    /* 减少行间距 */
-}
-
-/* 让搜索框在行内表单中不换行 */
-.filter-form .search-input {
-    min-width: 200px;
-}
-
-/* 这段代码的意思是：
-  找到 class 为 "filter-form" 的元素 (我们的表单),
-  然后找到它里面的 "el-form-item",
-  再找到它里面的 "el-select" (我们的下拉框),
-  然后把它们的宽度统一设置为 150px。
-*/
-.filter-form .el-form-item .el-select {
-    width: 150px;
-}
-
-/* 您可能还想让“设备ID/设备名称”输入框也长一点，
-  可以用类似的方法：
-*/
-.filter-form .el-form-item .el-input {
-    width: 500px;
-}
 
 .stat-card :deep(.el-card__body) {
     padding: 20px;

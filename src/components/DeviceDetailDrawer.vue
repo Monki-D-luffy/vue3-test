@@ -1,3 +1,4 @@
+<!-- 详情页 -->
 <template>
     <el-drawer v-model="visible" title="设备详情" direction="rtl" size="50%" @closed="$emit('close')">
         <div v-loading="deviceLoading" style="padding: 20px; min-height: 300px;">
