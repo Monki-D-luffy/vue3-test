@@ -121,12 +121,23 @@
                     </template>
                 </el-table-column>
 
-                <template #empty>
-                    <el-empty description="暂无激活设备" />
+                <template>
+                    <el-card class="table-card" shadow="never">
+                        <el-table :data="deviceList" v-loading="loading">
+                            <template #empty>
+                                <el-empty description="暂无激活设备" />
+                            </template>
+                        </el-table>
+
+                        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+                            :page-sizes="[10, 20, 50]" :total="totalDevices"
+                            layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange" class="pagination-container" />
+                    </el-card>
+
                 </template>
             </el-table>
         </el-card>
-
     </div>
 </template>
 
@@ -169,6 +180,10 @@ const deviceList = ref([])
 const loading = ref(true) // 表格加载状态
 const selectedCenter = ref('CN')
 
+// 分页数据
+const currentPage = ref(1) // 当前页码
+const pageSize = ref(20)   // 每页显示条数 (默认为 20)
+const totalDevices = ref(0)  // 总设备数
 // --- API 请求函数 ---
 
 // 获取顶部统计数据
@@ -186,6 +201,7 @@ const fetchSummary = async () => {
         console.error(error)
     }
 }
+
 // 辅助函数：根据状态返回对应的 Element Plus Tag 类型
 const getStatusType = (status) => {
     switch (status) {
@@ -212,7 +228,11 @@ const fetchDevices = async () => {
             // 将 endDate 映射为 gmtActive_lte (激活时间 <= 结束日期)
             // 注意：为了包含结束当天的所有时间，我们加上 23:59:59
             gmtActive_lte: dateRange && dateRange[1] ? dateRange[1].toISOString().split('T')[0] + ' 23:59:59' : null,
-            dataCenter: selectedCenter.value
+            dataCenter: selectedCenter.value,
+
+            //  新增：为 json-server 添加分页参数
+            _page: currentPage.value,
+            _limit: pageSize.value
         }
 
         // 2. ✨ 关键修改：创建一个新对象，只存入有值的参数 ✨
@@ -225,6 +245,14 @@ const fetchDevices = async () => {
 
         // 3. 发送请求
         const response = await api.get(`/devices`, { params })
+
+        // 4. ✨ 修改：从响应头获取总数
+        // json-server 会在 'x-total-count' 响应头中返回总条目数
+        const totalCountHeader = response.headers['x-total-count']
+
+        totalDevices.value = totalCountHeader ? parseInt(totalCountHeader, 10) : 0
+        console.log('总设备数:', totalDevices.value);
+        // 5. 更新列表数据
         deviceList.value = response.data.data
     } catch (error) {
         ElMessage.error('获取设备列表失败')
@@ -233,21 +261,49 @@ const fetchDevices = async () => {
         loading.value = false
     }
 }
+// 新增分页事件处理函数 ▼▼▼
+
+/**
+ * 当用户切换每页显示条数时 (e.g., 20 -> 50)
+ */
+const handleSizeChange = (newSize) => {
+    console.log('每页显示条数切换为:', newSize, pageSize.value, currentPage.value);
+
+    pageSize.value = newSize
+    currentPage.value = 1 // 切换条数时，重置回第一页
+    fetchDevices()
+}
+
+/**
+ * 当用户点击页码时 (e.g., 1 -> 2)
+ */
+const handleCurrentChange = (newPage) => {
+    console.log('每页显示条数切换为:', newSize, pageSize.value, currentPage.value);
+
+    currentPage.value = newPage
+    fetchDevices()
+}
+// --- 事件处理函数 ---
+
 // 切换数据中心
 const handleCenterChange = (command) => {
     console.log('数据中心切换为:', command)
     selectedCenter.value = command
 
+    currentPage.value = 1 //  重置到第一页
     // 一旦切换了数据中心，我们就应该重新获取数据
     // (我们也会在 onMounted 中调用它，以加载默认数据中心的数据)
     fetchDevices()
     fetchSummary()
 }
-// --- 事件处理函数 ---
+
 
 const handleSearch = () => {
     // 触发搜索，（在真实后端中）会根据 filters 重新获取数据
     ElMessage.success('正在搜索...')
+
+    currentPage.value = 1 //  重置到第一页
+
     fetchDevices()
 }
 
@@ -258,8 +314,12 @@ const handleReset = () => {
     filters.dateRange = ''
     filters.keyword = ''
     ElMessage.info('已重置')
+
+    currentPage.value = 1 //  重置到第一页
+
     fetchDevices()
 }
+
 
 // --- 生命周期钩子 ---
 onMounted(() => {
@@ -389,5 +449,12 @@ onMounted(() => {
     font-weight: bold;
     color: #303133;
     margin-top: 5px;
+}
+
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    /* 让分页组件靠右对齐 */
 }
 </style>

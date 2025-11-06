@@ -98,6 +98,11 @@ const router = jsonServer.router(dbPath)
 const middlewares = jsonServer.defaults()
 
 server.use(middlewares)
+// 解决CORS问题，暴露 X-Total-Count 响应头
+server.use((req, res, next) => {
+  res.header('Access-Control-Expose-Headers', 'X-Total-Count')
+  next()
+})
 server.use(jsonServer.bodyParser)
 
 // 登录接口
