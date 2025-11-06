@@ -66,19 +66,6 @@
       "gmtLastOnline": "2025-08-20 14:16:34"
     },
     {
-      "id": "2B593b95-C947-CDD0-96FA-1E96AaeB2e7B",
-      "name": "回类算大候组",
-      "status": "离线",
-      "puuid": "PU-20247428",
-      "productInfo": "精建市 / PID_VARQPPQP",
-      "deviceType": "智能灯泡",
-      "sn": "SN_08JCG8C53V8P",
-      "isBound": true,
-      "dataCenter": "CN",
-      "gmtActive": "2022-04-09 02:50:22",
-      "gmtLastOnline": "2023-07-23 10:52:10"
-    },
-    {
       "id": "f7CddF9f-E54C-5bF4-F754-ac1B117C7Cc6",
       "name": "级认造快",
       "status": "未激活",

@@ -117,7 +117,7 @@
                     <template #default="scope">
                         <el-button link type="primary">查看</el-button>
                         <el-button link type="primary" @click="goToDetails(scope.row)">详情</el-button>
-                        <el-button link type="danger">删除</el-button>
+                        <el-button link type="danger" @click="handleDelete(scope.row)">删除</el-button>
                     </template>
                 </el-table-column>
                 <template #empty>
@@ -139,15 +139,15 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
-// import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
+// 引入需要的图标
+import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
+
 // 引入自己的组件
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 import AppPagination from '@/components/AppPagination.vue'
 
-// 引入需要的图标
-import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 
 
 // --- 状态变量 ---
@@ -216,6 +216,50 @@ const goToDetails = (row) => {
     console.log('请求打开详情, ID:', row.id)
     selectedDeviceId.value = row.id
 }
+
+// 删除功能逻辑
+const handleDelete = async (row) => {
+    console.log('请求删除, ID:', row.id, '名称:', row.name)
+
+    try {
+        // 3. 弹出确认框 (这是一个异步操作, 可以 await)
+        await ElMessageBox.confirm(
+            // 提示内容 (使用模板字符串让提示更友好)
+            `您确定要删除设备 "${row.name}" (ID: ${row.id}) 吗？此操作不可撤销。`,
+            '删除确认', // 标题
+            {
+                confirmButtonText: '确定删除',
+                cancelButtonText: '取消',
+                type: 'warning', // 显示一个警告图标
+            }
+        )
+
+        // 4. 用户点击了“确定”，执行删除 API 调用
+        // 你的 mock server 已经支持了 DELETE /devices/:id
+        await api.delete(`/devices/${row.id}`)
+
+        // 5. 成功后提示
+        ElMessage.success('设备删除成功！')
+
+        // 6. 关键：重新加载列表
+        //    我们不需要手动从 deviceList.value 里删数据，
+        //    重新请求一次API是最安全、最能保证数据一致性的做法。
+        //    (如果删除的是最后一页的最后一条，这样处理也能自动跳回前一页)
+        await fetchDevices()
+
+    } catch (error) {
+        // 7. 捕获错误
+        // 如果 error 是 'cancel'，说明是用户主动点击了“取消”
+        if (error === 'cancel') {
+            ElMessage.info('已取消删除')
+        } else {
+            // 否则，是 API 删除失败
+            ElMessage.error('删除失败，请稍后重试')
+            console.error('删除设备时出错:', error)
+        }
+    }
+}
+
 // 修改/重命名“关闭抽屉”的逻辑
 // 当子组件(抽屉)发出 'close' 事件时，
 // 我们把 ID 设回 null，v-if 会自动销毁抽屉组件
