@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // 导入创建的组件
-import DeviceDashboard from '@/views/DeviceDashboard.vue'
-import DebugSelect from '../views/DebugSelect.vue'
-import LoginView from '../views/Login.vue'
+import DebugSelect from '../views/DebugSelect.vue'  // 导入调试选择页组件
+import LoginView from '../views/Login.vue'          // 导入登录页组件
+import AppLayout from '@/layouts/AppLayout.vue'     // 导入布局
+import DeviceDashboard from '@/views/DeviceDashboard.vue' // 导入设备看板组件
+import DeviceDetails from '@/views/DeviceDetails.vue'     // 导入设备详情
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,9 +22,26 @@ const router = createRouter({
       component: LoginView
     },
     {
-      path: '/dashboard', // 这是新页面的 URL
-      name: 'dashboard',
-      component: DeviceDashboard
+      path: '/dashboard',
+      component: AppLayout, // 父路由使用 AppLayout 布局
+      meta: { requiresAuth: true }, // (可选, 但推荐) 标记这个路由需要登录
+      children: [
+        {
+          // 当访问 /dashboard 时，
+          // 在 AppLayout 的 <RouterView> 中渲染 DeviceDashboard
+          path: '', // path 为空，表示这是 /dashboard 的默认子路由
+          name: 'dashboard-list',
+          component: DeviceDashboard
+        },
+        {
+          // 当访问 /dashboard/details/:id 时，
+          // 在 AppLayout 的 <RouterView> 中渲染 DeviceDetails
+          path: 'details/:id', // 注意这里没有开头的 '/'
+          name: 'device-details',
+          component: DeviceDetails,
+          props: true // 允许组件通过 props 接收路由参数 (:id)
+        }
+      ]
     },
     {
       path: '/debug',

@@ -116,7 +116,7 @@
                 <el-table-column label="操作" fixed="right" min-width="150">
                     <template #default="scope">
                         <el-button link type="primary">查看</el-button>
-                        <el-button link type="primary">详情</el-button>
+                        <el-button link type="primary" @click="goToDetails(scope.row)">详情</el-button>
                         <el-button link type="danger">删除</el-button>
                     </template>
                 </el-table-column>
@@ -143,7 +143,20 @@ import { ElMessage } from 'element-plus'
 import api from '@/api'
 // 引入需要的图标
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
+// 导入 useRouter
+import { useRouter } from 'vue-router'
 
+// 实例化 router
+const router = useRouter()
+
+// 新增一个跳转方法
+const goToDetails = (row) => {
+    console.log('跳转到详情页, ID:', row.id)
+    router.push({
+        name: 'device-details', // 使用我们刚才在路由中定义的 name
+        params: { id: row.id }  // 传入设备 ID
+    })
+}
 
 // 顶部卡片数据
 const summary = ref({
