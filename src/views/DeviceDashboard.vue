@@ -1,38 +1,6 @@
 <template>
     <div class="dashboard-container">
-        <el-drawer v-model="isDrawerVisible" title="设备详情" direction="rtl" size="50%" @closed="handleDrawerClose">
-            <div v-loading="deviceLoading" style="padding: 20px; min-height: 300px;">
-
-                <el-descriptions v-if="deviceDetails" :column="2" border>
-                    <template #title>
-                        <div class="card-header">
-                            <span>{{ deviceDetails.name }}</span>
-                            <el-tag :type="getStatusType(deviceDetails.status)" effect="light" round>
-                                {{ deviceDetails.status }}
-                            </el-tag>
-                        </div>
-                    </template>
-
-                    <el-descriptions-item label="设备ID">{{ deviceDetails.id }}</el-descriptions-item>
-                    <el-descriptions-item label="设备SN码">{{ deviceDetails.sn }}</el-descriptions-item>
-                    <el-descriptions-item label="生产PUUID">{{ deviceDetails.puuid }}</el-descriptions-item>
-                    <el-descriptions-item label="所属产品">{{ deviceDetails.productInfo }}</el-descriptions-item>
-                    <el-descriptions-item label="数据中心">
-                        <el-tag size="small">{{ deviceDetails.dataCenter }}</el-tag>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="是否绑定">
-                        <el-tag :type="deviceDetails.isBound ? 'success' : 'info'" size="small">
-                            {{ deviceDetails.isBound ? '已绑定' : '未绑定' }}
-                        </el-tag>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="激活时间">{{ deviceDetails.gmtActive }}</el-descriptions-item>
-                    <el-descriptions-item label="最近上线时间">{{ deviceDetails.gmtLastOnline }}</el-descriptions-item>
-                </el-descriptions>
-
-                <el-empty v-if="!deviceDetails && !deviceLoading" description="无设备详情" />
-
-            </div>
-        </el-drawer>
+        <DeviceDetailDrawer v-if="selectedDeviceId" :device-id="selectedDeviceId" @close="closeDrawer" />
         <div class="page-header">
             <h1 class="title">设备明细</h1>
 
@@ -173,14 +141,16 @@ import { ref, onMounted, reactive } from 'vue'
 // import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+// 引入自己的组件
+import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
+
 // 引入需要的图标
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 
-// 新增：抽屉(Drawer)所需的状态,不需要通过路由进行跳转
-const isDrawerVisible = ref(false)  // 控制抽屉是否显示
-const deviceDetails = ref(null)     // 存储当前选中设备的详情
-const deviceLoading = ref(false)    // 详情抽屉的加载状态
 
+// --- 状态变量 ---
+// 抽屉状态简化：只需要一个 ref 来存 ID 
+const selectedDeviceId = ref(null) // null 表示抽屉关闭
 // 顶部卡片数据
 const summary = ref({
     total: 0,
@@ -235,43 +205,22 @@ const fetchSummary = async () => {
     }
 }
 
-// 新增：获取设备详情的函数 (从 DeviceDetails.vue 迁移而来)
-const fetchDeviceDetails = async (id) => {
-    deviceLoading.value = true
-    deviceDetails.value = null // 先清空旧数据
-    try {
-        // 你的 mock API 支持 /devices/:id
-        const response = await api.get(`/devices/${id}`)
-        deviceDetails.value = response.data.data
-    } catch (error) {
-        ElMessage.error('获取设备详情失败')
-        console.error(error)
-        isDrawerVisible.value = false // 加载失败时自动关闭抽屉
-    } finally {
-        deviceLoading.value = false
-    }
-}
 
 
 // 修改：点击“详情”按钮的逻辑 
 const goToDetails = (row) => {
-    // console.log('跳转到详情页, ID:', row.id) // 旧逻辑
-    // router.push({ ... }) // 旧逻辑
-
     // 新逻辑：
-    console.log('打开详情抽屉, ID:', row.id)
-    isDrawerVisible.value = true // 打开抽屉
-    fetchDeviceDetails(row.id)   // 异步获取数据
+    // 只需要设置 ID，v-if 会自动帮我们创建抽屉组件
+    console.log('请求打开详情, ID:', row.id)
+    selectedDeviceId.value = row.id
+}
+// 修改/重命名“关闭抽屉”的逻辑
+// 当子组件(抽屉)发出 'close' 事件时，
+// 我们把 ID 设回 null，v-if 会自动销毁抽屉组件
+const closeDrawer = () => {
+    selectedDeviceId.value = null
 }
 
-
-
-//  新增：关闭抽屉时的回调函数 
-const handleDrawerClose = () => {
-    // isDrawerVisible 会自动变为 false,
-    // 我们在这里清空数据，防止下次打开时“闪现”旧数据
-    deviceDetails.value = null
-}
 // 辅助函数：根据状态返回对应的 Element Plus Tag 类型
 const getStatusType = (status) => {
     switch (status) {
