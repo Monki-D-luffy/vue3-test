@@ -72,7 +72,7 @@ const handleLogin = async () => {
 
                 const success = await authStore.login(loginForm.email, loginForm.password)
                 if (success) {
-                    router.push('/dashboard')
+                    router.push('/overview')
                 }
             } finally {
                 loading.value = false
