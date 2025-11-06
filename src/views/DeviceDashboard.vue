@@ -21,14 +21,7 @@
         </div>
 
         <el-row :gutter="20" class="summary-cards">
-            <!-- <el-col :span="8">
-                <el-card shadow="hover">
-                    <div class="card-content">
-                        <span>设备总数</span>
-                        <span class="value">{{ summary.total }}</span>
-                    </div>
-                </el-card>
-            </el-col> -->
+
             <el-col :span="8">
                 <el-card shadow="hover" class="stat-card">
                     <div class="stat-item">
@@ -44,14 +37,7 @@
                     </div>
                 </el-card>
             </el-col>
-            <!-- <el-col :span="8">
-                <el-card shadow="hover">
-                    <div class="card-content">
-                        <span>已激活设备</span>
-                        <span class="value">{{ summary.activated }}</span>
-                    </div>
-                </el-card>
-            </el-col> -->
+
             <el-col :span="8">
                 <el-card shadow="hover" class="stat-card">
                     <div class="stat-item">
@@ -67,14 +53,7 @@
                     </div>
                 </el-card>
             </el-col>
-            <!-- <el-col :span="8">
-                <el-card shadow="hover">
-                    <div class="card-content">
-                        <span>当前在线设备</span>
-                        <span class="value">{{ summary.online }}</span>
-                    </div>
-                </el-card>
-            </el-col> -->
+
             <el-col :span="8">
                 <el-card shadow="hover" class="stat-card">
                     <div class="stat-item">
@@ -106,7 +85,7 @@
                 </el-form-item>
                 <el-form-item label="时间区间">
                     <el-date-picker v-model="filters.dateRange" type="daterange" range-separator="至"
-                        start-placeholder="开始日期" end-placeholder="结束日期" />
+                        start-placeholder="开始日期" end-placeholder="结束日期" unlink-panels />
                 </el-form-item>
                 <el-form-item class="search-input">
                     <el-input v-model="filters.keyword" placeholder="设备ID / 名称 / PUUID / SN码" clearable />
