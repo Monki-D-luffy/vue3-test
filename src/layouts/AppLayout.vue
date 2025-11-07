@@ -11,7 +11,8 @@
                     :collapse-transition="false" router>
                     <template v-for="item in menuItems" :key="item.index">
 
-                        <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.index">
+                        <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.index"
+                            popper-class="sidebar-popper">
                             <template #title>
                                 <el-icon>
                                     <component :is="item.icon" />
@@ -82,9 +83,13 @@ const isCollapsed = ref(false)
 const menuItems = ref([
     {
         // "概览" 是一个没有子集的 "el-menu-item"
-        index: '/overview', // 路由路径
+        index: '/overview', // 父菜单的 index 仍然指向默认子页面
         title: '概览',
         icon: markRaw(HomeFilled),
+        children: [
+            // 2. ✨ 把“概览”自己作为唯一的子项
+            { index: '/overview', title: '概览' }
+        ]
     },
     {
         // "设备管理" 是一个 "el-sub-menu"
@@ -141,18 +146,17 @@ const logout = () => {
 
 .el-main {
     background-color: #f5f7fa;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 61px);
     overflow-y: auto;
-    /* 恢复我们之前删除的 main padding */
     padding: 20px;
 }
 
 /* --- 侧边栏 --- */
 .sidebar-container {
-    background-color: #2d3a4b;
-    color: #fff;
-    transition: width 0.3s ease;
-    /* 恢复动画 */
+    background-color: #f7f8fa;
+    /* 非常浅的背景 */
+    color: #303133;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     border-right: none;
     overflow-x: hidden;
 }
@@ -163,56 +167,105 @@ const logout = () => {
     justify-content: center;
     align-items: center;
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 1px;
+    color: #303133;
+    border-bottom: 1px solid #f0f0f0;
 }
 
-/* --- el-menu 样式 --- */
+/* --- el-menu 核心样式 (现代感关键) --- */
 .el-menu-vertical {
     border-right: none;
-}
-
-.el-menu {
     background-color: transparent;
+    padding-top: 8px;
+    /* 菜单顶部留出空隙 */
 }
 
-.el-menu-item {
-    color: #bfcbd9;
+/* (关键) 现在只针对 el-sub-menu__title 设置样式 */
+/* 我们在前面加了 .sidebar-container，这样它就只会影响侧边栏内部了 */
+.sidebar-container :deep(.el-sub-menu__title) {
+    color: #606266 !important;
+    background-color: transparent !important;
+
+    /* 增大字体和高度 */
+    height: 60px;
+    /* 进一步增大高度 */
+    line-height: 60px;
+    font-size: 16px;
+    /* 进一步增大字体 */
+    font-weight: 500;
+
+    padding-left: 24px !important;
+    border-radius: 10px;
+
+    /* 增大垂直间距 */
+    margin: 8px 10px;
+    width: calc(100% - 20px) !important;
 }
 
-.el-menu-item:hover {
-    background-color: #001f3f;
+/* ✨ (修改) 增大展开时图标尺寸 */
+.sidebar-container :deep(.el-icon) {
+    font-size: 24px;
+    /* 从 20px 增大到 24px */
+    margin-right: 14px;
+    /* 调整图标和文字的间距 */
+    width: 24px;
+    /* 确保图标占位 */
 }
 
-.el-menu-item.is-active {
-    color: #409EFF;
-    background-color: #001f3f;
+/* 统一处理悬浮状态 (非激活时) */
+.sidebar-container :deep(.el-sub-menu__title:not(.is-active):hover) {
+    background-color: #eef0f3 !important;
+    color: #303133 !important;
 }
 
-:deep(.el-sub-menu__title) {
-    color: #bfcbd9 !important;
+/* (关键) 当子菜单被激活时，父菜单标题也高亮 */
+.sidebar-container :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
+    color: #ff6a00 !important;
+    font-weight: 600;
 }
 
-:deep(.el-sub-menu__title:hover) {
-    background-color: #001f3f !important;
+.sidebar-container :deep(.el-sub-menu.is-active > .el-sub-menu__title .el-icon) {
+    color: #ff6a00 !important;
 }
 
-.el-menu--collapse .el-icon {
-    height: 56px;
-    width: 100%;
-    justify-content: center;
+/*
+ * (重要) 处理折叠后的样式
+ */
+.sidebar-container :deep(.el-menu--collapse) {
+
+    /* 折叠时，让所有标题都居中 */
+    .el-sub-menu__title {
+        padding: 0 !important;
+        justify-content: center;
+    }
+
+    /* 折叠时，图标没有右边距 */
+    .el-icon {
+        margin-right: 0;
+        /* ✨ (修改) 增大折叠时图标尺寸 */
+        font-size: 26px;
+        /* 从 22px 增大到 26px */
+    }
+
+    /* 隐藏文字和子菜单的箭头 */
+    .el-sub-menu__icon-arrow,
+    span {
+        display: none;
+    }
 }
+
 
 /* --- 顶栏 (Header) --- */
 .el-header {
     background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .08);
+    box-shadow: none;
+    border-bottom: 1px solid #f0f0f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-/* 6. 恢复：伸缩按钮的样式 */
 .collapse-icon {
     font-size: 22px;
     cursor: pointer;
@@ -228,21 +281,87 @@ const logout = () => {
     margin-right: 15px;
 }
 
-/* 7. 悬浮子菜单的样式 (在收起时依然有效) */
-:global(.el-menu--popup) {
-    background-color: #2d3a4b !important;
+/* --- 浮动子菜单 (在收起时) --- */
+/* --- 第1层：“真·外壳” (The REAL Container) --- */
+/* 我们选定最外层的容器作为唯一的外壳，赋予它白底、圆角和阴影 */
+:global(.sidebar-popper .el-menu--popup),
+:global(.el-popper.is-light) {
+    /* .el-popper.is-light 不能加.sidebar-popper 否则会出现黑色聚焦轮廓 */
+    background-color: #ffffff !important;
+    /* 确立白色背景 */
+    border: none !important;
+    /* 去掉默认黑边 */
+    border-radius: 12px !important;
+    /* 确立大圆角 */
+    /* 用一个柔和的阴影来代替边框，更显高级 */
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1) !important;
+
+    /* 关键：给外壳加一点内边距，让里面的内容不会贴边 */
+    padding: 6px !important;
+
+    /* 核心修复：同时去掉 border 和 outline */
+    border: none !important;
+    outline: none !important;
+    /* ✨ 去掉浏览器默认的黑色聚焦轮廓 ✨ */
 }
 
-:global(.el-menu--popup .el-menu-item) {
-    color: #bfcbd9 !important;
+/* 额外保险：确保鼠标放上去或者聚焦时也不会出现 */
+:global(.sidebar-popper .el-menu--popup:hover),
+:global(.sidebar-popper .el-menu--popup:focus),
+:global(.sidebar-popper .el-menu--popup:focus-visible) {
+    outline: none !important;
+    border: none !important;
 }
 
-:global(.el-menu--popup .el-menu-item:hover) {
-    background-color: #001f3f !important;
+/* --- 中间层：“隐身术” (Make Middle Layers Invisible) --- */
+/* 这就是你提到的“设置成相同颜色”策略的极致——直接透明 */
+/* 我们把中间可能出现边框、背景色的元素全部找出来，强制透明 */
+:global(.sidebar-popper .el-menu--popup .el-menu),
+:global(.sidebar-popper .el-menu--popup .el-scrollbar__wrap),
+:global(.sidebar-popper .el-popper .el-scrollbar__wrap) {
+    background-color: transparent !important;
+    /* 背景透明，透出最外层的白色 */
+    border: none !important;
+    /* 去掉任何可能的边框 */
+    padding: 0 !important;
+    /* 去掉内边距，避免空间浪费 */
+    margin: 0 !important;
+    /* 去掉外边距 */
+    box-shadow: none !important;
+    /* 去掉阴影 */
+    border-radius: 0 !important;
 }
 
-:global(.el-menu--popup .el-menu-item.is-active) {
-    color: #409EFF !important;
-    background-color: #001f3f !important;
+/* 顺手把那个碍事的小箭头隐藏掉 */
+:global(.sidebar-popper .el-popper__arrow) {
+    display: none !important;
+}
+
+/* --- 第2层：“真·内容” (The REAL Content) --- */
+/* 具体的菜单项，它们是真正需要用户交互的地方 */
+:global(.sidebar-popper .el-menu--popup .el-menu-item) {
+    /* 平时是透明的，看起来就和外壳融为一体了 */
+    background-color: transparent !important;
+    color: #606266 !important;
+
+    /* 给每个选项也加个小圆角，呼应外壳 */
+    border-radius: 8px;
+    /* 选项之间留点空隙，更有呼吸感 */
+    margin: 4px 0;
+    height: 40px;
+    line-height: 40px;
+    border: none !important;
+}
+
+/* 鼠标放上去时的颜色 (浅灰) */
+:global(.sidebar-popper .el-menu--popup .el-menu-item:not(.is-active):hover) {
+    background-color: #5de6f52b !important;
+}
+
+/* 选中时的颜色 (你的主题橙) */
+:global(.sidebar-popper .el-menu--popup .el-menu-item.is-active) {
+    background-color: #fff7f0 !important;
+    color: #ff6a00 !important;
+    font-weight: 600;
 }
 </style>
