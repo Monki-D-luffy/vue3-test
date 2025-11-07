@@ -6,25 +6,6 @@ const Mock = require('mockjs')
 const dbPath = path.join(__dirname, 'db.json')
 
 // =========================================
-// 辅助函数: 生成指定范围内的随机时间
-// =========================================
-function getRandomTimeStr(startYear, endYear) {
-  const startDate = new Date(`${startYear}-01-01 00:00:00`).getTime()
-  const endDate = new Date(`${endYear}-12-31 23:59:59`).getTime()
-  const randomTime = startDate + Math.random() * (endDate - startDate)
-  const date = new Date(randomTime)
-
-  // 手动格式化为 "YYYY-MM-DD HH:mm:ss"
-  const Y = date.getFullYear() + '-'
-  const M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-'
-  const D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' '
-  const h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':'
-  const m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) + ':'
-  const s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds())
-
-  return Y + M + D + h + m + s
-}
-// =========================================
 // 辅助函数: 时间格式化
 // =========================================
 function formatTimestamp(timestamp) {
@@ -34,60 +15,94 @@ function formatTimestamp(timestamp) {
   const D = (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + ' '
   const h = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':'
   const m = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) + ':'
-  const s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds())
-  return Y + M + D + h + m + s
+  const s = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds()) + '.'
+  const ms = (date.getMilliseconds() < 100 ? (date.getMilliseconds() < 10 ? '00' : '0') : '') + date.getMilliseconds()
+  return Y + M + D + h + m + s + ms
 }
+
 // =========================================
 // 核心功能 1: 提前自动造数据 (Pre-Seeding)
 // =========================================
 function preSeedDatabase() {
-  let dbData = { devices: [] }
-  if (fs.existsSync(dbPath)) {
-    try {
-      dbData = JSON.parse(fs.readFileSync(dbPath, 'utf-8'))
-    } catch (e) { /* ignore */ }
+  // 1. 初始化 DB 结构
+  let dbData = {
+    devices: [],
+    deviceLogs: [] // <-- ✨ 新增 deviceLogs 数组
   }
 
-  if (!dbData.devices || dbData.devices.length < 100) {
-    console.log('--- [Mock Server] 正在生成 2022-2025 年间的 500 条数据... ---')
-    const dataCenters = ['CN', 'US-WEST', 'EU-CENTRAL', 'IN', 'US-EAST', 'EU-WEST', 'SG']
-    const deviceTypes = ["智能插座", "温湿度计", "摄像头", "智能灯泡", "NB-IoT水表"]
-    // 定义时间边界 (时间戳)
-    const minTime = new Date('2022-01-01 00:00:00').getTime()
-    const maxTime = new Date('2025-12-31 23:59:59').getTime()
+  // (我们不再读取旧的 db.json, 而是每次都重新生成)
+
+  console.log('--- [Mock Server] 正在重新生成所有模拟数据... ---')
+
+  // --- 2. 生成设备 (沿用旧逻辑) ---
+  const dataCenters = ['CN', 'US-WEST', 'EU-CENTRAL', 'IN', 'US-EAST', 'EU-WEST', 'SG']
+  const deviceTypes = ["智能插座", "温湿度计", "摄像头", "智能灯泡", "NB-IoT水表"]
+  const minTime = new Date('2022-01-01 00:00:00').getTime()
+  const maxTime = new Date('2025-12-31 23:59:59').getTime()
+
+  for (let i = 0; i < 202; i++) { // (沿用你之前的202条设备)
+    const activeTs = minTime + Math.random() * (maxTime - minTime)
+    const lastOnlineTs = activeTs + Math.random() * (maxTime - activeTs)
+
+    dbData.devices.push(Mock.mock({
+      'id': '@guid',
+      'name': '@ctitle(3, 7)',
+      'status|1': ["在线", "离线", "未激活", "故障"],
+      'puuid': /PU-202[3-5][0-9]{4}/,
+      'productInfo': '@ctitle(2, 4) / PID_@string("upper", 8)',
+      'deviceType|1': deviceTypes,
+      'sn': /SN_[A-Z0-9]{12}/,
+      'isBound|1-2': true,
+      'dataCenter|1': dataCenters,
+      'gmtActive': formatTimestamp(activeTs).split(' ')[0] + ' ' + formatTimestamp(activeTs).split(' ')[1].split('.')[0], // 格式化为 YYYY-MM-DD HH:mm:ss
+      'gmtLastOnline': formatTimestamp(lastOnlineTs).split(' ')[0] + ' ' + formatTimestamp(lastOnlineTs).split(' ')[1].split('.')[0]
+    }))
+  }
+  console.log(`--- [Mock Server] ${dbData.devices.length} 条设备数据生成完毕 ---`)
 
 
-    const newDevices = []
-    for (let i = 0; i < 500; i++) {
-      // 使用我们自定义的函数生成时间
-      // const randomTime1 = getRandomTimeStr(2022, 2025)
-      // const randomTime2 = getRandomTimeStr(2022, 2025)
-      // 1. 先生成激活时间 (minTime ~ maxTime 之间)
-      const activeTs = minTime + Math.random() * (maxTime - minTime)
-      // 2. 再生成最近上线时间 (activeTs ~ maxTime 之间)，确保它必定晚于激活时间
-      const lastOnlineTs = activeTs + Math.random() * (maxTime - activeTs)
+  // --- 3. ✨✨✨ (新功能) 生成设备日志 ✨✨✨ ---
+  const logEvents = ['设备上报', '平台下发', '设备在线', '设备离线', '设备告警']
+  const logTypes = ['数据转换', '状态通知', '云端处理', 'OTA升级', '告警事件']
+  const logSources = ['设备本身', '平台下发', '云端规则']
+  // 定义一个生成 Base64 风格字符串的 Mockjs 模板
+  const detailsTemplate = /TkkAilQ[A-Za-z0-9+/=]{60,100}/
 
-      newDevices.push(Mock.mock({
-        'id': '@guid',
-        'name': '@ctitle(3, 7)',
-        'status|1': ["在线", "离线", "未激活", "故障"],
-        'puuid': /PU-202[3-5][0-9]{4}/,
-        'productInfo': '@ctitle(2, 4) / PID_@string("upper", 8)',
-        'deviceType|1': deviceTypes,
-        'sn': /SN_[A-Z0-9]{12}/,
-        'isBound|1-2': true,
-        'dataCenter|1': dataCenters,
-        // 3. 使用辅助函数格式化时间戳
-        'gmtActive': formatTimestamp(activeTs),
-        'gmtLastOnline': formatTimestamp(lastOnlineTs)   // 简单起见，最近上线时间设为和激活时间一样
-      }))
+  let logIdCounter = 1
+
+  // 为每个设备生成一些日志
+  dbData.devices.forEach(device => {
+    // 为每个设备生成 5 到 20 条日志
+    const logCount = Mock.Random.integer(5, 20);
+    for (let i = 0; i < logCount; i++) {
+      const logTimeTs = minTime + Math.random() * (maxTime - minTime)
+
+      const newLog = Mock.mock({
+        id: logIdCounter++,
+        deviceId: device.id, // 关联设备ID
+        time: formatTimestamp(logTimeTs),
+        'event|1': logEvents,
+        'type|1': logTypes,
+        'details': detailsTemplate, // <-- 使用你想要的格式
+        'source|1': logSources,
+        'switch|1-2': true
+      })
+      dbData.deviceLogs.push(newLog)
     }
-    dbData.devices = newDevices;
-    fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf-8')
-    console.log('--- [Mock Server] 数据生成完毕 ---')
-  }
+  });
+
+  // ✨ (优化) 按时间倒序排序，模拟真实日志查询
+  dbData.deviceLogs.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+
+  console.log(`--- [Mock Server] ${dbData.deviceLogs.length} 条日志数据生成完毕 ---`)
+
+  // --- 4. 写入文件 (覆盖) ---
+  fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf-8')
+  console.log('--- [Mock Server] db.json 文件已成功覆盖 ---')
 }
 
+
+// (启动时自动执行)
 preSeedDatabase()
 
 // =========================================
@@ -108,7 +123,7 @@ server.use(jsonServer.bodyParser)
 // 登录接口
 server.post('/api/auth/login', (req, res) => {
   const { account, password } = req.body
-  if (account === '1067360038@qq.com' && password === '123456') {
+  if ((account === '1067360038@qq.com' && password === '123456') || (account === 'admin' && password === '123456')) {
     res.json({
       code: 200, message: "登录成功", success: true,
       data: { token: "mock_token_" + Mock.Random.string(32), userId: Mock.Random.guid(), nickname: "Admin", email: account }
@@ -118,13 +133,15 @@ server.post('/api/auth/login', (req, res) => {
   }
 })
 
-// Token 校验
+// Token 校验 (暂时放行所有)
 server.use('/api', (req, res, next) => {
   if (req.path === '/auth/login') return next()
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     next()
   } else {
-    next() // 暂且放行，方便调试
+    // 方便调试，暂时放行
+    console.warn(`[Mock Server] WARN: /api${req.path} 请求未携带 Token，已放行`)
+    next()
   }
 })
 
@@ -148,7 +165,24 @@ server.get('/api/devices/summary', (req, res) => {
 
 // 统一返回格式
 router.render = (req, res) => {
-  res.json({ code: 200, message: '操作成功', success: true, data: res.locals.data })
+  // ✨ (新逻辑) 对 /api/devices 和 /api/deviceLogs 的 GET 请求进行分页处理
+  if (req.method === 'GET' && (req.path === '/devices' || req.path === '/deviceLogs')) {
+    // json-server 默认会处理 _page 和 _limit, 我们只需要把 data 包裹起来
+    res.json({
+      code: 200,
+      message: '操作成功',
+      success: true,
+      data: res.locals.data
+    })
+  } else {
+    // 其他请求 (如 POST, PUT, DELETE, 或 GET /devices/:id)
+    res.json({
+      code: 200,
+      message: '操作成功',
+      success: true,
+      data: res.locals.data
+    })
+  }
 }
 
 server.use('/api', router)

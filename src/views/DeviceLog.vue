@@ -5,21 +5,24 @@
         <el-card class="filter-card" shadow="never">
             <el-form :inline="true" :model="filters" class="filter-form">
                 <el-form-item label="设备任务ID">
-                    <el-input v-model="filters.taskId" placeholder="请输入设备任务ID" clearable />
+                    <el-input v-model="filters.taskId" placeholder="模糊搜索" clearable />
                 </el-form-item>
                 <el-form-item label="事件ID">
-                    <el-input v-model="filters.eventId" placeholder="请输入事件ID" clearable />
+                    <el-input v-model="filters.eventId" placeholder="模糊搜索" clearable />
                 </el-form-item>
                 <el-form-item label="全部类型">
-                    <el-select v-model="filters.type" placeholder="全部类型">
+                    <el-select v-model="filters.type" placeholder="全部类型" clearable>
                         <el-option label="全部类型" value="all" />
-                        <el-option label="上报" value="report" />
-                        <el-option label="下发" value="send" />
+                        <el-option label="数据转换" value="数据转换" />
+                        <el-option label="状态通知" value="状态通知" />
+                        <el-option label="云端处理" value="云端处理" />
+                        <el-option label="设备上报" value="设备上报" />
+                        <el-option label="平台下发" value="平台下发" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="时间范围">
                     <el-date-picker v-model="filters.dateRange" type="datetimerange" range-separator="至"
-                        start-placeholder="开始时间" end-placeholder="结束时间" />
+                        start-placeholder="开始时间" end-placeholder="结束时间" unlink-panels />
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="handleSearch">查询</el-button>
@@ -40,7 +43,7 @@
         <el-card class="log-table-card" shadow="never">
             <el-table :data="logData" v-loading="loading" stripe>
                 <el-table-column type="index" label="序号" width="80" />
-                <el-table-column prop="time" label="时间(GMT+8)" width="200" />
+                <el-table-column prop="time" label="时间(GMT+8)" width="220" />
                 <el-table-column prop="event" label="设备事件" width="120" />
                 <el-table-column prop="type" label="事件类型" width="120" />
                 <el-table-column prop="details" label="事件详情" min-width="300">
@@ -54,8 +57,14 @@
                         <el-switch v-model="scope.row.switch" />
                     </template>
                 </el-table-column>
+                <template #empty>
+                    <el-empty description="暂无日志" />
+                </template>
             </el-table>
 
+            <AppPagination v-if="pagination.total > 0" :total="pagination.total"
+                v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
+                @size-change="onSizeChange" @current-change="onCurrentChange" />
         </el-card>
     </div>
 </template>
@@ -64,94 +73,66 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-// import { markRaw, defineProps, defineEmits } from 'vue' // <- 移除了未使用的导入
+// ✨ 1. 导入 AppPagination 组件和 useDeviceLogs
+import AppPagination from '@/components/AppPagination.vue'
+import { useDeviceLogs } from '@/composables/useDeviceLogs'
 
 const route = useRoute()
 
-// 1. 从路由查询参数获取设备信息
-const deviceId = ref(route.query.id || 'N/A')
-const deviceName = ref(route.query.name || '未知设备')
-
+// --- 1. 基础状态 ---
+const deviceId = ref(route.query.id as string || 'N/A')
+const deviceName = ref(route.query.name as string || '未知设备')
 const pageTitle = computed(() => `设备日志`)
 
-// 2. 状态定义
-const loading = ref(false)
 const filters = reactive({
     taskId: '',
     eventId: '',
     type: 'all',
-    dateRange: [new Date(2025, 10, 7, 14, 34, 0), new Date(2025, 10, 7, 14, 34, 21)] // 模拟截图时间
+    dateRange: null // 默认无时间范围
 })
 
-// 定义日志条目的接口 
-interface LogEntry {
-    id: number;
-    time: string;
-    event: string;
-    type: string;
-    details: string;
-    source: string;
-    switch: boolean;
+// --- 2. 使用 Composable ---
+const {
+    loading,
+    logData,
+    pagination,
+    fetchLogs,
+    handleSizeChange,
+    handleCurrentChange,
+    resetPagination
+} = useDeviceLogs()
+
+// --- 3. 逻辑函数 ---
+
+// 统一的数据加载函数
+const loadData = () => {
+    if (deviceId.value === 'N/A') {
+        ElMessage.error('未指定设备ID，无法查询日志')
+        return
+    }
+    fetchLogs(deviceId.value, filters)
 }
 
-// 3. 表格模拟数据
-const logData = ref<LogEntry[]>([])
-
-const fetchLogs = () => {
-    loading.value = true
-    // 模拟API请求
-    setTimeout(() => {
-        // 现在 TypeScript 知道 logData.value 应该是一个 LogEntry 数组
-        logData.value = [
-            {
-                id: 1,
-                time: '2025-11-07 14:34:11.46',
-                event: '设备上报',
-                type: '数据转换',
-                details: `TkkAilQMAAAAAAAAAAAAAAAA\nAAAA...AAAAA+gAAAAAABBB\nBAAAAAAJAAAAAAAAAAAAAA==\n十六进制: ...`,
-                source: '设备本身',
-                switch: true
-            },
-            {
-                id: 2,
-                time: '2025-11-07 14:34:07.855',
-                event: '设备在线',
-                type: '状态通知',
-                details: `uuVrRXAKMAETAAAAAAAAAAAA\nMAAAAAAAA...AAAAAGkAAAAA\nAMQAAAAAAEuMAAAAAAAAAAA=\n十六进制: ...`,
-                source: '平台下发',
-                switch: false
-            },
-            {
-                id: 3,
-                time: '2025-11-07 14:34:04.964',
-                event: '设备上报',
-                type: '云端处理',
-                details: `TkkAilQMAAAAAAAAAAAAAAAA\nMYQAAAA...AAAAA+gAAAAAABBB\nBAAAAAAJAAAAAAAAAAAAAA==\n十六进制: ...`,
-                source: '设备本身',
-                switch: true
-            },
-            {
-                id: 4,
-                time: '2025-11-07 14:34:01.862',
-                event: '设备上报',
-                type: '数据转换',
-                details: `uuVrRXAKMAETAAAAAAAAAAAA\nMAAAAAAAA...AAAAAGkAAAAA\nAMQAAAAAAEuMAAAAAAAAAAA=\n十六进制: ...`,
-                source: '设备本身',
-                switch: true
-            }
-        ]
-        loading.value = false
-    }, 500)
-}
-
+// 搜索
 const handleSearch = () => {
     ElMessage.success('正在查询日志...')
-    fetchLogs()
+    resetPagination() // 搜索时重置到第一页
+    loadData()
 }
 
-// 4. 生命周期
+// 分页变更
+const onSizeChange = (newSize: number) => {
+    handleSizeChange(newSize)
+    loadData()
+}
+const onCurrentChange = (newPage: number) => {
+    handleCurrentChange(newPage)
+    loadData()
+}
+
+// --- 4. 生命周期 ---
 onMounted(() => {
-    fetchLogs()
+    loadData()
 })
 
 </script>
@@ -177,14 +158,25 @@ onMounted(() => {
 .filter-card,
 .info-card,
 .log-table-card {
-    margin-top: 20px;
-    border-radius: 8px;
+    margin-top: -1px;
+    border-radius: 15px;
 }
 
 .filter-form .el-form-item {
     margin-bottom: 0;
     /* 保持筛选栏紧凑 */
+    margin-right: 12px;
+    /* 增加一些间距 */
 }
+
+.filter-form .el-select {
+    width: 130px;
+}
+
+.filter-form .el-input {
+    width: 180px;
+}
+
 
 /* 设备信息栏样式 */
 .info-card :deep(.el-card__body) {
@@ -218,5 +210,14 @@ onMounted(() => {
     /* 保留换行 */
     word-break: break-all;
     /* 允许长字符串换行 */
+}
+
+/* 分页组件的样式 */
+.log-table-card :deep(.pagination-block) {
+    justify-content: center;
+    /* 确保分页居中 */
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding-top: 20px;
+    margin-top: 20px;
 }
 </style>
