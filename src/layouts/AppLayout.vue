@@ -36,8 +36,13 @@
                     </template>
                 </el-menu>
             </el-aside>
+
             <el-container>
-                <AppHeader />
+
+                <el-header style="padding: 0; height: 60px;">
+                    <AppHeader :is-collapsed="isCollapsed" @toggle-collapse="toggleCollapse" />
+                </el-header>
+
                 <el-main>
                     <RouterView />
                 </el-main>
@@ -68,7 +73,7 @@ const authStore = useAuthStore()
 // 3. 恢复：默认不折叠
 const isCollapsed = ref(true)
 
-// 4. ▼▼▼ 核心修改：菜单数据和路由同步 ▼▼▼
+// 4.  核心修改：菜单数据和路由同步 
 const menuItems = ref([
     {
         // "概览" 是一个没有子集的 "el-menu-item"
