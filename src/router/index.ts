@@ -14,7 +14,7 @@ const router = createRouter({
       component: () => import('../views/Login.vue')
     },
 
-    // 3. ▼▼▼ 核心修改：AppLayout 作为根路由 '/' 的组件 ▼▼▼
+    // 3. AppLayout 作为根路由 '/' 的组件 
     {
       path: '/',
       component: AppLayout,
@@ -36,6 +36,11 @@ const router = createRouter({
           component: () => import('@/views/DeviceDashboard.vue')
         },
         {
+          path: 'devices/log', // 匹配 /devices/log
+          name: 'device-log',
+          component: () => import('@/views/DeviceLog.vue')
+        },
+        {
           path: 'products', // 匹配 /products
           name: 'product-list',
           component: () => import('@/views/ProductManagement.vue')
@@ -47,20 +52,11 @@ const router = createRouter({
         }
       ]
     },
-    // ▲▲▲ 修改结束 ▲▲▲
 
-    // 4. 你已删除 Debug 页面，我们也把路由删掉
-    /*
-    {
-      path: '/debug',
-      name: 'debug',
-      component: DebugSelect
-    }
-    */
   ],
 })
 
-// --- 导航守卫 (同步修改) ---
+// --- 导航守卫 ---
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('authToken');
   const isAuthRoute = to.matched.some(record => record.meta.requiresAuth)
