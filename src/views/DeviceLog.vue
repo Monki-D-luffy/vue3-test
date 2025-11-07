@@ -2,15 +2,6 @@
     <div class="device-log-container">
         <h1 class="page-title">{{ pageTitle }}</h1>
 
-        <el-tabs v-model="activeTab" class="log-tabs">
-            <el-tab-pane label="免费版" name="free"></el-tab-pane>
-            <el-tab-pane label="付费版" name="paid"></el-tab-pane>
-            <el-tab-pane label="AI/声音" name="ai"></el-tab-pane>
-        </el-tabs>
-
-        <el-alert title="您当前使用的是免费版日志服务，仅支持查询T+1日日志数据。如需查询实时日志或更长周期，请升级至付费版。" type="warning" show-icon :closable="false"
-            class="upgrade-alert" />
-
         <el-card class="filter-card" shadow="never">
             <el-form :inline="true" :model="filters" class="filter-form">
                 <el-form-item label="设备任务ID">
@@ -73,6 +64,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+// import { markRaw, defineProps, defineEmits } from 'vue' // <- 移除了未使用的导入
 
 const route = useRoute()
 
@@ -80,10 +72,9 @@ const route = useRoute()
 const deviceId = ref(route.query.id || 'N/A')
 const deviceName = ref(route.query.name || '未知设备')
 
-const pageTitle = computed(() => `${deviceName.value} 设备日志`)
+const pageTitle = computed(() => `设备日志`)
 
 // 2. 状态定义
-const activeTab = ref('free')
 const loading = ref(false)
 const filters = reactive({
     taskId: '',
@@ -92,13 +83,25 @@ const filters = reactive({
     dateRange: [new Date(2025, 10, 7, 14, 34, 0), new Date(2025, 10, 7, 14, 34, 21)] // 模拟截图时间
 })
 
+// 定义日志条目的接口 
+interface LogEntry {
+    id: number;
+    time: string;
+    event: string;
+    type: string;
+    details: string;
+    source: string;
+    switch: boolean;
+}
+
 // 3. 表格模拟数据
-const logData = ref([])
+const logData = ref<LogEntry[]>([])
 
 const fetchLogs = () => {
     loading.value = true
     // 模拟API请求
     setTimeout(() => {
+        // 现在 TypeScript 知道 logData.value 应该是一个 LogEntry 数组
         logData.value = [
             {
                 id: 1,
@@ -165,17 +168,6 @@ onMounted(() => {
     margin-bottom: 20px;
 }
 
-.log-tabs {
-
-    /* 移除标签页下方的边框，让它更干净 */
-    :deep(.el-tabs__header) {
-        margin-bottom: 0;
-    }
-
-    :deep(.el-tabs__nav-wrap::after) {
-        height: 0;
-    }
-}
 
 .upgrade-alert {
     margin-top: 20px;

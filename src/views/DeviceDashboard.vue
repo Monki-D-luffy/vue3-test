@@ -41,7 +41,7 @@
                 <el-table-column prop="gmtLastOnline" label="最近上线时间" width="180" />
                 <el-table-column label="操作" fixed="right" min-width="150">
                     <template #default="scope">
-                        <el-button link type="primary">查看</el-button>
+                        <el-button link type="primary" @click="viewLogs(scope.row)">查看</el-button>
                         <el-button link type="primary" @click="openDetails(scope.row.id)">详情</el-button>
                         <el-button link type="danger" @click="onDeleteClick(scope.row)">删除</el-button>
                     </template>
@@ -62,6 +62,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 
 // 引入组件
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
@@ -75,6 +76,7 @@ import { useDeviceList } from '@/composables/useDeviceList'
 import { useDeviceActions } from '@/composables/useDeviceActions'
 
 // --- 1. 基础状态 ---
+const router = useRouter()
 const selectedCenter = ref('CN')
 const selectedDeviceId = ref(null) // 控制抽屉
 const dataCenterMap = {
@@ -93,6 +95,20 @@ const {
 const { handleDelete } = useDeviceActions()
 
 // --- 3. 整合逻辑函数 ---
+
+// 跳转到设备日志页面
+const viewLogs = (row) => {
+    // 我们使用 路由名称(name) 和 查询参数(query) 来跳转
+    // 这样既能传递参数，又不用关心具体的 path 路径
+    // 这个 'device-log' 必须和 src/router/index.ts 中定义的 name 一致
+    router.push({
+        name: 'device-log',
+        query: {
+            id: row.id,
+            name: row.name
+        }
+    })
+}
 
 // 统一的加载数据函数：将当前所有的状态（数据中心、过滤器）组合起来传给 fetchDevices
 const loadData = () => {

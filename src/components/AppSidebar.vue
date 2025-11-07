@@ -76,6 +76,7 @@ const menuItems = ref([
         icon: markRaw(Collection),
         children: [
             { index: '/devices', title: '设备列表' },
+            { index: '/devices/log', title: '设备日志' }
         ]
     },
     {
@@ -98,7 +99,7 @@ const menuItems = ref([
 </script>
 
 <style scoped>
-/* 7. 所有的侧边栏样式全部剪切到这里 */
+/* 所有的侧边栏样式全部剪切到这里 */
 /* --- 侧边栏 --- */
 .sidebar-container {
     background-color: #f7f8fa;
@@ -241,7 +242,7 @@ const menuItems = ref([
 </style>
 
 <style>
-/* 8. 全局滚动条样式也剪切过来 */
+/* 全局滚动条样式也剪切过来 */
 .sidebar-container::-webkit-scrollbar-track {
     background: transparent;
     border-radius: 10px;
