@@ -37,6 +37,7 @@
                 </el-menu>
             </el-aside>
             <el-container>
+                <AppHeader />
                 <el-main>
                     <RouterView />
                 </el-main>
@@ -50,6 +51,7 @@ import { ref, markRaw } from 'vue' // 引入 markRaw (修复警告用)
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { ElMessage } from 'element-plus';
+import AppHeader from '@/components/AppHeader.vue'
 import {
     Fold,   // 恢复
     Expand, // 恢复
@@ -128,7 +130,8 @@ const toggleCollapse = () => {
 
 .el-main {
     background-color: #f5f7fa;
-    height: calc(100vh - 61px);
+    /* 60px 是 AppHeader.vue 里的 .el-header 默认高度 */
+    height: calc(100vh - 60px);
     overflow-y: auto;
     padding: 20px;
 }
@@ -141,6 +144,8 @@ const toggleCollapse = () => {
     transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     border-right: none;
     overflow-x: hidden;
+    overflow-y: auto;
+    /* ✨ 修复点：添加这一行来启用垂直滚动条 */
 }
 
 .sidebar-logo {
@@ -163,7 +168,7 @@ const toggleCollapse = () => {
     /* 菜单顶部留出空隙 */
 }
 
-/* (关键) 现在只针对 el-sub-menu__title 设置样式 */
+/* 现在只针对 el-sub-menu__title 设置样式 */
 /* 我们在前面加了 .sidebar-container，这样它就只会影响侧边栏内部了 */
 .sidebar-container :deep(.el-sub-menu__title) {
     color: #606266 !important;
@@ -185,7 +190,7 @@ const toggleCollapse = () => {
     width: calc(100% - 20px) !important;
 }
 
-/* ✨ (修改) 增大展开时图标尺寸 */
+/* 增大展开时图标尺寸 */
 .sidebar-container :deep(.el-icon) {
     font-size: 24px;
     /* 从 20px 增大到 24px */
@@ -201,7 +206,7 @@ const toggleCollapse = () => {
     color: #303133 !important;
 }
 
-/* (关键) 当子菜单被激活时，父菜单标题也高亮 */
+/* 当子菜单被激活时，父菜单标题也高亮 */
 .sidebar-container :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
     color: #ff6a00 !important;
     font-weight: 600;
@@ -212,7 +217,7 @@ const toggleCollapse = () => {
 }
 
 /*
- * (重要) 处理折叠后的样式
+ * 处理折叠后的样式
  */
 .sidebar-container :deep(.el-menu--collapse) {
 
@@ -225,7 +230,7 @@ const toggleCollapse = () => {
     /* 折叠时，图标没有右边距 */
     .el-icon {
         margin-right: 0;
-        /* ✨ (修改) 增大折叠时图标尺寸 */
+        /* 增大折叠时图标尺寸 */
         font-size: 26px;
         /* 从 22px 增大到 26px */
     }
@@ -260,7 +265,7 @@ const toggleCollapse = () => {
     /* 核心修复：同时去掉 border 和 outline */
     border: none !important;
     outline: none !important;
-    /* ✨ 去掉浏览器默认的黑色聚焦轮廓 ✨ */
+    /* 去掉浏览器默认的黑色聚焦轮廓  */
 }
 
 /* 额外保险：确保鼠标放上去或者聚焦时也不会出现 */
@@ -326,25 +331,26 @@ const toggleCollapse = () => {
 <style>
 /* --- 侧边栏滚动条美化 (全局但限定范围) --- */
 
-/* 因为这个 <style> 块没有 "scoped"，
-  我们必须在每个选择器前都加上 .sidebar-container .sidebar-top-content
-  来确保这个样式【只】影响侧边栏的滚动条！
+/*
+  ✨ 修复点：
+  删除了 .sidebar-top-content
+  现在样式直接作用于 .sidebar-container 自身
 */
 
 /* 1. 滚动条轨道 (背景) */
-.sidebar-container .sidebar-top-content::-webkit-scrollbar-track {
+.sidebar-container::-webkit-scrollbar-track {
     background: transparent;
     /* 轨道背景透明 */
     border-radius: 10px;
 }
 
 /* 2. 滚动条整体宽度 (变细) */
-.sidebar-container .sidebar-top-content::-webkit-scrollbar {
+.sidebar-container::-webkit-scrollbar {
     width: 5px;
 }
 
 /* 3. 滚动条滑块 (thumb) */
-.sidebar-container .sidebar-top-content::-webkit-scrollbar-thumb {
+.sidebar-container::-webkit-scrollbar-thumb {
     background: #dcdcdc;
     /* 滑块颜色变浅 */
     border-radius: 10px;
@@ -354,7 +360,7 @@ const toggleCollapse = () => {
 }
 
 /* 4. 鼠标悬浮在滑块上 */
-.sidebar-container .sidebar-top-content::-webkit-scrollbar-thumb:hover {
+.sidebar-container::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
     /* 悬浮时颜色加深 */
 }
