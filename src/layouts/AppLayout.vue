@@ -2,7 +2,7 @@
     <div class="common-layout">
         <el-container>
             <el-aside :width="isCollapsed ? '64px' : '220px'" class="sidebar-container">
-                <div class="sidebar-logo">
+                <div class="sidebar-logo" @click="toggleCollapse">
                     <span v-if="isCollapsed">🛰️</span>
                     <span v-if="!isCollapsed">IoT 平台</span>
                 </div>
@@ -36,20 +36,7 @@
                     </template>
                 </el-menu>
             </el-aside>
-
             <el-container>
-                <el-header>
-                    <el-icon class="collapse-icon" @click="toggleCollapse">
-                        <Fold v-if="!isCollapsed" />
-                        <Expand v-else />
-                    </el-icon>
-
-                    <div class="header-right">
-                        <span>(欢迎您, Admin)</span>
-                        <el-button type="danger" link @click="logout">退出登录</el-button>
-                    </div>
-                </el-header>
-
                 <el-main>
                     <RouterView />
                 </el-main>
@@ -77,7 +64,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 // 3. 恢复：默认不折叠
-const isCollapsed = ref(false)
+const isCollapsed = ref(true)
 
 // 4. ▼▼▼ 核心修改：菜单数据和路由同步 ▼▼▼
 const menuItems = ref([
@@ -129,11 +116,6 @@ const toggleCollapse = () => {
     isCollapsed.value = !isCollapsed.value
 }
 
-const logout = () => {
-    authStore.logout()
-    router.push('/login')
-    ElMessage.success('已安全退出')
-}
 </script>
 
 <style scoped>
@@ -256,30 +238,6 @@ const logout = () => {
 }
 
 
-/* --- 顶栏 (Header) --- */
-.el-header {
-    background-color: #fff;
-    box-shadow: none;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.collapse-icon {
-    font-size: 22px;
-    cursor: pointer;
-    color: #303133;
-}
-
-.header-right {
-    display: flex;
-    align-items: center;
-}
-
-.header-right span {
-    margin-right: 15px;
-}
 
 /* --- 浮动子菜单 (在收起时) --- */
 /* --- 第1层：“真·外壳” (The REAL Container) --- */
@@ -363,5 +321,41 @@ const logout = () => {
     background-color: #fff7f0 !important;
     color: #ff6a00 !important;
     font-weight: 600;
+}
+</style>
+<style>
+/* --- 侧边栏滚动条美化 (全局但限定范围) --- */
+
+/* 因为这个 <style> 块没有 "scoped"，
+  我们必须在每个选择器前都加上 .sidebar-container .sidebar-top-content
+  来确保这个样式【只】影响侧边栏的滚动条！
+*/
+
+/* 1. 滚动条轨道 (背景) */
+.sidebar-container .sidebar-top-content::-webkit-scrollbar-track {
+    background: transparent;
+    /* 轨道背景透明 */
+    border-radius: 10px;
+}
+
+/* 2. 滚动条整体宽度 (变细) */
+.sidebar-container .sidebar-top-content::-webkit-scrollbar {
+    width: 5px;
+}
+
+/* 3. 滚动条滑块 (thumb) */
+.sidebar-container .sidebar-top-content::-webkit-scrollbar-thumb {
+    background: #dcdcdc;
+    /* 滑块颜色变浅 */
+    border-radius: 10px;
+    /* 圆角拉满 */
+    /* 关键：添加一个和侧边栏背景同色的边框，产生 "悬浮" 效果 */
+    border: 1px solid #f7f8fa;
+}
+
+/* 4. 鼠标悬浮在滑块上 */
+.sidebar-container .sidebar-top-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+    /* 悬浮时颜色加深 */
 }
 </style>
