@@ -181,8 +181,11 @@ const toggleCollapse = () => {
 
     /* 增大字体和高度 */
     height: 60px;
-    /* 进一步增大高度 */
-    line-height: 60px;
+
+    /* 删除 line-height，改用 flex 居中  */
+    display: flex;
+    align-items: center;
+
     font-size: 16px;
     /* 进一步增大字体 */
     font-weight: 500;
@@ -203,6 +206,17 @@ const toggleCollapse = () => {
     /* 调整图标和文字的间距 */
     width: 24px;
     /* 确保图标占位 */
+}
+
+/* * 针对性地调整箭头图标 
+ *
+ * 强制箭头图标的字体大小与菜单文字(16px)保持一致，
+ * 这样 flex 居中才能实现完美的视觉对齐。
+ */
+.sidebar-container :deep(.el-sub-menu__icon-arrow) {
+    font-size: 18px;
+    margin-left: 5px;
+    /* 增加一点文字和箭头间的距离 */
 }
 
 /* 统一处理悬浮状态 (非激活时) */
