@@ -45,11 +45,26 @@
                 <el-table-column prop="time" label="时间(GMT+8)" width="220" />
                 <el-table-column prop="event" label="设备事件" width="120" />
                 <el-table-column prop="type" label="事件类型" width="120" />
+
                 <el-table-column prop="details" label="事件详情" min-width="300">
                     <template #default="scope">
-                        <pre class="log-details">{{ scope.row.details }}</pre>
+                        <div class="details-cell-content">
+                            <pre class="log-details-raw">{{ truncateRawDetails(scope.row.details) }}</pre>
+                            <el-popover placement="right-start" :width="400" trigger="hover"
+                                popper-class="log-details-popover">
+                                <template #default>
+                                    <pre class="log-details-parsed">{{ parseLogDetails(scope.row.details) }}</pre>
+                                </template>
+                                <template #reference>
+                                    <el-tag class="details-trigger-tag" effect="plain" size="small">
+                                        解析
+                                    </el-tag>
+                                </template>
+                            </el-popover>
+                        </div>
                     </template>
                 </el-table-column>
+
                 <el-table-column prop="source" label="来源" width="100" />
                 <template #empty>
                     <el-empty description="暂无日志" />
@@ -74,7 +89,7 @@ import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs
 import { useDataExport } from '@/composables/useDataExport'
 
 import { formatDateTime } from '@/utils/formatters'
-
+import { parseLogDetails } from '@/utils/logParser'
 const route = useRoute()
 
 // --- 1. 基础状态 ---
@@ -114,12 +129,24 @@ const logTableColumns = [
 
 // --- 3. 逻辑函数 ---
 
+// 添加截断函数, 用于在表格中显示原始详情
+const truncateRawDetails = (rawDetails: any): string => {
+    const str = String(rawDetails);
+    if (str.length > 50) {
+        return str.substring(0, 50) + '...';
+    }
+    return str;
+}
+
 // 定义日志页面的数据处理器
 const logDataProcessor = (data: any[]) => {
     return data.map(row => ({
         ...row,
         // 格式化 'time' 字段 (它可能是 ISO 字符串)
-        time: formatDateTime(row.time)
+        time: formatDateTime(row.time),
+
+        // 格式化 'details' 字段, 复用同一个解析器
+        details: parseLogDetails(row.details)
     }))
 }
 const handleExport = () => {
@@ -242,5 +269,59 @@ onMounted(() => {
     border-top: 1px solid var(--el-border-color-lighter);
     padding-top: 20px;
     margin-top: 20px;
+}
+
+/* 单元格的 flex 布局 */
+.details-cell-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* 单元格中 "原始" 数据的 <pre> 样式 */
+.log-details-raw {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #909399;
+    /* 灰色, 表示是原始数据 */
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    flex-grow: 1;
+    /* 占据主要空间 */
+}
+
+/* "解析" 标签的样式 */
+.details-trigger-tag {
+    margin-left: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    /* 防止标签被压缩 */
+
+    /* (可选) 微调, 让 'plain' 标签的边框更明显 */
+    border-color: var(--el-color-primary-light-5);
+    color: var(--el-color-primary);
+}
+
+.details-trigger-tag:hover {
+    background-color: var(--el-color-primary-light-9);
+}
+
+
+/* * Popover 内部的 <pre> 样式 (保持不变)
+ * 必须使用 :global(), 因为 Popover 默认渲染在 <body> 下
+*/
+:global(.log-details-popover pre.log-details-parsed) {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #303133;
+    background-color: #f5f7fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 400px;
+    overflow-y: auto;
 }
 </style>
