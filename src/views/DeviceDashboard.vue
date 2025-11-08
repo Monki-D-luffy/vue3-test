@@ -83,6 +83,8 @@ import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceLis
 import { useDeviceActions } from '@/composables/useDeviceActions'
 import { useDataExport } from '@/composables/useDataExport'
 
+import { formatDateTime } from '@/utils/formatters'
+
 // --- 基础状态 ---
 const router = useRouter()
 const selectedCenter = ref('CN')
@@ -115,27 +117,6 @@ const deviceTableColumns = [
 ]
 
 // --- 整合逻辑函数 ---
-/**
- * 格式化日期时间字符串
- * @param dateString 任何有效的日期输入
- * @returns 格式化的字符串 'YYYY-MM-DD HH:mm:ss' 或 ''
- */
-const formatDateTime = (dateString) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '' // 处理无效日期
-
-    const pad = (num) => num.toString().padStart(2, '0')
-
-    const Y = date.getFullYear()
-    const M = pad(date.getMonth() + 1)
-    const D = pad(date.getDate())
-    const h = pad(date.getHours())
-    const m = pad(date.getMinutes())
-    const s = pad(date.getSeconds())
-
-    return `${Y}-${M}-${D} ${h}:${m}:${s}`
-}
 
 // 定义此页面的数据处理器
 const deviceDataProcessor = (data) => {

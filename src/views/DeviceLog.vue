@@ -69,8 +69,11 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 import AppPagination from '@/components/AppPagination.vue'
+
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
 import { useDataExport } from '@/composables/useDataExport'
+
+import { formatDateTime } from '@/utils/formatters'
 
 const route = useRoute()
 
@@ -110,24 +113,7 @@ const logTableColumns = [
 ]
 
 // --- 3. 逻辑函数 ---
-// 添加日期格式化辅助函数
-// (在实际项目中，应将此函数提取到 src/utils/formatters.ts 以避免重复)
-const formatDateTime = (dateString: string | Date | null | undefined): string => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return ''
 
-    const pad = (num: number) => num.toString().padStart(2, '0')
-
-    const Y = date.getFullYear()
-    const M = pad(date.getMonth() + 1)
-    const D = pad(date.getDate())
-    const h = pad(date.getHours())
-    const m = pad(date.getMinutes())
-    const s = pad(date.getSeconds())
-
-    return `${Y}-${M}-${D} ${h}:${m}:${s}`
-}
 // 定义日志页面的数据处理器
 const logDataProcessor = (data: any[]) => {
     return data.map(row => ({
