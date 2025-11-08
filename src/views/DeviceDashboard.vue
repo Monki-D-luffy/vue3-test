@@ -25,6 +25,14 @@
         <DeviceFilterBar v-model:filters="filters" @search="handleSearch" @reset="handleReset" />
 
         <el-card class="table-card" shadow="never">
+            <template #header>
+                <div class="card-header">
+                    <span>设备列表</span>
+                    <el-button type="primary" :loading="isExporting" @click="handleExport" plain>
+                        导出数据
+                    </el-button>
+                </div>
+            </template>
             <el-table :data="deviceList" v-loading="loading">
                 <el-table-column prop="name" label="设备名称/ID" width="180" />
                 <el-table-column prop="status" label="设备状态" width="120">
@@ -70,12 +78,12 @@ import AppPagination from '@/components/AppPagination.vue'
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 import StatCard from '@/components/StatCard.vue'
 
-// 引入我们刚创建的 Composables
 import { useDeviceSummary } from '@/composables/useDeviceSummary'
-import { useDeviceList } from '@/composables/useDeviceList'
+import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceList'
 import { useDeviceActions } from '@/composables/useDeviceActions'
+import { useDataExport } from '@/composables/useDataExport'
 
-// --- 1. 基础状态 ---
+// --- 基础状态 ---
 const router = useRouter()
 const selectedCenter = ref('CN')
 const selectedDeviceId = ref(null) // 控制抽屉
@@ -86,21 +94,81 @@ const dataCenterMap = {
 // 筛选条件状态
 const filters = reactive({ isBound: '', productId: '', dateRange: '', keyword: '' })
 
-// --- 2. 使用 Composables ---
+// --- 使用 Composables ---
 const { summary, fetchSummary } = useDeviceSummary()
 const {
     loading, deviceList, pagination,
     fetchDevices, handleSizeChange, handleCurrentChange, resetPagination
-} = useDeviceList()
+} = useDeviceList() // 注意：这里不需要 buildDeviceListParams，因为它已在顶层导入
 const { handleDelete } = useDeviceActions()
+const { isExporting, exportData } = useDataExport()
 
-// --- 3. 整合逻辑函数 ---
+// 定义导出的列 (CSV表头 和 数据key)
+const deviceTableColumns = [
+    { label: '设备名称/ID', key: 'name' },
+    { label: '设备状态', key: 'status' },
+    { label: '生产PUUID', key: 'puuid' },
+    { label: '所属产品/产品ID', key: 'productId' },
+    { label: '设备SN码', key: 'sn' },
+    { label: '激活时间', key: 'gmtActive' },
+    { label: '最近上线时间', key: 'gmtLastOnline' }
+]
+
+// --- 整合逻辑函数 ---
+/**
+ * 格式化日期时间字符串
+ * @param dateString 任何有效的日期输入
+ * @returns 格式化的字符串 'YYYY-MM-DD HH:mm:ss' 或 ''
+ */
+const formatDateTime = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return '' // 处理无效日期
+
+    const pad = (num) => num.toString().padStart(2, '0')
+
+    const Y = date.getFullYear()
+    const M = pad(date.getMonth() + 1)
+    const D = pad(date.getDate())
+    const h = pad(date.getHours())
+    const m = pad(date.getMinutes())
+    const s = pad(date.getSeconds())
+
+    return `${Y}-${M}-${D} ${h}:${m}:${s}`
+}
+
+// 定义此页面的数据处理器
+const deviceDataProcessor = (data) => {
+    return data.map(row => ({
+        ...row,
+        // 格式化需要导出的日期字段
+        gmtActive: formatDateTime(row.gmtActive),
+        gmtLastOnline: formatDateTime(row.gmtLastOnline)
+    }))
+}
+//  导出处理函数
+const handleExport = () => {
+    // 1. 组装视图层的
+    const currentFilters = {
+        ...filters,
+        dataCenter: selectedCenter.value
+    }
+
+    // 2. 调用构建器 (不传分页参数，以获取所有数据)
+    const exportParams = buildDeviceListParams(currentFilters)
+
+    // 3. 调用导出
+    exportData(
+        '/devices',          // API 端点
+        exportParams,        // 传递处理过的、API友好的参数
+        deviceTableColumns,  // 列定义
+        '设备明细',           // 文件名
+        deviceDataProcessor // 注入处理器
+    )
+}
 
 // 跳转到设备日志页面
 const viewLogs = (row) => {
-    // 我们使用 路由名称(name) 和 查询参数(query) 来跳转
-    // 这样既能传递参数，又不用关心具体的 path 路径
-    // 这个 'device-log' 必须和 src/router/index.ts 中定义的 name 一致
     router.push({
         name: 'device-log',
         query: {
@@ -110,8 +178,9 @@ const viewLogs = (row) => {
     })
 }
 
-// 统一的加载数据函数：将当前所有的状态（数据中心、过滤器）组合起来传给 fetchDevices
+// 统一的加载数据函数
 const loadData = () => {
+    // fetchDevices 内部会调用 buildDeviceListParams 并传入分页
     fetchDevices({
         ...filters,
         dataCenter: selectedCenter.value
@@ -122,46 +191,43 @@ const loadData = () => {
 const handleCenterChange = (command) => {
     selectedCenter.value = command
     ElMessage.success(`已切换至 ${dataCenterMap[command]}`)
-    resetPagination() // 切换中心时重置分页
-    loadData()        // 重新加载列表
-    fetchSummary(command) // 重新加载统计
+    resetPagination()
+    loadData()
+    fetchSummary(command)
 }
 
 // 搜索
 const handleSearch = () => {
     ElMessage.success('正在搜索...')
-    pagination.currentPage = 1 // 搜索时重置到第一页
+    pagination.currentPage = 1
     loadData()
 }
 
 // 重置
 const handleReset = () => {
-    // 清空筛选状态
     filters.isBound = ''
     filters.productId = ''
     filters.dateRange = ''
     filters.keyword = ''
     ElMessage.info('已重置筛选条件')
-    resetPagination() // 重置分页
+    resetPagination()
     loadData()
 }
 
 // 分页事件适配
 const onSizeChange = (newSize) => {
     handleSizeChange(newSize)
-    loadData() // pageSize 变化后重新加载
+    loadData()
 }
 const onCurrentChange = (newPage) => {
     handleCurrentChange(newPage)
-    loadData() // currentPage 变化后重新加载
+    loadData()
 }
 
 // 删除点击事件
 const onDeleteClick = (row) => {
-    // 调用 composable 的删除方法，并传入成功后的回调（重新加载数据）
     handleDelete(row, () => {
         loadData()
-        // 可选：删除后也刷新下统计数据
         fetchSummary(selectedCenter.value)
     })
 }
@@ -170,7 +236,7 @@ const onDeleteClick = (row) => {
 const openDetails = (id) => { selectedDeviceId.value = id }
 const closeDrawer = () => { selectedDeviceId.value = null }
 
-// 状态颜色辅助函数 (建议后续也提取到公共文件)
+// 状态颜色辅助函数
 const getStatusType = (status) => {
     const map = { '在线': 'success', '离线': 'info', '故障': 'danger', '未激活': 'warning' }
     return map[status] || ''
@@ -203,5 +269,29 @@ onMounted(() => {
 
 .summary-cards {
     margin-bottom: 20px;
+}
+
+/* Card Header 样式 */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 确保表格卡片有正确的内边距 */
+.table-card :deep(.el-card__header) {
+    padding: 15px 20px;
+}
+
+/* Card Header 样式 */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 确保表格卡片有正确的内边距 */
+.table-card :deep(.el-card__header) {
+    padding: 15px 20px;
 }
 </style>

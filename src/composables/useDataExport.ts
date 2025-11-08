@@ -66,16 +66,20 @@ export function useDataExport() {
 
     /**
      * 主函数：调用 API 获取所有数据并导出
-     * @param apiEndpoint API 终点 (e.g., '/devices')
+     * @param apiEndpoint API 终点
      * @param currentFilters 当前的筛选条件
      * @param columns 列定义
      * @param filename 导出的文件名
+     * @param dataProcessor (可选) 数据处理器，在转换为CSV前格式化数据
      */
     const exportData = async (
         apiEndpoint: string,
         currentFilters: Record<string, any>,
         columns: ExportColumn[],
-        filename: string
+        filename: string,
+        // ✨ 1. (关键重构) 添加可选的数据处理器参数
+        // 默认处理器：什么都不做，直接返回原数据
+        dataProcessor: (data: any[]) => any[] = (data) => data
     ) => {
         if (isExporting.value) return
         isExporting.value = true
@@ -87,29 +91,31 @@ export function useDataExport() {
         })
 
         try {
-            // 1. 准备参数：复制筛选条件，但移除分页
+            // 1. 准备参数
             const exportParams: any = { ...currentFilters }
             delete exportParams._page
             delete exportParams._limit
 
-            // 2. (关键) 请求所有数据。
-            // 我们在 mock-server 中配置了，不传 _page 和 _limit 会返回所有数据
+            // 2. 请求所有数据
             const response = await api.get(apiEndpoint, { params: exportParams })
 
-            const allData = response.data.data
+            const allData = response.data.data || response.data
 
             if (!allData || allData.length === 0) {
                 ElMessage.warning('没有可导出的数据')
                 return
             }
 
-            // 3. 转换为 CSV
-            const csvContent = convertToCSV(allData, columns)
+            // ✨ 2. (关键重构) 在转换CSV前，调用数据处理器
+            const processedData = dataProcessor(allData)
+
+            // 3. 转换为 CSV (使用处理过的数据)
+            const csvContent = convertToCSV(processedData, columns)
 
             // 4. 下载
             downloadFile(csvContent, filename)
 
-            ElMessage.success(`数据导出成功！共 ${allData.length} 条。`)
+            ElMessage.success(`数据导出成功！共 ${processedData.length} 条。`)
 
         } catch (error) {
             console.error('Export failed:', error)

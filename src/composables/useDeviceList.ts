@@ -1,16 +1,59 @@
-// 处理复杂的列表和分页逻辑
+// src/composables/useDeviceList.ts
 import { ref, reactive } from 'vue'
 import api from '@/api'
 import { ElMessage } from 'element-plus'
 
-// 定义过滤器的接口（可选，但推荐）
-interface FetchParams {
+// 定义过滤器的接口
+export interface DeviceListFilters {
     isBound?: string
     productId?: string
     dateRange?: any[]
     keyword?: string
     dataCenter?: string
 }
+
+// 定义分页接口
+interface PaginationParams {
+    _page: number
+    _limit: number
+}
+
+// ✨ 1. (关键重构) 提取参数构建器
+/**
+ * 构建 /devices API 的查询参数
+ * @param filters 视图层的原始筛选器
+ * @param pagination (可选) 分页参数
+ * @returns 清理过的、API 友好的参数对象
+ */
+export const buildDeviceListParams = (
+    filters: DeviceListFilters = {},
+    pagination?: PaginationParams
+) => {
+    // 1. 解构参数
+    const { isBound, productId, dateRange, keyword, dataCenter } = filters
+
+    // 2. 准备原始参数 (包含转换逻辑)
+    const rawParams: any = {
+        isBound,
+        productId,
+        q: keyword,
+        gmtActive_gte: dateRange && dateRange[0] ? new Date(dateRange[0]).toISOString().split('T')[0] + ' 00:00:00' : null,
+        gmtActive_lte: dateRange && dateRange[1] ? new Date(dateRange[1]).toISOString().split('T')[0] + ' 23:59:59' : null,
+        dataCenter,
+        ...pagination // 合并分页参数 (如果传入了)
+    }
+
+    // 3. 清理无效参数
+    const cleanedParams: any = {}
+    for (const key in rawParams) {
+        if (rawParams[key] !== null && rawParams[key] !== undefined && rawParams[key] !== '') {
+            cleanedParams[key] = rawParams[key]
+        }
+    }
+
+    return cleanedParams
+}
+
 
 export function useDeviceList() {
     const loading = ref(false)
@@ -22,33 +65,14 @@ export function useDeviceList() {
     })
 
     // 核心获取数据函数
-    const fetchDevices = async (filters: FetchParams = {}) => {
+    const fetchDevices = async (filters: DeviceListFilters = {}) => {
         loading.value = true
         try {
-            // 1. 解构参数
-            const { isBound, productId, dateRange, keyword, dataCenter } = filters
-
-            // 2. 准备原始参数
-            const rawParams = {
-                isBound,
-                productId,
-                q: keyword,
-                gmtActive_gte: dateRange && dateRange[0] ? new Date(dateRange[0]).toISOString().split('T')[0] + ' 00:00:00' : null,
-                gmtActive_lte: dateRange && dateRange[1] ? new Date(dateRange[1]).toISOString().split('T')[0] + ' 23:59:59' : null,
-                dataCenter,
+            // ✨ 2. (关键重构) 复用参数构建器
+            const params = buildDeviceListParams(filters, {
                 _page: pagination.currentPage,
                 _limit: pagination.pageSize
-            }
-
-            // 3. 清理无效参数
-            const params: any = {}
-            for (const key in rawParams) {
-                // @ts-ignore
-                if (rawParams[key] !== null && rawParams[key] !== undefined && rawParams[key] !== '') {
-                    // @ts-ignore
-                    params[key] = rawParams[key]
-                }
-            }
+            })
 
             // 4. 发送请求
             const response = await api.get(`/devices`, { params })
@@ -69,10 +93,6 @@ export function useDeviceList() {
     const handleSizeChange = (newSize: number) => {
         pagination.pageSize = newSize
         pagination.currentPage = 1 // 重置到第一页
-        // 注意：这里我们不直接调用 fetchDevices，而是让组件来决定何时重新获取，
-        // 或者你可以选择在这里传入当前的 filters 重新获取。
-        // 为了解耦，我们通常只更新状态，让外部的 watcher 或特定函数去触发重新请求。
-        // 但在这个简单场景下，组件里监听 pagination变化 或者手动调用更可控。
     }
 
     const handleCurrentChange = (newPage: number) => {
@@ -92,6 +112,8 @@ export function useDeviceList() {
         fetchDevices,
         handleSizeChange,
         handleCurrentChange,
-        resetPagination
+        resetPagination,
+        // ✨ 3. (关键重构) 导出构建器
+        buildDeviceListParams
     }
 }

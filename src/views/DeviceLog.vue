@@ -34,9 +34,8 @@
             <span>设备名称：{{ deviceName }}</span>
             <el-divider direction="vertical" />
             <span>设备ID：{{ deviceId }}</span>
-            <el-divider direction="vertical" />
-            <el-button link type="primary">
-                查看操作手册
+            <el-button type="primary" :loading="isExporting" @click="handleExport" plain>
+                导出日志
             </el-button>
         </el-card>
 
@@ -52,11 +51,6 @@
                     </template>
                 </el-table-column>
                 <el-table-column prop="source" label="来源" width="100" />
-                <el-table-column prop="switch" label="处理开关" width="100">
-                    <template #default="scope">
-                        <el-switch v-model="scope.row.switch" />
-                    </template>
-                </el-table-column>
                 <template #empty>
                     <el-empty description="暂无日志" />
                 </template>
@@ -73,9 +67,10 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-// ✨ 1. 导入 AppPagination 组件和 useDeviceLogs
+
 import AppPagination from '@/components/AppPagination.vue'
-import { useDeviceLogs } from '@/composables/useDeviceLogs'
+import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
+import { useDataExport } from '@/composables/useDataExport'
 
 const route = useRoute()
 
@@ -88,7 +83,7 @@ const filters = reactive({
     taskId: '',
     eventId: '',
     type: 'all',
-    dateRange: null // 默认无时间范围
+    dateRange: null as [Date, Date] | null
 })
 
 // --- 2. 使用 Composable ---
@@ -102,7 +97,56 @@ const {
     resetPagination
 } = useDeviceLogs()
 
+const { isExporting, exportData } = useDataExport()
+
+// 定义导出的列
+const logTableColumns = [
+    { label: '时间(GMT+8)', key: 'time' },
+    { label: '设备事件', key: 'event' },
+    { label: '事件类型', key: 'type' },
+    { label: '事件详情', key: 'details' },
+    { label: '来源', key: 'source' }
+    // ✨ 确保这里也移除了 'switch' 列，因为它是交互控件，不适合导出
+]
+
 // --- 3. 逻辑函数 ---
+// 添加日期格式化辅助函数
+// (在实际项目中，应将此函数提取到 src/utils/formatters.ts 以避免重复)
+const formatDateTime = (dateString: string | Date | null | undefined): string => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ''
+
+    const pad = (num: number) => num.toString().padStart(2, '0')
+
+    const Y = date.getFullYear()
+    const M = pad(date.getMonth() + 1)
+    const D = pad(date.getDate())
+    const h = pad(date.getHours())
+    const m = pad(date.getMinutes())
+    const s = pad(date.getSeconds())
+
+    return `${Y}-${M}-${D} ${h}:${m}:${s}`
+}
+// 定义日志页面的数据处理器
+const logDataProcessor = (data: any[]) => {
+    return data.map(row => ({
+        ...row,
+        // 格式化 'time' 字段 (它可能是 ISO 字符串)
+        time: formatDateTime(row.time)
+    }))
+}
+const handleExport = () => {
+    const exportParams = buildDeviceLogParams(deviceId.value, filters)
+
+    exportData(
+        '/deviceLogs',       // API 端点
+        exportParams,        // 传递处理过的、API友好的参数
+        logTableColumns,     // 列定义
+        `设备日志_${deviceName.value}`, // 文件名
+        logDataProcessor // 注入处理器
+    )
+}
 
 // 统一的数据加载函数
 const loadData = () => {
@@ -116,17 +160,17 @@ const loadData = () => {
 // 搜索
 const handleSearch = () => {
     ElMessage.success('正在查询日志...')
-    resetPagination() // 搜索时重置到第一页
+    resetPagination()
     loadData()
 }
 
 // 分页变更
 const onSizeChange = (newSize: number) => {
-    handleSizeChange(newSize)
+    pagination.pageSize = newSize
     loadData()
 }
 const onCurrentChange = (newPage: number) => {
-    handleCurrentChange(newPage)
+    pagination.currentPage = newPage
     loadData()
 }
 
@@ -164,9 +208,7 @@ onMounted(() => {
 
 .filter-form .el-form-item {
     margin-bottom: 0;
-    /* 保持筛选栏紧凑 */
     margin-right: 12px;
-    /* 增加一些间距 */
 }
 
 .filter-form .el-select {
@@ -192,9 +234,7 @@ onMounted(() => {
 }
 
 .info-card .el-button {
-    padding: 0;
     margin-left: auto;
-    /* 推动按钮到最右侧 */
 }
 
 /* 表格日志详情样式 */
@@ -207,15 +247,12 @@ onMounted(() => {
     border-radius: 4px;
     margin: 0;
     white-space: pre-wrap;
-    /* 保留换行 */
     word-break: break-all;
-    /* 允许长字符串换行 */
 }
 
 /* 分页组件的样式 */
 .log-table-card :deep(.pagination-block) {
     justify-content: center;
-    /* 确保分页居中 */
     border-top: 1px solid var(--el-border-color-lighter);
     padding-top: 20px;
     margin-top: 20px;
