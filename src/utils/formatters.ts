@@ -20,3 +20,19 @@ export const formatDateTime = (dateString: string | Date | null | undefined): st
 
     return `${Y}-${M}-${D} ${h}:${m}:${s}`
 }
+
+/**
+ * (✨ 新增)
+ * 根据设备状态返回 Element Plus 的 Tag 类型
+ * @param status 设备状态 (如 '在线', '离线')
+ * @returns 对应的 'type' (如 'success', 'info')
+ */
+export const getDeviceStatusType = (status: string): string => {
+    const map: Record<string, string> = {
+        '在线': 'success',
+        '离线': 'info',
+        '故障': 'danger',
+        '未激活': 'warning'
+    }
+    return map[status] || 'default' // 使用 'default' 作为备用
+}

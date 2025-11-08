@@ -33,15 +33,22 @@
                     </el-button>
                 </div>
             </template>
+
             <el-table :data="deviceList" v-loading="loading">
                 <el-table-column prop="name" label="设备名称/ID" width="180" />
-                <el-table-column prop="status" label="设备状态" width="120">
+
+                <el-table-column prop="status" label="设备状态" min-width="120">
                     <template #default="scope">
-                        <el-tag :type="getStatusType(scope.row.status)" effect="light" round>
-                            {{ scope.row.status }}
-                        </el-tag>
+                        <div class="status-tags-container">
+                            <el-tag
+                                v-for="status in (Array.isArray(scope.row.status) ? scope.row.status : [scope.row.status])"
+                                :key="status" :type="getDeviceStatusType(status)" effect="light" round>
+                                {{ status }}
+                            </el-tag>
+                        </div>
                     </template>
                 </el-table-column>
+
                 <el-table-column prop="puuid" label="生产PUUID" width="200" />
                 <el-table-column prop="productId" label="所属产品/产品ID" width="180" />
                 <el-table-column prop="sn" label="设备SN码" width="180" />
@@ -72,43 +79,46 @@ import { ElMessage } from 'element-plus'
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
+// ✨ 2. (关键重构) 导入我们抽离的工具函数
+import { formatDateTime, getDeviceStatusType } from '@/utils/formatters'
+// (假设你也抽离了 DATA_CENTER_MAP)
+// import { DATA_CENTER_MAP } from '@/constants'
+
 // 引入组件
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 import AppPagination from '@/components/AppPagination.vue'
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 import StatCard from '@/components/StatCard.vue'
 
+// 引入 Composables
 import { useDeviceSummary } from '@/composables/useDeviceSummary'
 import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceList'
 import { useDeviceActions } from '@/composables/useDeviceActions'
 import { useDataExport } from '@/composables/useDataExport'
 
-import { formatDateTime } from '@/utils/formatters'
-
-// --- 基础状态 ---
+// --- 1. 基础状态 ---
 const router = useRouter()
 const selectedCenter = ref('CN')
-const selectedDeviceId = ref(null) // 控制抽屉
-const dataCenterMap = {
+const selectedDeviceId = ref(null)
+const dataCenterMap = { // (如果你没有抽离到 constants，这个暂时保留)
     'CN': '中国数据中心', 'US-WEST': '美西数据中心', 'EU-CENTRAL': '中欧数据中心',
     'IN': '印度数据中心', 'US-EAST': '美东数据中心', 'EU-WEST': '西欧数据中心', 'SG': '新加坡数据中心',
 }
-// 筛选条件状态
 const filters = reactive({ isBound: '', productId: '', dateRange: '', keyword: '' })
 
-// --- 使用 Composables ---
+// --- 2. 使用 Composables ---
 const { summary, fetchSummary } = useDeviceSummary()
 const {
     loading, deviceList, pagination,
     fetchDevices, handleSizeChange, handleCurrentChange, resetPagination
-} = useDeviceList() // 注意：这里不需要 buildDeviceListParams，因为它已在顶层导入
+} = useDeviceList()
 const { handleDelete } = useDeviceActions()
 const { isExporting, exportData } = useDataExport()
 
-// 定义导出的列 (CSV表头 和 数据key)
+// 列定义
 const deviceTableColumns = [
     { label: '设备名称/ID', key: 'name' },
-    { label: '设备状态', key: 'status' },
+    { label: '设备状态', key: 'status' }, // (key 保持不变, processor 会处理)
     { label: '生产PUUID', key: 'puuid' },
     { label: '所属产品/产品ID', key: 'productId' },
     { label: '设备SN码', key: 'sn' },
@@ -116,34 +126,33 @@ const deviceTableColumns = [
     { label: '最近上线时间', key: 'gmtLastOnline' }
 ]
 
-// --- 整合逻辑函数 ---
+// --- 3. 整合逻辑函数 ---
 
-// 定义此页面的数据处理器
+// ✨ 3. (关键重构) 更新数据处理器
 const deviceDataProcessor = (data) => {
     return data.map(row => ({
         ...row,
-        // 格式化需要导出的日期字段
+        // 格式化日期
         gmtActive: formatDateTime(row.gmtActive),
-        gmtLastOnline: formatDateTime(row.gmtLastOnline)
+        gmtLastOnline: formatDateTime(row.gmtLastOnline),
+        // (核心) 在导出时, 将 status 数组转换回 CSV 友好的字符串
+        status: Array.isArray(row.status) ? row.status.join(', ') : row.status
     }))
 }
-//  导出处理函数
+
+// 导出处理函数
 const handleExport = () => {
-    // 1. 组装视图层的
     const currentFilters = {
         ...filters,
         dataCenter: selectedCenter.value
     }
-
-    // 2. 调用构建器 (不传分页参数，以获取所有数据)
     const exportParams = buildDeviceListParams(currentFilters)
 
-    // 3. 调用导出
     exportData(
-        '/devices',          // API 端点
-        exportParams,        // 传递处理过的、API友好的参数
-        deviceTableColumns,  // 列定义
-        '设备明细',           // 文件名
+        '/devices',
+        exportParams,
+        deviceTableColumns,
+        '设备明细',
         deviceDataProcessor // 注入处理器
     )
 }
@@ -161,7 +170,6 @@ const viewLogs = (row) => {
 
 // 统一的加载数据函数
 const loadData = () => {
-    // fetchDevices 内部会调用 buildDeviceListParams 并传入分页
     fetchDevices({
         ...filters,
         dataCenter: selectedCenter.value
@@ -217,11 +225,7 @@ const onDeleteClick = (row) => {
 const openDetails = (id) => { selectedDeviceId.value = id }
 const closeDrawer = () => { selectedDeviceId.value = null }
 
-// 状态颜色辅助函数
-const getStatusType = (status) => {
-    const map = { '在线': 'success', '离线': 'info', '故障': 'danger', '未激活': 'warning' }
-    return map[status] || ''
-}
+// ✨ 4. (关键重构) 删除了本地的 getStatusType, 因为我们现在从 @/utils 导入
 
 // --- 4. 生命周期 ---
 onMounted(() => {
@@ -252,27 +256,27 @@ onMounted(() => {
     margin-bottom: 20px;
 }
 
-/* Card Header 样式 */
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* 确保表格卡片有正确的内边距 */
 .table-card :deep(.el-card__header) {
     padding: 15px 20px;
 }
 
-/* Card Header 样式 */
-.card-header {
+/* ✨ 5. (关键重构) 添加新样式 */
+.status-tags-container {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-wrap: wrap;
+    /* 允许标签换行 */
+    gap: 6px;
+    /* 标签之间的间距 */
 }
 
-/* 确保表格卡片有正确的内边距 */
-.table-card :deep(.el-card__header) {
-    padding: 15px 20px;
+/* (可选) 确保标签本身不会太挤 */
+.status-tags-container .el-tag {
+    margin-bottom: 0;
 }
 </style>
