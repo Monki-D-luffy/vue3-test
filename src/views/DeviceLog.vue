@@ -25,7 +25,7 @@
                         start-placeholder="开始时间" end-placeholder="结束时间" unlink-panels />
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="handleSearch">查询</el-button>
+                    <el-button type="primary" @click="handleSearch" plain>查询</el-button>
                 </el-form-item>
             </el-form>
         </el-card>

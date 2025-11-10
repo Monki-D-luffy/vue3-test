@@ -20,7 +20,7 @@
                 <el-input v-model="filtersModel.keyword" placeholder="设备ID / 名称 / PUUID / SN码" clearable />
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="$emit('search')">搜索</el-button>
+                <el-button type="primary" @click="$emit('search')" plain>搜索</el-button>
                 <el-button @click="$emit('reset')">重置</el-button>
             </el-form-item>
         </el-form>

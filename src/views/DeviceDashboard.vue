@@ -79,7 +79,7 @@ import { ElMessage } from 'element-plus'
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
-// ✨ 2. (关键重构) 导入我们抽离的工具函数
+// 导入我们抽离的工具函数
 import { formatDateTime, getDeviceStatusType } from '@/utils/formatters'
 // (假设你也抽离了 DATA_CENTER_MAP)
 // import { DATA_CENTER_MAP } from '@/constants'
