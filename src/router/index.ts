@@ -49,6 +49,11 @@ const router = createRouter({
           component: () => import('@/views/product/ProductManagement.vue')
         },
         {
+          path: 'firmware',
+          name: 'firmware',
+          component: () => import('@/views/product/FirmwareManagement.vue')
+        },
+        {
           path: 'system', // 匹配 /system
           name: 'system-management',
           // ✨ (关键修改) 路径已更新

@@ -29021,6 +29021,18 @@
       "errorMessage": null,
       "startedAt": "2025-11-10 16:13:04",
       "finishedAt": null
+    },
+    {
+      "id": "task_bADAdFFB-E5D3-1375-6E1f-0C05BedB5A3a",
+      "deviceId": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
+      "deviceName": "极在观家节有",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "downloading",
+      "progress": 20,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 16:21:17",
+      "finishedAt": null
     }
   ]
 }

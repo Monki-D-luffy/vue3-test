@@ -84,7 +84,8 @@ const menuItems = ref([
         title: '产品管理',
         icon: markRaw(Box),
         children: [
-            { index: '/products', title: '产品列表' }
+            { index: '/products', title: '产品列表' },
+            { index: '/firmware', title: '固件管理' }
         ]
     },
     {
