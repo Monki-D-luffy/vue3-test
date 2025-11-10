@@ -10,7 +10,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      // 懒加载 LoginView
+      // 懒加载 LoginView (路径不变)
       component: () => import('../views/Login.vue')
     },
 
@@ -27,28 +27,32 @@ const router = createRouter({
         {
           path: 'overview', // 匹配 /overview
           name: 'overview',
-          // 懒加载 Overview
+          // 懒加载 Overview (路径不变)
           component: () => import('@/views/Overview.vue')
         },
         {
-          path: 'devices', // 匹配 /devices (这就是你的设备列表页)
+          path: 'devices', // 匹配 /devices
           name: 'device-list',
-          component: () => import('@/views/DeviceDashboard.vue')
+          // ✨ (关键修改) 路径已更新
+          component: () => import('@/views/device/DeviceDashboard.vue')
         },
         {
           path: 'devices/log', // 匹配 /devices/log
           name: 'device-log',
-          component: () => import('@/views/DeviceLog.vue')
+          // ✨ (关键修改) 路径已更新
+          component: () => import('@/views/device/DeviceLog.vue')
         },
         {
           path: 'products', // 匹配 /products
           name: 'product-list',
-          component: () => import('@/views/ProductManagement.vue')
+          // ✨ (关键修改) 路径已更新
+          component: () => import('@/views/product/ProductManagement.vue')
         },
         {
           path: 'system', // 匹配 /system
           name: 'system-management',
-          component: () => import('@/views/SystemManagement.vue')
+          // ✨ (关键修改) 路径已更新
+          component: () => import('@/views/system/SystemManagement.vue')
         }
       ]
     },
