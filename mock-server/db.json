@@ -547,7 +547,7 @@
     {
       "id": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
       "name": "极在观家节有",
-      "status": "故障",
+      "status": "升级中",
       "puuid": "PU-20245605",
       "productInfo": "智能插座 / prod_socket_01",
       "deviceType": "智能插座",
@@ -787,13 +787,13 @@
     {
       "id": "0B253fdC-d2CC-0C9d-28Cf-EACf10bAc764",
       "name": "日整器看半研",
-      "status": "故障",
+      "status": "在线",
       "puuid": "PU-20253290",
       "productInfo": "智能插座 / prod_socket_01",
       "deviceType": "智能插座",
       "productId": "prod_socket_01",
-      "firmwareVersion": "1.0.0",
-      "hasNewFirmware": true,
+      "firmwareVersion": "1.0.1",
+      "hasNewFirmware": false,
       "sn": "SN_M32I1JG7Y0J8",
       "isBound": false,
       "dataCenter": "EU-CENTRAL",
@@ -28937,6 +28937,90 @@
       "errorMessage": null,
       "startedAt": "2025-11-10 15:20:03",
       "finishedAt": "2025-11-10 15:20:15"
+    },
+    {
+      "id": "task_12D2E53F-da2F-37e1-0148-1EBA1DDBBF91",
+      "deviceId": "0B253fdC-d2CC-0C9d-28Cf-EACf10bAc764",
+      "deviceName": "日整器看半研",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "success",
+      "progress": 100,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 15:30:18",
+      "finishedAt": "2025-11-10 15:30:30"
+    },
+    {
+      "id": "task_B839CDFc-275F-af7F-ddc5-3EfAe3bff38b",
+      "deviceId": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
+      "deviceName": "极在观家节有",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "downloading",
+      "progress": 20,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 15:51:36",
+      "finishedAt": null
+    },
+    {
+      "id": "task_Bb1dfE4B-4f84-4af2-ED58-F470374c4B42",
+      "deviceId": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
+      "deviceName": "极在观家节有",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "downloading",
+      "progress": 45,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 15:51:50",
+      "finishedAt": null
+    },
+    {
+      "id": "task_F481253d-02ED-9b0B-f6ef-974f9D1457B7",
+      "deviceId": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
+      "deviceName": "极在观家节有",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "downloading",
+      "progress": 49,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 15:52:20",
+      "finishedAt": null
+    },
+    {
+      "id": "task_dB9CDdF2-d327-4CCf-31e3-eC9feC15DE22",
+      "deviceId": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
+      "deviceName": "极在观家节有",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "downloading",
+      "progress": 41,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 16:12:43",
+      "finishedAt": null
+    },
+    {
+      "id": "task_96f243EB-6630-891E-D3C1-8d4b19F90FdF",
+      "deviceId": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
+      "deviceName": "极在观家节有",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "downloading",
+      "progress": 20,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 16:12:55",
+      "finishedAt": null
+    },
+    {
+      "id": "task_4Bb35B7E-937C-4EcD-13b1-cD4D9ef4F9f0",
+      "deviceId": "bdBECC8b-fACD-78DE-1DFA-8Af487AD8dAb",
+      "deviceName": "极在观家节有",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "installing",
+      "progress": 90,
+      "errorMessage": null,
+      "startedAt": "2025-11-10 16:13:04",
+      "finishedAt": null
     }
   ]
 }

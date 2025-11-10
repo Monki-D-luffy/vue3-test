@@ -2,6 +2,7 @@
 import { ref, reactive } from 'vue'
 import api from '@/api'
 import { ElMessage } from 'element-plus'
+// 移除了 'Device' 类型的导入，因为它不再需要
 
 // 定义过滤器类型
 export interface LogFilters {
@@ -70,6 +71,10 @@ export function useDeviceLogs() {
         total: 0
     })
 
+    // --- 新增状态: 仅需控制弹窗可见性 ---
+    const isUpgradeModalVisible = ref(false)
+    // --- (移除了 device 状态) ---
+
     const fetchLogs = async (deviceId: string, filters: LogFilters) => {
         loading.value = true
         try {
@@ -93,6 +98,28 @@ export function useDeviceLogs() {
             loading.value = false
         }
     }
+
+    // --- 新增方法: 用于固件升级 ---
+
+    // --- (移除了 fetchDeviceDetails) ---
+
+    /**
+     * 打开升级模态框
+     */
+    const openUpgradeModal = () => {
+        isUpgradeModalVisible.value = true;
+    }
+
+    /**
+     * 升级完成后的回调
+     */
+    const handleUpgradeDone = () => {
+        // 升级完成，目前日志页无需特殊操作
+        // 未来如果需要，可在此处添加逻辑
+        console.log('Upgrade done event received in composable.')
+    }
+    // ---------------------------------
+
 
     // 分页事件处理
     const handleSizeChange = (newSize: number) => {
@@ -118,6 +145,12 @@ export function useDeviceLogs() {
         handleCurrentChange,
         resetPagination,
         // ✨ 3. (关键重构) 导出构建器
-        buildDeviceLogParams
+        buildDeviceLogParams,
+
+        // --- 导出更新后的状态和方法 ---
+        isUpgradeModalVisible,
+        openUpgradeModal,
+        handleUpgradeDone
+        // --- (移除了 device 和 fetchDeviceDetails) ---
     }
 }

@@ -34,9 +34,15 @@
             <span>设备名称：{{ deviceName }}</span>
             <el-divider direction="vertical" />
             <span>设备ID：{{ deviceId }}</span>
-            <el-button type="primary" :loading="isExporting" @click="handleExport" plain>
-                导出日志
-            </el-button>
+
+            <div class="info-card-buttons">
+                <el-button type="primary" @click="openUpgradeModal" plain>
+                    固件升级
+                </el-button>
+                <el-button type="primary" :loading="isExporting" @click="handleExport" plain>
+                    导出日志
+                </el-button>
+            </div>
         </el-card>
 
         <el-card class="log-table-card" shadow="never">
@@ -75,15 +81,20 @@
                 v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
                 @size-change="onSizeChange" @current-change="onCurrentChange" />
         </el-card>
+
+        <FirmwareUpgradeModal v-model="isUpgradeModalVisible" :device="deviceForModal" @upgrade-done="onUpgradeDone" />
     </div>
 </template>
 
 <script setup lang="ts">
+// *** 修改点: 导入 computed ***
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 import AppPagination from '@/components/AppPagination.vue'
+// *** 新增导入 ***
+import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
 
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
 import { useDataExport } from '@/composables/useDataExport'
@@ -92,7 +103,7 @@ import { formatDateTime } from '@/utils/formatters'
 import { parseLogDetails } from '@/utils/logParser'
 const route = useRoute()
 
-// --- 1. 基础状态 ---
+// --- 1. 基础状态 (你原有的代码) ---
 const deviceId = ref(route.query.id as string || 'N/A')
 const deviceName = ref(route.query.name as string || '未知设备')
 const pageTitle = computed(() => `设备日志`)
@@ -104,7 +115,7 @@ const filters = reactive({
     dateRange: null as [Date, Date] | null
 })
 
-// --- 2. 使用 Composable ---
+// --- 2. 使用 Composable (*** 修改点: 更新解构 ***) ---
 const {
     loading,
     logData,
@@ -112,22 +123,39 @@ const {
     fetchLogs,
     handleSizeChange,
     handleCurrentChange,
-    resetPagination
+    resetPagination,
+    // *** 新增解构 ***
+    isUpgradeModalVisible,
+    openUpgradeModal,
+    handleUpgradeDone
 } = useDeviceLogs()
 
 const { isExporting, exportData } = useDataExport()
 
-// 定义导出的列
+// *** 新增: 构造弹窗所需的 device 对象 ***
+// 弹窗只需要 id 和 name 字段
+const deviceForModal = computed(() => {
+    if (deviceId.value === 'N/A') {
+        return null
+    }
+    // 构造一个临时的对象，满足 FirmwareUpgradeModal 的 props 需求
+    return {
+        id: deviceId.value,
+        name: deviceName.value
+    }
+})
+
+
+// 定义导出的列 (你原有的代码)
 const logTableColumns = [
     { label: '时间(GMT+8)', key: 'time' },
     { label: '设备事件', key: 'event' },
     { label: '事件类型', key: 'type' },
     { label: '事件详情', key: 'details' },
     { label: '来源', key: 'source' }
-    // ✨ 确保这里也移除了 'switch' 列，因为它是交互控件，不适合导出
 ]
 
-// --- 3. 逻辑函数 ---
+// --- 3. 逻辑函数 (你原有的代码) ---
 
 // 添加截断函数, 用于在表格中显示原始详情
 const truncateRawDetails = (rawDetails: any): string => {
@@ -170,6 +198,11 @@ const loadData = () => {
     fetchLogs(deviceId.value, filters)
 }
 
+// *** 新增: 升级完成的回调 ***
+const onUpgradeDone = () => {
+    handleUpgradeDone();
+}
+
 // 搜索
 const handleSearch = () => {
     ElMessage.success('正在查询日志...')
@@ -187,7 +220,7 @@ const onCurrentChange = (newPage: number) => {
     loadData()
 }
 
-// --- 4. 生命周期 ---
+// --- 4. 生命周期 (*** 修改点: 移除了 loadDevice() ***) ---
 onMounted(() => {
     loadData()
 })
@@ -195,6 +228,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 你原有的所有样式 */
 .device-log-container {
     padding: 0;
 }
@@ -233,7 +267,7 @@ onMounted(() => {
 }
 
 
-/* 设备信息栏样式 */
+/* 设备信息栏样式 (*** 已修改 ***) */
 .info-card :deep(.el-card__body) {
     padding: 15px 20px;
     display: flex;
@@ -246,8 +280,14 @@ onMounted(() => {
     margin: 0 16px;
 }
 
-.info-card .el-button {
+/* *** 新增: 按钮容器样式 *** */
+.info-card-buttons {
     margin-left: auto;
+    /* 将按钮组推到最右侧 */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* 控制按钮之间的间距 */
 }
 
 /* 表格日志详情样式 */
