@@ -44,6 +44,7 @@ api.interceptors.response.use(
       }
       return Promise.reject(new Error(response.data.message || 'Error'))
     }
+    // 拦截器中，我们返回的是完整的 response，在 API 函数中再解构 .data
     return response
   },
   (error) => {
@@ -65,4 +66,147 @@ api.interceptors.response.use(
   }
 )
 
+// =================================================================
+// ✨✨✨ 新增：API 类型定义 (Phase 1, Step 3) ✨✨✨
+// =================================================================
+
+/**
+ * 模拟服务器的统一响应结构
+ */
+export interface ApiResponse<T> {
+  code: number
+  message: string
+  success: boolean
+  data: T
+}
+
+/**
+ * 产品类型 (用于固件关联)
+ */
+export interface Product {
+  id: string
+  name: string
+  type: string
+}
+
+/**
+ * 固件信息类型
+ */
+export interface Firmware {
+  id: string
+  version: string
+  productId: string
+  productName: string
+  releaseNotes: string
+  fileUrl: string
+  uploadedAt: string
+}
+
+/**
+ * 固件上传数据结构
+ */
+export interface FirmwareUploadData {
+  version: string
+  productId: string
+  releaseNotes: string
+}
+
+/**
+ * 升级任务状态类型
+ */
+export type UpgradeTaskStatus = 'pending' | 'downloading' | 'installing' | 'success' | 'failed' | 'idle'
+
+/**
+ * 升级任务类型
+ */
+export interface UpgradeTask {
+  id: string
+  deviceId: string
+  deviceName: string
+  firmwareId: string
+  firmwareVersion: string
+  status: UpgradeTaskStatus
+  progress: number
+  errorMessage: string | null
+  startedAt: string
+  finishedAt: string | null
+}
+
+/**
+ * 分页查询参数
+ */
+export interface PaginationParams {
+  _page: number
+  _limit: number
+  [key: string]: any // 允许其他筛选条件
+}
+
+/**
+ * 分页响应结构
+ */
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+}
+
+
+// =================================================================
+// ✨✨✨ 新增：API 客户端函数 (Phase 1, Step 3) ✨✨✨
+// =================================================================
+
+/**
+ * 1. 获取固件列表 (分页)
+ * @param params 分页和筛选参数
+ */
+export const fetchFirmwares = async (params: PaginationParams): Promise<PaginatedResponse<Firmware>> => {
+  // api.get 返回的是 AxiosResponse，其数据在 response.data
+  // response.data 是我们的 ApiResponse<T> 结构
+  // response.data.data 才是真正的固件数组
+  const response = await api.get<ApiResponse<Firmware[]>>('/firmwares', { params })
+
+  // 从响应头获取 json-server 提供的总数
+  const totalCount = response.headers['x-total-count'] || 0
+
+  return {
+    items: response.data.data,
+    total: +totalCount // 确保是数字
+  }
+}
+
+/**
+ * (新增) 获取所有产品列表 (用于上传固件时的下拉菜单)
+ */
+export const fetchProducts = async (): Promise<Product[]> => {
+  const response = await api.get<ApiResponse<Product[]>>('/products')
+  return response.data.data // 直接返回产品数组
+}
+
+/**
+ * 2. 上传新固件
+ * @param data 固件信息
+ */
+export const uploadFirmware = async (data: FirmwareUploadData): Promise<Firmware> => {
+  const response = await api.post<ApiResponse<Firmware>>('/firmwares', data)
+  return response.data.data // 返回创建的固件对象
+}
+
+/**
+ * 3. 触发设备升级
+ * @param deviceId 设备ID
+ */
+export const startDeviceUpgrade = async (deviceId: string): Promise<UpgradeTask> => {
+  const response = await api.post<ApiResponse<UpgradeTask>>('/devices/upgrade', { deviceId })
+  return response.data.data // 返回新创建的升级任务
+}
+
+/**
+ * 4. 轮询升级任务状态
+ * @param taskId 任务ID
+ */
+export const getUpgradeTaskStatus = async (taskId: string): Promise<UpgradeTask> => {
+  const response = await api.get<ApiResponse<UpgradeTask>>(`/upgrade-task/${taskId}`)
+  return response.data.data // 返回更新后的任务状态
+}
+
+// 默认导出 axios 实例
 export default api

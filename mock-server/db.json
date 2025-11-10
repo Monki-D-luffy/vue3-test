@@ -145,22 +145,6 @@
       "gmtLastOnline": "2022-11-02 08:23:17"
     },
     {
-      "id": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "name": "将最工车养县",
-      "status": "离线",
-      "puuid": "PU-20236325",
-      "productInfo": "智能插座 / prod_socket_01",
-      "deviceType": "智能插座",
-      "productId": "prod_socket_01",
-      "firmwareVersion": "1.0.1",
-      "hasNewFirmware": false,
-      "sn": "SN_257C8O77V7M7",
-      "isBound": false,
-      "dataCenter": "CN",
-      "gmtActive": "2024-04-07 14:30:51",
-      "gmtLastOnline": "2025-02-27 10:09:18"
-    },
-    {
       "id": "F2981eBe-2Abb-82c1-80a9-6DA3EAbc32e7",
       "name": "头因证行",
       "status": "在线",
@@ -9345,16 +9329,6 @@
       "switch": false
     },
     {
-      "id": 114,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2025-01-23 20:46:43.228",
-      "event": "设备在线",
-      "type": "OTA升级",
-      "details": "TkkAilQw6++=/=j4++j/K+B/7+O++//+=/e+r76+h=/m/waok+k+/+htLf///57+=/+nq/bbo/7i8+=/P8",
-      "source": "平台下发",
-      "switch": false
-    },
-    {
       "id": 407,
       "deviceId": "4Bb0cef0-de3b-Ffef-E7F6-e837A5b5Cc1e",
       "time": "2025-01-23 14:37:13.827",
@@ -9642,16 +9616,6 @@
       "type": "数据转换",
       "details": "TkkAilQm3++3h/1/K/C/+8q/NG8//Z=+//+q/R++++4/H//wd7=3=1/+cn/I/=++d4=/+U0+//57W+n=+/L+=/y3+",
       "source": "云端规则",
-      "switch": true
-    },
-    {
-      "id": 117,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2025-01-07 03:23:03.040",
-      "event": "设备在线",
-      "type": "OTA升级",
-      "details": "TkkAilQ/=L+/z/f///w+=+gV4+2v//ds+/lL//+++3/69Cy+h=q+/+i//ne5/==/RV=0D5G4+o+//1/r+=/Dz+x4",
-      "source": "设备本身",
       "switch": true
     },
     {
@@ -11045,16 +11009,6 @@
       "switch": false
     },
     {
-      "id": 118,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2024-10-05 18:57:58.528",
-      "event": "设备告警",
-      "type": "状态通知",
-      "details": "TkkAilQ+spO+8/9/+++/b/++++ne/=+qb+36+S//h+/=5/45+/5+P5+/a+=5/a+wM/+Xq+8+7Mhv5/3+yw//+/Xv/2a+6++/",
-      "source": "设备本身",
-      "switch": false
-    },
-    {
       "id": 1596,
       "deviceId": "F51BBdae-1F5f-3f4B-1928-dFD68B56Ab93",
       "time": "2024-10-05 15:32:02.370",
@@ -11182,16 +11136,6 @@
       "type": "OTA升级",
       "details": "TkkAilQP+Y+Z+k//+D/q//IX9m7uYu=l++5/+9bbZ1+/+/8p7jE1/r+y+///y/=m5N=/=j8+/3+/////d++=5837zU/9I=c+/J/d//+/x+4",
       "source": "设备本身",
-      "switch": false
-    },
-    {
-      "id": 109,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2024-09-29 09:55:27.373",
-      "event": "设备上报",
-      "type": "状态通知",
-      "details": "TkkAilQ4/++1q+k+=/h++52bHv==+on3////8+/+/i+9=I/Oh//D/4/2/7e1g+/+/+/n",
-      "source": "平台下发",
       "switch": false
     },
     {
@@ -11423,16 +11367,6 @@
       "details": "TkkAilQ++2+==kU=+6I9K=io4=/6=+W+dg+Oc/+/2+Lx/+//G0/n/O1w=+Mn+/t=//qtr/56+6+n+pcL0",
       "source": "设备本身",
       "switch": false
-    },
-    {
-      "id": 120,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2024-09-21 02:45:30.170",
-      "event": "平台下发",
-      "type": "状态通知",
-      "details": "TkkAilQg/+/Efl=+/+io+/M+d/8s=//=+N+vi4zn=TR+//p/+/=e+++2C=7+8/728g/hs=8/A/87KY3S=7x/T/",
-      "source": "设备本身",
-      "switch": true
     },
     {
       "id": 2136,
@@ -12325,16 +12259,6 @@
       "switch": false
     },
     {
-      "id": 121,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2024-07-31 07:24:34.829",
-      "event": "设备在线",
-      "type": "云端处理",
-      "details": "TkkAilQ4Kvq88t2Fd4/D+o1N==6+gEtu/1+z77=34++22R/IC/==/+=/Mt//2+9/DM/5",
-      "source": "平台下发",
-      "switch": false
-    },
-    {
       "id": 46,
       "deviceId": "7f42C6B9-9bbA-B3A2-6Da9-8EC4DB1C8EEf",
       "time": "2024-07-29 16:06:08.487",
@@ -13123,16 +13047,6 @@
       "details": "TkkAilQt/D/9a///=+/a6/G=+4A+C2/++++0z578/+4h+P/+3zi/dqT8tj56/+8=J52g=ui+/7/8rDcrd+//+/1/+/68=d4H=+///=m4",
       "source": "平台下发",
       "switch": true
-    },
-    {
-      "id": 122,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2024-06-02 07:32:48.913",
-      "event": "设备离线",
-      "type": "数据转换",
-      "details": "TkkAilQx/+s4+=/=60=//+7+F5//cc/jw2/=+=y454xn+7=Ia+D=r=l+++um61//F/=//o6n",
-      "source": "设备本身",
-      "switch": false
     },
     {
       "id": 311,
@@ -15105,16 +15019,6 @@
       "switch": false
     },
     {
-      "id": 113,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2024-02-22 17:41:29.526",
-      "event": "设备告警",
-      "type": "云端处理",
-      "details": "TkkAilQ1/++j9=mQ+h+=6/=+/=02c+72+/+/K==3W/=oy//+//5=C/=+2C3es3+++h3/M1/D+/r021/+f=+s11J///+6v+w//++/=2Xd0",
-      "source": "云端规则",
-      "switch": true
-    },
-    {
       "id": 875,
       "deviceId": "be733E73-69Fe-FF9e-cD8A-Abfd3cDbC7Af",
       "time": "2024-02-22 12:48:40.916",
@@ -15611,16 +15515,6 @@
       "event": "平台下发",
       "type": "告警事件",
       "details": "TkkAilQk5+//+57/4x0==Ea+//+X/fRj64D+=/+8/aQ58+E=++k/tL/=//267/+4+/V///=+lz6/bQ+3+t+=Xh/u/5y+/=+/=7g/D=+2y+",
-      "source": "平台下发",
-      "switch": true
-    },
-    {
-      "id": 111,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2024-01-23 22:44:52.433",
-      "event": "设备在线",
-      "type": "云端处理",
-      "details": "TkkAilQ+0/s+5==P2+e6/Sp/r=2PfIx6+=h+/++45+n/8+==2Y++e+K++2+n/w/NYV0/4++/++/++42+/N=P/L//=+X/0+=R971/15r53",
       "source": "平台下发",
       "switch": true
     },
@@ -17151,16 +17045,6 @@
       "event": "设备离线",
       "type": "云端处理",
       "details": "TkkAilQQ+q//+/q8y/DV/i/5/k+3/8/1c5=+a4+4+7A/u73+8/=//8h+3T/88//2+2I+N//=p5/+/+=h/e+8/N+7+cI=+//0/",
-      "source": "平台下发",
-      "switch": false
-    },
-    {
-      "id": 110,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2023-10-29 18:46:20.880",
-      "event": "设备上报",
-      "type": "OTA升级",
-      "details": "TkkAilQ+5hpj5/V+J/+sqh+/7+6B/ba1+14=2f/+r/8K/7=/=/=4e+734n/m5m=m+/=5Uh+/P//1/5/e",
       "source": "平台下发",
       "switch": false
     },
@@ -19283,16 +19167,6 @@
       "details": "TkkAilQmQk+==1Hh=4J2t++=v=+++6//h++p6D/+/hD/I+3+0+R73+R+x+E//3+k=m50",
       "source": "设备本身",
       "switch": true
-    },
-    {
-      "id": 119,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2023-06-28 21:53:11.204",
-      "event": "平台下发",
-      "type": "OTA升级",
-      "details": "TkkAilQ1Oc=+/XV+p/I=+//b=eq+=u+=+==3/7+f8+=+R+/UT+u//+/4/u=L/+e/=Tq++/=++",
-      "source": "设备本身",
-      "switch": false
     },
     {
       "id": 924,
@@ -23335,16 +23209,6 @@
       "switch": false
     },
     {
-      "id": 116,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2022-10-30 03:35:42.296",
-      "event": "平台下发",
-      "type": "数据转换",
-      "details": "TkkAilQ4+9q=///+=+/+64i4g/8sRr31/==+/=/8+iL3//+=++1/=+2D+=7/+==/j+++W/8/=v2/d7+7//p3K4+/",
-      "source": "平台下发",
-      "switch": true
-    },
-    {
       "id": 1473,
       "deviceId": "dB6c25f3-Deb6-FFdd-60cD-Dd8E98e79d8b",
       "time": "2022-10-29 12:56:42.660",
@@ -23683,16 +23547,6 @@
       "details": "TkkAilQ+w=//=+rR=7i+//3=+=JPq+=//3//z/65=/+d=V+8w/1++//1+++=+v2=43+/+/wE+3gG1/=5+0//5/+",
       "source": "设备本身",
       "switch": true
-    },
-    {
-      "id": 115,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2022-10-08 11:04:29.275",
-      "event": "平台下发",
-      "type": "OTA升级",
-      "details": "TkkAilQ54K/p++/+wsp/==+lq++350/n82u/+9=mg=/=237/J=+v/2//++/+//C+=/=/MF+8/w+",
-      "source": "平台下发",
-      "switch": false
     },
     {
       "id": 2116,
@@ -24322,16 +24176,6 @@
       "type": "OTA升级",
       "details": "TkkAilQL/+h=2g++/3w/y++2=++W7+/yF/66=g=+4++/=hP4b9pC+=/72=f=iw++///w/9x////0=///m//Y8/3/+/+5v+",
       "source": "云端规则",
-      "switch": true
-    },
-    {
-      "id": 112,
-      "deviceId": "daCEbb54-442a-8C1D-fDEd-128bfc8B7dbC",
-      "time": "2022-09-04 15:05:16.942",
-      "event": "设备告警",
-      "type": "云端处理",
-      "details": "TkkAilQ/Dw/+/f6/nW41+/xh03+7+++Gc=+/v/428+l005/2+/Atx/1XY=c=/+/PW/+2+",
-      "source": "平台下发",
       "switch": true
     },
     {
