@@ -1,6 +1,10 @@
 <template>
     <div class="dashboard-container">
-        <DeviceDetailDrawer v-if="selectedDeviceId" :device-id="selectedDeviceId" @close="closeDrawer" />
+        <DeviceDetailDrawer v-if="selectedDeviceId" :device-id="selectedDeviceId" @close="closeDrawer"
+            @trigger-upgrade="handleUpgradeClick" />
+
+        <FirmwareUpgradeModal v-model="upgradeModalVisible" :device="selectedDeviceForUpgrade"
+            @upgrade-done="onUpgradeDone" />
 
         <div class="page-header">
             <h1 class="title">设备明细</h1>
@@ -49,11 +53,14 @@
                     </template>
                 </el-table-column>
 
+                <el-table-column prop="firmwareVersion" label="固件版本" min-width="110" />
+
                 <el-table-column prop="puuid" label="生产PUUID" width="200" />
                 <el-table-column prop="productId" label="所属产品/产品ID" width="180" />
                 <el-table-column prop="sn" label="设备SN码" width="180" />
                 <el-table-column prop="gmtActive" label="激活时间" width="180" />
                 <el-table-column prop="gmtLastOnline" label="最近上线时间" width="180" />
+
                 <el-table-column label="操作" fixed="right" min-width="150">
                     <template #default="scope">
                         <el-button link type="primary" @click="viewLogs(scope.row)">查看</el-button>
@@ -76,19 +83,19 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+// ✨ 修改：移除 Top/Upgrade 图标导入
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
 // 导入我们抽离的工具函数
 import { formatDateTime, getDeviceStatusType } from '@/utils/formatters'
-// (假设你也抽离了 DATA_CENTER_MAP)
-// import { DATA_CENTER_MAP } from '@/constants'
 
 // 引入组件
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 import AppPagination from '@/components/AppPagination.vue'
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 import StatCard from '@/components/StatCard.vue'
+import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
 
 // 引入 Composables
 import { useDeviceSummary } from '@/composables/useDeviceSummary'
@@ -96,17 +103,17 @@ import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceLis
 import { useDeviceActions } from '@/composables/useDeviceActions'
 import { useDataExport } from '@/composables/useDataExport'
 
-// --- 1. 基础状态 ---
+// --- 1. 基础状态 (沿用) ---
 const router = useRouter()
 const selectedCenter = ref('CN')
-const selectedDeviceId = ref(null)
-const dataCenterMap = { // (如果你没有抽离到 constants，这个暂时保留)
+const selectedDeviceId = ref(null) // 用于详情抽屉
+const dataCenterMap = {
     'CN': '中国数据中心', 'US-WEST': '美西数据中心', 'EU-CENTRAL': '中欧数据中心',
     'IN': '印度数据中心', 'US-EAST': '美东数据中心', 'EU-WEST': '西欧数据中心', 'SG': '新加坡数据中心',
 }
 const filters = reactive({ isBound: '', productId: '', dateRange: '', keyword: '' })
 
-// --- 2. 使用 Composables ---
+// --- 2. 使用 Composables (沿用) ---
 const { summary, fetchSummary } = useDeviceSummary()
 const {
     loading, deviceList, pagination,
@@ -115,10 +122,15 @@ const {
 const { handleDelete } = useDeviceActions()
 const { isExporting, exportData } = useDataExport()
 
-// 列定义
+// --- 固件升级状态 (沿用) ---
+const upgradeModalVisible = ref(false)
+const selectedDeviceForUpgrade = ref(null)
+
+// (沿用)
 const deviceTableColumns = [
     { label: '设备名称/ID', key: 'name' },
-    { label: '设备状态', key: 'status' }, // (key 保持不变, processor 会处理)
+    { label: '设备状态', key: 'status' },
+    { label: '固件版本', key: 'firmwareVersion' },
     { label: '生产PUUID', key: 'puuid' },
     { label: '所属产品/产品ID', key: 'productId' },
     { label: '设备SN码', key: 'sn' },
@@ -128,19 +140,17 @@ const deviceTableColumns = [
 
 // --- 3. 整合逻辑函数 ---
 
-// ✨ 3. (关键重构) 更新数据处理器
+// (沿用)
 const deviceDataProcessor = (data) => {
     return data.map(row => ({
         ...row,
-        // 格式化日期
         gmtActive: formatDateTime(row.gmtActive),
         gmtLastOnline: formatDateTime(row.gmtLastOnline),
-        // (核心) 在导出时, 将 status 数组转换回 CSV 友好的字符串
         status: Array.isArray(row.status) ? row.status.join(', ') : row.status
     }))
 }
 
-// 导出处理函数
+// (沿用)
 const handleExport = () => {
     const currentFilters = {
         ...filters,
@@ -153,11 +163,11 @@ const handleExport = () => {
         exportParams,
         deviceTableColumns,
         '设备明细',
-        deviceDataProcessor // 注入处理器
+        deviceDataProcessor
     )
 }
 
-// 跳转到设备日志页面
+// (沿用)
 const viewLogs = (row) => {
     router.push({
         name: 'device-log',
@@ -168,7 +178,7 @@ const viewLogs = (row) => {
     })
 }
 
-// 统一的加载数据函数
+// (沿用)
 const loadData = () => {
     fetchDevices({
         ...filters,
@@ -176,7 +186,7 @@ const loadData = () => {
     })
 }
 
-// 切换数据中心
+// (沿用)
 const handleCenterChange = (command) => {
     selectedCenter.value = command
     ElMessage.success(`已切换至 ${dataCenterMap[command]}`)
@@ -185,14 +195,14 @@ const handleCenterChange = (command) => {
     fetchSummary(command)
 }
 
-// 搜索
+// (沿用)
 const handleSearch = () => {
     ElMessage.success('正在搜索...')
     pagination.currentPage = 1
     loadData()
 }
 
-// 重置
+// (沿用)
 const handleReset = () => {
     filters.isBound = ''
     filters.productId = ''
@@ -203,7 +213,7 @@ const handleReset = () => {
     loadData()
 }
 
-// 分页事件适配
+// (沿用)
 const onSizeChange = (newSize) => {
     handleSizeChange(newSize)
     loadData()
@@ -213,7 +223,7 @@ const onCurrentChange = (newPage) => {
     loadData()
 }
 
-// 删除点击事件
+// (沿用)
 const onDeleteClick = (row) => {
     handleDelete(row, () => {
         loadData()
@@ -221,13 +231,44 @@ const onDeleteClick = (row) => {
     })
 }
 
-// 详情抽屉控制
+// (沿用) 详情抽屉控制
 const openDetails = (id) => { selectedDeviceId.value = id }
 const closeDrawer = () => { selectedDeviceId.value = null }
 
-// ✨ 4. (关键重构) 删除了本地的 getStatusType, 因为我们现在从 @/utils 导入
 
-// --- 4. 生命周期 ---
+// --- ✨ 4. 升级逻辑 (修改) ✨ ---
+
+/**
+ * 点击"升级"按钮时触发
+ * @param {object} device - 由抽屉组件 emit 传回的完整 device 对象
+ */
+const handleUpgradeClick = (device) => {
+    selectedDeviceForUpgrade.value = device // 传递完整的 device 对象
+    upgradeModalVisible.value = true
+    closeDrawer() // (可选) 点升级时关闭详情抽屉
+}
+
+/**
+ * 当升级弹窗通知升级完成时 (无论成功或失败)
+ */
+const onUpgradeDone = () => {
+    // 刷新列表以更新固件版本和 hasNewFirmware 状态
+    loadData()
+    // 也刷新一下统计卡片
+    fetchSummary(selectedCenter.value)
+    // (可选) 如果抽屉还开着，也刷新一下抽屉
+    if (selectedDeviceId.value) {
+        // 重新打开（或刷新）抽屉的逻辑
+        // 因为抽屉是watch deviceId的，我们需要一个方法来强制它刷新
+        // 目前最简单的方法是关闭再打开，但体验不好
+        // 更好的方法是让 useDeviceDetail 暴露一个 refresh 方法
+        // ...
+        // [当前实现]: 升级时已关闭抽屉，此步暂不需要
+    }
+}
+
+
+// --- 5. 生命周期 (沿用) ---
 onMounted(() => {
     fetchSummary(selectedCenter.value)
     loadData()
@@ -266,16 +307,12 @@ onMounted(() => {
     padding: 15px 20px;
 }
 
-/* ✨ 5. (关键重构) 添加新样式 */
 .status-tags-container {
     display: flex;
     flex-wrap: wrap;
-    /* 允许标签换行 */
     gap: 6px;
-    /* 标签之间的间距 */
 }
 
-/* (可选) 确保标签本身不会太挤 */
 .status-tags-container .el-tag {
     margin-bottom: 0;
 }

@@ -1,7 +1,20 @@
-<!-- 详情页 -->
 <template>
-    <el-drawer v-model="visible" title="设备详情" direction="rtl" size="50%" @closed="$emit('close')">
+    <el-drawer :model-value="true" title="设备详情" direction="rtl" size="50%" @closed="onClose">
         <div v-loading="deviceLoading" style="padding: 20px; min-height: 300px;">
+            <div class="action-bar" v-if="deviceDetails">
+                <el-button v-if="deviceDetails.hasNewFirmware && deviceDetails.status !== '升级中'" type="primary"
+                    :icon="Top" @click="onUpgradeClick">
+                    升级固件 ({{ deviceDetails.firmwareVersion }})
+                </el-button>
+                <el-button v-else-if="deviceDetails.status === '升级中'" type="info" loading plain disabled>
+                    正在升级...
+                </el-button>
+                <el-button v-else type="success" :icon="CircleCheck" plain disabled>
+                    已是最新版本 ({{ deviceDetails.firmwareVersion }})
+                </el-button>
+            </div>
+            <el-divider v-if="deviceDetails" />
+
             <el-descriptions v-if="deviceDetails" :column="2" border>
                 <template #title>
                     <div class="card-header">
@@ -24,21 +37,38 @@
                         {{ deviceDetails.isBound ? '已绑定' : '未绑定' }}
                     </el-tag>
                 </el-descriptions-item>
-                <el-descriptions-item label="激活时间">{{ deviceDetails.gmtActive }}</el-descriptions-item>
-                <el-descriptions-item label="最近上线时间">{{ deviceDetails.gmtLastOnline }}</el-descriptions-item>
+                <el-descriptions-item label="激活时间">{{ formatDateTime(deviceDetails.gmtActive) }}</el-descriptions-item>
+                <el-descriptions-item label="最近上线">{{ formatDateTime(deviceDetails.gmtLastOnline)
+                    }}</el-descriptions-item>
             </el-descriptions>
 
-            <el-empty v-if="!deviceDetails && !deviceLoading" description="无设备详情" />
+            <el-divider v-if="deviceDetails">原始数据</el-divider>
+            <pre v-if="deviceDetails" class="raw-data">{{ JSON.stringify(deviceDetails, null, 2) }}</pre>
+
+            <el-empty v-if="!deviceDetails && !deviceLoading" description="未能加载设备数据" />
         </div>
     </el-drawer>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import api from '@/api'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted, defineProps, defineEmits, watch } from 'vue'
+// [修正]：导入需要的组件
+import {
+    ElDrawer,
+    ElDescriptions,
+    ElDescriptionsItem,
+    ElTag,
+    ElEmpty,
+    ElButton,
+    ElDivider,
+    ElMessage
+} from 'element-plus'
+// [新增]：导入图标
+import { Top, CircleCheck } from '@element-plus/icons-vue'
+import api from '@/api' // [沿用] 你的 api 实例
+import { formatDateTime } from '@/utils/formatters'
 
-// 1. 定义组件接收的属性 (props)
+// 1. 定义组件的 props (和之前一样)
 const props = defineProps({
     deviceId: {
         type: String,
@@ -46,69 +76,90 @@ const props = defineProps({
     }
 })
 
-// 2. 定义组件能发出的事件 (emits)
-const emit = defineEmits(['close'])
+// 2. [修正]：定义组件能发出的事件 (emits)，新增 'trigger-upgrade'
+const emit = defineEmits(['close', 'trigger-upgrade'])
 
-// 3. 内部状态
-const visible = ref(true) // 组件一旦被 v-if 渲染，抽屉就应立即显示
+// 3. 内部状态 (和之前一样)
+// [修正]：移除 visible = ref(true)，因为 model-value 会控制
 const deviceDetails = ref(null)
 const deviceLoading = ref(false)
 
 // 4. API 请求 (和之前一样)
 const fetchDeviceDetails = async (id) => {
+    if (!id) return
     deviceLoading.value = true
     deviceDetails.value = null
     try {
-        const response = await api.get(`/devices/${id}`) //
+        const response = await api.get(`/devices/${id}`)
         deviceDetails.value = response.data.data
     } catch (error) {
         ElMessage.error('获取设备详情失败')
         console.error(error)
-        visible.value = false // 加载失败时自动关闭
-        emit('close')         // 并通知父组件
+        onClose() // 加载失败时自动关闭
     } finally {
         deviceLoading.value = false
     }
 }
 
-// 5. 辅助函数 (和之前一样)
+// 5. 辅助函数
 const getStatusType = (status) => {
     switch (status) {
         case '在线': return 'success'
         case '离线': return 'info'
         case '故障': return 'danger'
         case '未激活': return 'warning'
+        case '升级中': return 'processing' // [新增]
         default: return ''
     }
 }
 
-// 6. 生命周期钩子
-onMounted(() => {
-    // 当组件被创建(v-if=true)时，
-    // 立即使用传入的 prop (deviceId) 来获取数据
-    if (props.deviceId) {
-        fetchDeviceDetails(props.deviceId)
-    }
-})
+// 6. [新增]：升级按钮点击处理
+const onUpgradeClick = () => {
+    // 将完整的设备对象发射出去
+    emit('trigger-upgrade', deviceDetails.value)
+    // (可选) 升级时自动关闭抽屉
+    onClose()
+}
+
+// 7. [新增]：关闭抽屉的统一处理
+const onClose = () => {
+    emit('close')
+}
+
+// 8. 生命周期钩子
+// [修正]：使用 watch 替代 onMounted，以便在 deviceId 变化时重新加载
+watch(
+    () => props.deviceId,
+    (newId) => {
+        if (newId) {
+            fetchDeviceDetails(newId)
+        }
+    },
+    { immediate: true } // 立即执行一次
+)
 </script>
 
 <style scoped>
-/* 这些样式只属于这个组件，
-  父组件不需要再关心抽屉长什么样
-*/
+/* [沿用] */
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 18px;
-    font-weight: 600;
 }
 
-/* :deep() 允许我们修改 el-drawer 的内部样式
-  我们不希望抽屉的 body 有内边距，
-  因为我们自己在内容区加了 padding
-*/
-:deep(.el-drawer__body) {
-    padding: 0;
+/* [新增] */
+.action-bar {
+    margin-bottom: 16px;
+}
+
+.raw-data {
+    background-color: #fafafa;
+    border: 1px solid #eaeaea;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 </style>
