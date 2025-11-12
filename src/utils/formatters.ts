@@ -1,13 +1,12 @@
-/**
- * 格式化日期时间字符串
- * @param dateString 任何有效的日期输入
- * @returns 格式化的字符串 'YYYY-MM-DD HH:mm:ss' 或 ''
- */
-export const formatDateTime = (dateString: string | Date | null | undefined): string => {
-    if (!dateString) return ''
+// src/utils/formatters.ts
 
+/**
+ * 格式化日期时间字符串 (YYYY-MM-DD HH:mm:ss)
+ */
+export const formatDateTime = (dateString: string | Date | number | null | undefined): string => {
+    if (!dateString) return ''
     const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '' // 处理无效日期
+    if (isNaN(date.getTime())) return ''
 
     const pad = (num: number) => num.toString().padStart(2, '0')
 
@@ -22,17 +21,33 @@ export const formatDateTime = (dateString: string | Date | null | undefined): st
 }
 
 /**
- * (✨ 新增)
+ * ✨ [修复] 格式化日期 (YYYY-MM-DD) - 尊重本地时区
+ * 用于查询参数构建，避免 toISOString() 导致的跨天问题
+ */
+export const formatDate = (dateInput: Date | string | number | null | undefined): string => {
+    if (!dateInput) return ''
+    const date = new Date(dateInput)
+    if (isNaN(date.getTime())) return ''
+
+    const pad = (num: number) => num.toString().padStart(2, '0')
+
+    const Y = date.getFullYear()
+    const M = pad(date.getMonth() + 1)
+    const D = pad(date.getDate())
+
+    return `${Y}-${M}-${D}`
+}
+
+/**
  * 根据设备状态返回 Element Plus 的 Tag 类型
- * @param status 设备状态 (如 '在线', '离线')
- * @returns 对应的 'type' (如 'success', 'info')
  */
 export const getDeviceStatusType = (status: string): string => {
     const map: Record<string, string> = {
         '在线': 'success',
         '离线': 'info',
         '故障': 'danger',
-        '未激活': 'warning'
+        '未激活': 'warning',
+        '升级中': 'primary' // 补充升级中状态
     }
-    return map[status] || 'default' // 使用 'default' 作为备用
+    return map[status] || ''
 }

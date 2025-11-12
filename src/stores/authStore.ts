@@ -1,69 +1,49 @@
 // src/stores/authStore.ts
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-// import axios from 'axios'
-import router from '@/router' // 导入路由实例
 import { ElMessage } from 'element-plus'
 import api from '@/api'
-// 1. 定义我们API的基础URL
-// const API_BASE_URL = 'http://192.168.1.100/api'
+import type { UserInfo } from '@/types'        // ✨ 引入统一类型
+import { STORAGE_KEYS } from '@/types'         // ✨ 引入常量
 
-// 2. 定义一个类型，匹配您提供的后端数据
-//    (这在TypeScript中是最佳实践)
-interface UserInfo {
-  nickname: string
-  email: string
-  userId: string
-  [key: string]: any // 其他字段
-}
-
-// 3. 定义并导出 store
 export const useAuthStore = defineStore('auth', () => {
-  // --- State (状态) ---
-  // 用 ref() 来定义响应式状态
-  const token = ref<string | null>(null)
+  // --- State ---
+  const token = ref<string | null>(localStorage.getItem(STORAGE_KEYS.TOKEN))
   const userInfo = ref<UserInfo | null>(null)
 
-  // --- Actions (动作) ---
+  // --- Actions ---
 
   // 登录动作
-  const login = async (account: any, password: any) => {
+  const login = async (account: string, password: string) => {
     try {
-      // 4. 调用模拟的登录 API
-      //    (我们下一步会在 mockjs 中创建这个 /api/auth/login 接口)
+      // 调用 API
+      // 注意：我们的拦截器已经处理了 HTTP 错误和 code !== 200 的情况
+      // 所以这里只要能拿到 response，说明业务是成功的
       const response = await api.post(`/auth/login`, {
         account,
         password
       })
 
-      // 5. 检查后端返回的数据
-      if (response.data && response.data.code === 200) {
-        // 6. 登录成功！
-        //    将 token 和用户信息存入 state
-        token.value = response.data.data.token
-        userInfo.value = response.data.data
+      // 这里的类型检查依赖于你的 api 响应泛型，假设 api.post 返回的是 AxiosResponse<ApiResponse<LoginResult>>
+      // 为了简化，我们假设拦截器已经剥离了外层，或者我们直接信任数据
+      const data = response.data?.data || response.data;
 
-        // 7. (可选) 将 token 存入浏览器的 localStorage，以便刷新后保持登录
-        if (token.value !== null) {
-          localStorage.setItem('authToken', token.value)
-        }
+      // 登录成功
+      token.value = data.token
+      userInfo.value = data // 假设后端把 userInfo 混在同一个对象里，或者 data.userInfo
 
-        ElMessage.success('登录成功！')
-
-        // 8. 登录成功后，跳转到主看板页面
-        // router.push('/dashboard')
-        return true;
-
-      } else {
-        // 处理后端返回的“登录失败”
-        ElMessage.error(response.data.message || '登录失败')
-        return false;
+      if (token.value) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, token.value)
       }
+
+      ElMessage.success('登录成功！')
+      return true
+
     } catch (error) {
-      // 处理网络错误
-      ElMessage.error('登录请求失败，请检查网络或联系管理员')
-      console.error(error)
-      return false;
+      // ✨ [关键修复]：拦截器已经弹出了错误提示 (ElMessage.error)，
+      // 这里我们只做控制台记录，不再弹出第二个提示，避免骚扰用户。
+      console.warn('Login failed:', error)
+      return false
     }
   }
 
@@ -71,25 +51,24 @@ export const useAuthStore = defineStore('auth', () => {
   const logout = () => {
     token.value = null
     userInfo.value = null
-    localStorage.removeItem('authToken')
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
     ElMessage.info('您已退出登录')
-    // router.push('/login')
+    // 路由跳转建议在组件层处理，或者在 store 外部使用 router
   }
 
-  // --- Getters (计算属性) ---
-  // (暂时用不到，但可以先留着)
-  const tryAutoLogin = () => {
-    console.log('--- [AuthStore] 检查会话 ---')
-    const storedToken = localStorage.getItem('authToken')
+  // 自动登录尝试 (简单版)
+  const tryAutoLogin = async () => {
+    const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
     if (storedToken) {
-      console.log('--- [AuthStore] 发现Token，正在恢复会话 ---')
       token.value = storedToken
-
-      // (在真实项目中，您还会在这里用 token 去
-      //  调用一个 "getUserInfo" 接口来恢复 userInfo)
+      // 这里通常应该调用一个 getUserInfo 接口验证 token 有效性并获取用户信息
+      // try {
+      //    const res = await api.get('/auth/me');
+      //    userInfo.value = res.data.data;
+      // } catch (e) { logout() }
     }
   }
-  // 5. 将 state 和 actions 暴露出去
+
   return {
     token,
     userInfo,

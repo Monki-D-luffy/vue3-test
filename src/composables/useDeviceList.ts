@@ -2,50 +2,42 @@
 import { ref, reactive } from 'vue'
 import api from '@/api'
 import { ElMessage } from 'element-plus'
+import { formatDate } from '@/utils/formatters' // ✨ 导入新的日期格式化
+import type { Device, DeviceListFilters } from '@/types' // ✨ 导入类型
 
-// 定义过滤器的接口
-export interface DeviceListFilters {
-    isBound?: string
-    productId?: string
-    dateRange?: any[]
-    keyword?: string
-    dataCenter?: string
-}
-
-// 定义分页接口
 interface PaginationParams {
     _page: number
     _limit: number
 }
 
-// ✨ 1. (关键重构) 提取参数构建器
 /**
  * 构建 /devices API 的查询参数
- * @param filters 视图层的原始筛选器
- * @param pagination (可选) 分页参数
- * @returns 清理过的、API 友好的参数对象
  */
 export const buildDeviceListParams = (
     filters: DeviceListFilters = {},
     pagination?: PaginationParams
 ) => {
-    // 1. 解构参数
     const { isBound, productId, dateRange, keyword, dataCenter } = filters
 
-    // 2. 准备原始参数 (包含转换逻辑)
+    // ✨ [关键修复] 使用 formatDate 而不是 toISOString
+    // 这样 "2025-01-01" 还是 "2025-01-01"，不会变成 "2024-12-31"
+    const startDate = dateRange?.[0] ? formatDate(dateRange[0]) + ' 00:00:00' : null
+    const endDate = dateRange?.[1] ? formatDate(dateRange[1]) + ' 23:59:59' : null
+
     const rawParams: any = {
         isBound,
         productId,
         q: keyword,
-        gmtActive_gte: dateRange && dateRange[0] ? new Date(dateRange[0]).toISOString().split('T')[0] + ' 00:00:00' : null,
-        gmtActive_lte: dateRange && dateRange[1] ? new Date(dateRange[1]).toISOString().split('T')[0] + ' 23:59:59' : null,
+        gmtActive_gte: startDate,
+        gmtActive_lte: endDate,
         dataCenter,
-        ...pagination // 合并分页参数 (如果传入了)
+        ...pagination
     }
 
-    // 3. 清理无效参数
+    // 清理无效参数
     const cleanedParams: any = {}
     for (const key in rawParams) {
+        // 严格检查，保留 0 或 false，但排除 null/undefined/空字符串
         if (rawParams[key] !== null && rawParams[key] !== undefined && rawParams[key] !== '') {
             cleanedParams[key] = rawParams[key]
         }
@@ -54,52 +46,53 @@ export const buildDeviceListParams = (
     return cleanedParams
 }
 
-
 export function useDeviceList() {
     const loading = ref(false)
-    const deviceList = ref([])
+    // ✨ 添加泛型，开发时会有智能提示
+    const deviceList = ref<Device[]>([])
     const pagination = reactive({
         currentPage: 1,
         pageSize: 10,
         total: 0
     })
 
-    // 核心获取数据函数
     const fetchDevices = async (filters: DeviceListFilters = {}) => {
         loading.value = true
         try {
-            // ✨ 2. (关键重构) 复用参数构建器
             const params = buildDeviceListParams(filters, {
                 _page: pagination.currentPage,
                 _limit: pagination.pageSize
             })
 
-            // 4. 发送请求
             const response = await api.get(`/devices`, { params })
 
-            // 5. 更新状态
+            // 假设后端遵循 x-total-count 标准
             pagination.total = Number(response.headers['x-total-count'] || 0)
-            deviceList.value = response.data.data
+
+            // 兼容 mock-server 可能返回的结构
+            const data = response.data?.data || response.data || []
+            deviceList.value = data
 
         } catch (error) {
-            ElMessage.error('获取设备列表失败')
+            // 同样，拦截器可能已经报过错了，这里可以选择不报，或者报更具体的“列表加载失败”
             console.error(error)
+            // 如果希望覆盖拦截器的通用报错，可以使用 ElMessage
         } finally {
             loading.value = false
         }
     }
 
-    // 分页事件处理
     const handleSizeChange = (newSize: number) => {
         pagination.pageSize = newSize
-        pagination.currentPage = 1 // 重置到第一页
+        pagination.currentPage = 1
+        // 注意：这里没有自动调用 fetchDevices，
+        // 通常由组件监听 pagination 变化或手动调用
     }
 
     const handleCurrentChange = (newPage: number) => {
         pagination.currentPage = newPage
     }
 
-    // 重置分页
     const resetPagination = () => {
         pagination.currentPage = 1
         pagination.pageSize = 10
@@ -112,8 +105,6 @@ export function useDeviceList() {
         fetchDevices,
         handleSizeChange,
         handleCurrentChange,
-        resetPagination,
-        // ✨ 3. (关键重构) 导出构建器
-        buildDeviceListParams
+        resetPagination
     }
 }
