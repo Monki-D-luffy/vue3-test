@@ -16,10 +16,6 @@ onMounted(() => {
 </script>
 
 <style>
-/* 删除所有旧的 scoped 样式。
-  只保留(或添加)这个全局的 body 样式重置，
-  这能解决您之前遇到的“登录页偏右”的布局问题。
-*/
 body {
   margin: 0;
   padding: 0;
