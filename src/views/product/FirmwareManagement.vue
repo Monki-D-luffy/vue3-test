@@ -1,123 +1,166 @@
 <template>
-    <div class="product-management-view">
-        <el-tabs v-model="activeTab" class="page-tabs">
-            <el-tab-pane label="产品列表" name="productList">
-                <div class="tab-content">
-                    <el-empty description="产品列表待实现" />
-                </div>
-            </el-tab-pane>
+    <div class="firmware-management">
+        <div class="layout-container">
+            <div class="left-panel">
+                <ProductSidebar @select="handleProductSelect" />
+            </div>
 
-            <el-tab-pane label="固件管理" name="firmwareManagement">
-                <div class="tab-content">
-                    <div class="toolbar">
-                        <el-button type="primary" @click="openUploadDialog">
-                            <el-icon>
-                                <Upload />
-                            </el-icon>
-                            上传固件
-                        </el-button>
+            <div class="right-panel">
+                <div v-if="currentProduct" class="content-wrapper">
+                    <div class="content-header">
+                        <div class="header-info">
+                            <h2 class="product-title">
+                                {{ currentProduct.name }}
+                                <el-tag size="small" effect="plain" class="ml-2">{{ currentProduct.type }}</el-tag>
+                            </h2>
+                            <p class="product-id">Product ID: {{ currentProduct.id }}</p>
+                        </div>
+                        <div class="header-stats">
+                        </div>
                     </div>
 
-                    <FirmwareList :firmwares="firmwares" :is-loading="isLoading" :pagination="pagination"
-                        @page-change="handlePageChange" />
+                    <div class="content-body">
+                        <el-tabs v-model="activeTab" class="main-tabs">
+                            <el-tab-pane label="固件版本库" name="versions">
+                                <FirmwareVersionPanel :product="currentProduct" />
+                            </el-tab-pane>
+                            <el-tab-pane label="升级任务记录" name="tasks">
+                                <UpgradeTaskPanel :product="currentProduct" />
+                            </el-tab-pane>
+                        </el-tabs>
+                    </div>
                 </div>
-            </el-tab-pane>
-        </el-tabs>
 
-        <FirmwareUploadModal v-model="uploadModalVisible" v-model:formValue="uploadForm" :products="products"
-            :is-uploading="isUploading" @submit="handleUpload" />
+                <div v-else class="empty-wrapper">
+                    <el-empty description="请在左侧选择一个产品进行管理" />
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-// import { useRouter } from 'vue-router' // 你原有的，暂时没用到
-import { Upload } from '@element-plus/icons-vue'
+import { ref } from 'vue'
+import type { Product } from '@/api'
 
-// 导入我们新建的 composable 和 components
-import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
-import FirmwareList from '@/components/FirmwareList.vue'
-import FirmwareUploadModal from '@/components/FirmwareUploadModal.vue'
+// 引入子组件
+import ProductSidebar from './components/ProductSidebar.vue'
+import FirmwareVersionPanel from './components/FirmwareVersionPanel.vue'
+import UpgradeTaskPanel from './components/UpgradeTaskPanel.vue'
 
-const activeTab = ref('productList')
+const currentProduct = ref<Product | null>(null)
+const activeTab = ref('versions')
 
-// 1. 核心逻辑：从 composable 中解构所有状态和方法
-const {
-    firmwares,
-    products,
-    isLoading,
-    isUploading,
-    pagination,
-    uploadModalVisible,
-    uploadForm,
-    getFirmwares,
-    handlePageChange,
-    openUploadDialog,
-    handleUpload
-} = useFirmwareManagement()
-
-// 2. 在组件挂载时，自动加载第一页数据
-onMounted(() => {
-    // 我们只在 '固件管理' 标签页下加载数据
-    // (如果你希望它预加载，也可以直接调用 getFirmwares())
-    if (activeTab.value === 'firmwareManagement') {
-        getFirmwares(1)
-    }
-})
-
-// (可选) 监听 tab 切换，仅在首次切换到'固件管理'时加载数据
-// watch(activeTab, (newTab) => {
-//   if (newTab === 'firmwareManagement' && firmwares.value.length === 0) {
-//     getFirmwares(1)
-//   }
-// })
-// 简单起见，我们先用 onMounted，假设用户会自行点击或默认打开
-// 修正：我们应该在 onMounted 时就加载，因为用户可能直接进入此页面
-onMounted(() => {
-    getFirmwares(1)
-})
+// 处理左侧选择
+const handleProductSelect = (product: Product) => {
+    currentProduct.value = product
+    // 切换产品时，重置 Tab 或执行其他初始化
+    console.log('Switched to product:', product.name)
+}
 </script>
 
 <style scoped>
-.product-management-view {
+.firmware-management {
+    /* 铺满父容器 (AppLayout 的 el-main) */
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    padding: 20px;
-    box-sizing: border-box;
 }
 
-/* 让 el-tabs 占据所有可用空间 */
-.page-tabs {
+.layout-container {
     display: flex;
-    flex-direction: column;
     flex: 1;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    /* 确保容器高度撑满 */
     height: 100%;
 }
 
-/* 让 el-tabs 的内容区域 (el-tab-pane) 
-  也能占据剩余空间
-*/
+/* 左侧定宽 */
+.left-panel {
+    width: 280px;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+/* 右侧自适应 */
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.content-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.content-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fafafa;
+}
+
+.product-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    display: flex;
+    align-items: center;
+}
+
+.ml-2 {
+    margin-left: 8px;
+}
+
+.product-id {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    font-family: monospace;
+}
+
+.content-body {
+    flex: 1;
+    overflow: hidden;
+    /* 让 tabs 内容自己滚动 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 深度调整 el-tabs 样式让它撑满 */
+.main-tabs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+:deep(.el-tabs__header) {
+    margin-bottom: 0;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
 :deep(.el-tabs__content) {
     flex: 1;
-    height: 0;
-    /* 关键：允许 flex: 1 生效 */
+    overflow-y: auto;
+    padding: 0;
 }
 
-.el-tab-pane {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.tab-content {
-    display: flex;
-    flex-direction: column;
+.empty-wrapper {
     flex: 1;
-    height: 100%;
-}
-
-.toolbar {
-    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
