@@ -915,7 +915,7 @@
     {
       "id": "5dece9BD-492c-9Efd-f7A9-2D9b3Ac57991",
       "name": "合三军线员",
-      "status": "故障",
+      "status": "升级中",
       "puuid": "PU-20251602",
       "productInfo": "智能灯泡 / prod_light_01",
       "deviceType": "智能灯泡",
@@ -28985,6 +28985,18 @@
       "errorMessage": "设备意外离线",
       "startedAt": "2024-10-26 19:00:00",
       "finishedAt": "2024-10-26 19:02:00"
+    },
+    {
+      "id": "task_A7e3C8b7-6BDf-aFcF-178C-81Bb42c3bFBA",
+      "deviceId": "5dece9BD-492c-9Efd-f7A9-2D9b3Ac57991",
+      "deviceName": "合三军线员",
+      "firmwareId": "fw_001",
+      "firmwareVersion": "1.1.0",
+      "status": "downloading",
+      "progress": 46,
+      "errorMessage": null,
+      "startedAt": "2025-11-12 16:35:32",
+      "finishedAt": null
     }
   ]
 }

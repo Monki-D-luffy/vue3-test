@@ -1,15 +1,15 @@
 // src/api/index.ts
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import router from '@/router' // 我们需要 router 来实现 "401 踢回登录页"
-
+// import router from '@/router' // 我们需要 router 来实现 "401 踢回登录页"
+import { STORAGE_KEYS } from '@/types'
 const API_BASE_URL = '/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL
 })
 
-// 3. ✨✨✨ 全局请求拦截器 (只依赖 localStorage) ✨✨✨
+//  全局请求拦截器 (只依赖 localStorage)
 api.interceptors.request.use(
   (config) => {
     // 1. 登录请求，直接放行
@@ -32,7 +32,7 @@ api.interceptors.request.use(
   }
 )
 
-// 5. ✨✨✨ 全局响应拦截器 (用于处理 401) ✨✨✨
+// 5.  全局响应拦截器 (用于处理 401) 
 api.interceptors.response.use(
   (response) => {
     // 2xx 范围内的状态码都会触发该函数
@@ -54,10 +54,12 @@ api.interceptors.response.use(
       ElMessage.error('会话已过期，请重新登录。')
 
       // (可选) 清理本地存储
-      localStorage.removeItem('authToken')
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
 
       // 跳转到登录页 (假设您的登录页路径是 /login)
-      router.push('/login')
+      // 使用原生跳转，强制刷新页面，确保内存数据清空
+      // 避免 api -> router -> view -> store -> api 的循环依赖
+      window.location.href = '/login'
     } else {
       // 其他网络错误
       ElMessage.error(error.message || '网络错误')
@@ -66,9 +68,6 @@ api.interceptors.response.use(
   }
 )
 
-// =================================================================
-// ✨✨✨ 新增：API 类型定义 (Phase 1, Step 3) ✨✨✨
-// =================================================================
 
 /**
  * 模拟服务器的统一响应结构
@@ -150,9 +149,6 @@ export interface PaginatedResponse<T> {
 }
 
 
-// =================================================================
-// ✨✨✨ 新增：API 客户端函数 (Phase 1, Step 3) ✨✨✨
-// =================================================================
 
 /**
  * 1. 获取固件列表 (分页)

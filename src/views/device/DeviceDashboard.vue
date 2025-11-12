@@ -54,7 +54,6 @@
                 </el-table-column>
 
                 <el-table-column prop="firmwareVersion" label="固件版本" min-width="110" />
-
                 <el-table-column prop="puuid" label="生产PUUID" width="200" />
                 <el-table-column prop="productId" label="所属产品/产品ID" width="180" />
                 <el-table-column prop="sn" label="设备SN码" width="180" />
@@ -62,10 +61,10 @@
                 <el-table-column prop="gmtLastOnline" label="最近上线时间" width="180" />
 
                 <el-table-column label="操作" fixed="right" min-width="150">
-                    <template #default="scope">
-                        <el-button link type="primary" @click="viewLogs(scope.row)">查看</el-button>
-                        <el-button link type="primary" @click="openDetails(scope.row.id)">详情</el-button>
-                        <el-button link type="danger" @click="onDeleteClick(scope.row)">删除</el-button>
+                    <template #default="{ row }">
+                        <el-button link type="primary" @click="viewLogs(row)">查看</el-button>
+                        <el-button link type="primary" @click="openDetails(row.id)">详情</el-button>
+                        <el-button link type="danger" @click="onDeleteClick(row)">删除</el-button>
                     </template>
                 </el-table-column>
                 <template #empty>
@@ -80,14 +79,17 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+// 启用 lang="ts"
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-// ✨ 修改：移除 Top/Upgrade 图标导入
 import { Monitor, CircleCheck, Connection } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
-// 导入我们抽离的工具函数
+// 引入我们定义的统一类型 (来自 src/types/index.ts)
+import type { Device, DeviceListFilters } from '@/types'
+
+// 导入工具函数
 import { formatDateTime, getDeviceStatusType } from '@/utils/formatters'
 
 // 引入组件
@@ -103,30 +105,43 @@ import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceLis
 import { useDeviceActions } from '@/composables/useDeviceActions'
 import { useDataExport } from '@/composables/useDataExport'
 
-// --- 1. 基础状态 (沿用) ---
+// 导入常量
+import { DATA_CENTER_MAP } from '@/constants/dictionaries'
+// --- 基础状态 ---
 const router = useRouter()
 const selectedCenter = ref('CN')
-const selectedDeviceId = ref(null) // 用于详情抽屉
-const dataCenterMap = {
-    'CN': '中国数据中心', 'US-WEST': '美西数据中心', 'EU-CENTRAL': '中欧数据中心',
-    'IN': '印度数据中心', 'US-EAST': '美东数据中心', 'EU-WEST': '西欧数据中心', 'SG': '新加坡数据中心',
-}
-const filters = reactive({ isBound: '', productId: '', dateRange: '', keyword: '' })
 
-// --- 2. 使用 Composables (沿用) ---
+// 显式声明 Ref 类型，防止 null 赋值报错
+const selectedDeviceId = ref<string | null>(null)
+
+//  给字典对象加上类型索引，解决 dataCenterMap[key] 报错
+const dataCenterMap: Record<string, string> = DATA_CENTER_MAP
+
+// 使用 reactive<Interface> 确保 filters 结构符合预期
+const filters = reactive<DeviceListFilters>({
+    isBound: '',
+    productId: '',
+    dateRange: null, // Element Plus date-picker 返回的是 null 或 Date数组
+    keyword: ''
+})
+
+// --- 使用 Composables ---
 const { summary, fetchSummary } = useDeviceSummary()
+// 这里的 deviceList 已经在 useDeviceList 内部定义为 Ref<Device[]>
 const {
     loading, deviceList, pagination,
     fetchDevices, handleSizeChange, handleCurrentChange, resetPagination
 } = useDeviceList()
+
 const { handleDelete } = useDeviceActions()
 const { isExporting, exportData } = useDataExport()
 
-// --- 固件升级状态 (沿用) ---
+// --- 固件升级状态 ---
 const upgradeModalVisible = ref(false)
-const selectedDeviceForUpgrade = ref(null)
+// 明确这可能是一个 Device 对象或者 null
+const selectedDeviceForUpgrade = ref<Device | null>(null)
 
-// (沿用)
+// 导出列定义
 const deviceTableColumns = [
     { label: '设备名称/ID', key: 'name' },
     { label: '设备状态', key: 'status' },
@@ -138,19 +153,20 @@ const deviceTableColumns = [
     { label: '最近上线时间', key: 'gmtLastOnline' }
 ]
 
-// --- 3. 整合逻辑函数 ---
+// ---  整合逻辑函数 ---
 
-// (沿用)
-const deviceDataProcessor = (data) => {
+// 给参数 data 加上 any[] 或 Device[] 类型
+const deviceDataProcessor = (data: Device[]) => {
     return data.map(row => ({
         ...row,
+        // 确保 row 中的字段存在于 Device 类型中
         gmtActive: formatDateTime(row.gmtActive),
         gmtLastOnline: formatDateTime(row.gmtLastOnline),
+        // 处理 status 可能是数组的情况 (防御性编程)
         status: Array.isArray(row.status) ? row.status.join(', ') : row.status
     }))
 }
 
-// (沿用)
 const handleExport = () => {
     const currentFilters = {
         ...filters,
@@ -167,8 +183,8 @@ const handleExport = () => {
     )
 }
 
-// (沿用)
-const viewLogs = (row) => {
+// 为 row 参数添加 Device 类型注解
+const viewLogs = (row: Device) => {
     router.push({
         name: 'device-log',
         query: {
@@ -178,7 +194,6 @@ const viewLogs = (row) => {
     })
 }
 
-// (沿用)
 const loadData = () => {
     fetchDevices({
         ...filters,
@@ -186,89 +201,79 @@ const loadData = () => {
     })
 }
 
-// (沿用)
-const handleCenterChange = (command) => {
+// command 是 Element Plus dropdown 回调参数，通常是 string | number | object
+const handleCenterChange = (command: string) => {
     selectedCenter.value = command
-    ElMessage.success(`已切换至 ${dataCenterMap[command]}`)
+    // 安全访问 map
+    const centerName = dataCenterMap[command] || command
+    ElMessage.success(`已切换至 ${centerName}`)
     resetPagination()
     loadData()
     fetchSummary(command)
 }
 
-// (沿用)
 const handleSearch = () => {
     ElMessage.success('正在搜索...')
     pagination.currentPage = 1
     loadData()
 }
 
-// (沿用)
 const handleReset = () => {
     filters.isBound = ''
     filters.productId = ''
-    filters.dateRange = ''
+    filters.dateRange = null // 重置为 null
     filters.keyword = ''
     ElMessage.info('已重置筛选条件')
     resetPagination()
     loadData()
 }
 
-// (沿用)
-const onSizeChange = (newSize) => {
+const onSizeChange = (newSize: number) => {
     handleSizeChange(newSize)
     loadData()
 }
-const onCurrentChange = (newPage) => {
+const onCurrentChange = (newPage: number) => {
     handleCurrentChange(newPage)
     loadData()
 }
 
-// (沿用)
-const onDeleteClick = (row) => {
+// row 为 Device 类型
+const onDeleteClick = (row: Device) => {
     handleDelete(row, () => {
         loadData()
         fetchSummary(selectedCenter.value)
     })
 }
 
-// (沿用) 详情抽屉控制
-const openDetails = (id) => { selectedDeviceId.value = id }
+// 详情抽屉控制
+const openDetails = (id: string) => { selectedDeviceId.value = id }
 const closeDrawer = () => { selectedDeviceId.value = null }
 
 
-// --- ✨ 4. 升级逻辑 (修改) ✨ ---
+// ---  升级逻辑 ---
 
 /**
  * 点击"升级"按钮时触发
- * @param {object} device - 由抽屉组件 emit 传回的完整 device 对象
+ * 参数类型标注为 Device
  */
-const handleUpgradeClick = (device) => {
-    selectedDeviceForUpgrade.value = device // 传递完整的 device 对象
+const handleUpgradeClick = (device: Device) => {
+    selectedDeviceForUpgrade.value = device
     upgradeModalVisible.value = true
-    closeDrawer() // (可选) 点升级时关闭详情抽屉
+    closeDrawer()
 }
 
 /**
- * 当升级弹窗通知升级完成时 (无论成功或失败)
+ * 当升级弹窗通知升级完成时
  */
 const onUpgradeDone = () => {
-    // 刷新列表以更新固件版本和 hasNewFirmware 状态
     loadData()
-    // 也刷新一下统计卡片
     fetchSummary(selectedCenter.value)
-    // (可选) 如果抽屉还开着，也刷新一下抽屉
     if (selectedDeviceId.value) {
-        // 重新打开（或刷新）抽屉的逻辑
-        // 因为抽屉是watch deviceId的，我们需要一个方法来强制它刷新
-        // 目前最简单的方法是关闭再打开，但体验不好
-        // 更好的方法是让 useDeviceDetail 暴露一个 refresh 方法
-        // ...
-        // [当前实现]: 升级时已关闭抽屉，此步暂不需要
+        // 可选逻辑：刷新抽屉
     }
 }
 
-
-// --- 5. 生命周期 (沿用) ---
+// --- 5. 生命周期 ---
 onMounted(() => {
     fetchSummary(selectedCenter.value)
     loadData()
