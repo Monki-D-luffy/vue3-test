@@ -38,3 +38,28 @@ export interface DeviceListFilters {
 export const STORAGE_KEYS = {
     TOKEN: 'authToken'
 } as const;
+
+// ---产品与固件相关类型 ---
+
+export interface Product {
+    id: string;
+    name: string;
+    type: string;
+}
+
+export interface Firmware {
+    id: string;
+    version: string;
+    productId: string;
+    productName: string;
+    releaseNotes: string;
+    fileUrl: string;
+    uploadedAt: string;
+    verified?: boolean; // 验证状态
+}
+
+export interface FirmwareUploadData {
+    version: string;
+    productId: string;
+    releaseNotes: string;
+}

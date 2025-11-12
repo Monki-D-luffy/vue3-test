@@ -1,8 +1,9 @@
 // src/api/index.ts
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-// import router from '@/router' // 我们需要 router 来实现 "401 踢回登录页"
-import { STORAGE_KEYS } from '@/types'
+import { STORAGE_KEYS, } from '@/types'
+
+
 const API_BASE_URL = '/api'
 
 const api = axios.create({
@@ -32,7 +33,7 @@ api.interceptors.request.use(
   }
 )
 
-// 5.  全局响应拦截器 (用于处理 401) 
+// 全局响应拦截器 (用于处理 401) 
 api.interceptors.response.use(
   (response) => {
     // 2xx 范围内的状态码都会触发该函数
@@ -148,7 +149,20 @@ export interface PaginatedResponse<T> {
   total: number
 }
 
+/**
+ * 模拟服务器的统一响应结构
+ */
+export interface ApiResponse<T> {
+  code: number
+  message: string
+  success: boolean
+  data: T
+}
 
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+}
 
 /**
  * 1. 获取固件列表 (分页)
@@ -170,7 +184,7 @@ export const fetchFirmwares = async (params: PaginationParams): Promise<Paginate
 }
 
 /**
- * (新增) 获取所有产品列表 (用于上传固件时的下拉菜单)
+ * 获取所有产品列表 (用于上传固件时的下拉菜单)
  */
 export const fetchProducts = async (): Promise<Product[]> => {
   const response = await api.get<ApiResponse<Product[]>>('/products')
@@ -204,5 +218,20 @@ export const getUpgradeTaskStatus = async (taskId: string): Promise<UpgradeTask>
   return response.data.data // 返回更新后的任务状态
 }
 
+/**
+ * 更新固件信息 (用于验证/发布)
+ * PATCH /firmwares/:id
+ */
+export const updateFirmware = async (id: string, updates: Partial<Firmware>): Promise<Firmware> => {
+  const response = await api.patch<ApiResponse<Firmware>>(`/firmwares/${id}`, updates)
+  return response.data.data
+}
+
+/**
+ * ✨ (新增) 删除固件
+ */
+export const deleteFirmware = async (id: string): Promise<void> => {
+  await api.delete(`/firmwares/${id}`)
+}
 // 默认导出 axios 实例
 export default api
