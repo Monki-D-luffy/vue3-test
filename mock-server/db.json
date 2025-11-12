@@ -28940,7 +28940,8 @@
       "productName": "智能灯泡",
       "releaseNotes": "1. 修复了低功耗模式下的连接 Bug \n2. 优化了配网速度",
       "fileUrl": "/files/firmware_1.1.0.bin",
-      "uploadedAt": "2024-10-26 18:00:00"
+      "uploadedAt": "2024-10-26 18:00:00",
+      "verified": true
     },
     {
       "id": "fw_002",

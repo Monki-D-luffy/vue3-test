@@ -1,7 +1,11 @@
 <template>
     <div class="task-panel">
         <div class="panel-toolbar">
-            <div class="left"></div>
+            <div class="left">
+                <el-tooltip content="刷新列表" placement="top">
+                    <el-button circle :icon="Refresh" @click="loadData" />
+                </el-tooltip>
+            </div>
             <div class="right">
                 <el-button type="primary" :icon="Plus" @click="isCreateVisible = true">
                     新建推广任务
@@ -9,25 +13,45 @@
             </div>
         </div>
 
-        <el-table :data="taskList" v-loading="loading" style="width: 100%">
-            <el-table-column prop="id" label="任务 ID" width="180" show-overflow-tooltip />
+        <el-table :data="taskList" v-loading="loading" style="width: 100%" stripe border>
+            <el-table-column label="任务 ID / 名称" min-width="200">
+                <template #default="{ row }">
+                    <div class="task-id">{{ row.id }}</div>
+                    <div class="task-name" v-if="row.name">{{ row.name }}</div>
+                </template>
+            </el-table-column>
 
             <el-table-column label="目标固件" width="120">
                 <template #default="{ row }">
-                    <el-tag>{{ row.firmwareVersion }}</el-tag>
+                    <el-tag effect="plain">{{ row.firmwareVersion }}</el-tag>
                 </template>
             </el-table-column>
 
-            <el-table-column prop="status" label="状态" width="120">
+            <el-table-column label="执行状态" width="120">
                 <template #default="{ row }">
-                    <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
+                    <div class="status-flex">
+                        <el-icon v-if="row.status === 'success'" color="#67c23a">
+                            <CircleCheckFilled />
+                        </el-icon>
+                        <el-icon v-else-if="row.status === 'failed'" color="#f56c6c">
+                            <CircleCloseFilled />
+                        </el-icon>
+                        <el-icon v-else-if="row.status === 'installing'" class="is-loading" color="#409eff">
+                            <Loading />
+                        </el-icon>
+                        <el-icon v-else color="#909399">
+                            <Clock />
+                        </el-icon>
+                        <span class="status-text">{{ formatStatus(row.status) }}</span>
+                    </div>
                 </template>
             </el-table-column>
 
-            <el-table-column label="进度" min-width="200">
+            <el-table-column label="升级进度" min-width="180">
                 <template #default="{ row }">
                     <el-progress :percentage="row.progress"
-                        :status="row.status === 'failed' ? 'exception' : (row.status === 'success' ? 'success' : '')" />
+                        :status="row.status === 'failed' ? 'exception' : (row.status === 'success' ? 'success' : '')"
+                        :stroke-width="10" />
                 </template>
             </el-table-column>
 
@@ -36,6 +60,10 @@
                     {{ formatDateTime(row.startedAt) }}
                 </template>
             </el-table-column>
+
+            <template #empty>
+                <el-empty description="暂无升级任务记录" />
+            </template>
         </el-table>
 
         <CreateTaskWizard v-model="isCreateVisible" :product="product" @success="loadData" />
@@ -43,14 +71,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { ref, watch, onMounted } from 'vue'
+import { Plus, Refresh, CircleCheckFilled, CircleCloseFilled, Loading, Clock } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
 import type { Product } from '@/types'
 import CreateTaskWizard from './CreateTaskWizard.vue'
-// 暂时从 mock-server 接口拉取，或者你可以复用 useDeviceSummary 里的逻辑
-// 这里为了演示，我们假设有一个 api.fetchUpgradeTasks
-// 如果没有，可以暂时用空数组或写死数据测试
 import api from '@/api'
 
 const props = defineProps<{
@@ -61,17 +86,19 @@ const loading = ref(false)
 const taskList = ref<any[]>([])
 const isCreateVisible = ref(false)
 
+// 加载任务数据
 const loadData = async () => {
+    if (!props.product.id) return
     loading.value = true
     try {
-        // 这里应该调用 fetchUpgradeTasks({ productId: props.product.id })
-        // 暂时模拟：
+        // 模拟 API 调用
+        // 实际上 mock-server 还没有按 productId 筛选 upgradeTasks 的能力
+        // 这里我们获取所有，然后在前端简单过滤一下 (如果 mock 数据里有 productId 的话)
         const res = await api.get('/upgradeTasks')
-        // 简单前端过滤
-        // 注意：你的 mock-server db.json 里 upgradeTask 没有 productId 字段
-        // 而是 deviceId。这在真实后端是不对的，任务应该关联产品。
-        // 为了演示，我们暂时显示所有任务
-        taskList.value = res.data.data || []
+        const allTasks = res.data.data || []
+
+        // 简单排序：最新的在前面
+        taskList.value = allTasks.reverse()
     } catch (e) {
         console.error(e)
     } finally {
@@ -79,11 +106,16 @@ const loadData = async () => {
     }
 }
 
-const getStatusType = (status: string) => {
-    if (status === 'success') return 'success'
-    if (status === 'failed') return 'danger'
-    if (status === 'pending') return 'info'
-    return 'primary'
+const formatStatus = (status: string) => {
+    const map: Record<string, string> = {
+        'success': '成功',
+        'failed': '失败',
+        'installing': '进行中',
+        'downloading': '下载中',
+        'pending': '等待中',
+        'idle': '空闲'
+    }
+    return map[status] || status
 }
 
 watch(() => props.product.id, () => {
@@ -93,12 +125,37 @@ watch(() => props.product.id, () => {
 
 <style scoped>
 .task-panel {
-    padding: 20px;
+    padding: 0 20px 20px 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .panel-toolbar {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 16px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+}
+
+.task-id {
+    font-family: monospace;
+    font-size: 12px;
+    color: #909399;
+}
+
+.task-name {
+    font-weight: 500;
+    color: #303133;
+}
+
+.status-flex {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-text {
+    font-size: 13px;
 }
 </style>
