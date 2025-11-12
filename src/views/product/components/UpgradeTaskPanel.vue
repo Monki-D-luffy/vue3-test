@@ -77,6 +77,7 @@ import { formatDateTime } from '@/utils/formatters'
 import type { Product } from '@/types'
 import CreateTaskWizard from './CreateTaskWizard.vue'
 import api from '@/api'
+import { fetchCampaigns } from '@/api'
 
 const props = defineProps<{
     product: Product
@@ -91,14 +92,12 @@ const loadData = async () => {
     if (!props.product.id) return
     loading.value = true
     try {
-        // 模拟 API 调用
-        // 实际上 mock-server 还没有按 productId 筛选 upgradeTasks 的能力
-        // 这里我们获取所有，然后在前端简单过滤一下 (如果 mock 数据里有 productId 的话)
-        const res = await api.get('/upgradeTasks')
-        const allTasks = res.data.data || []
+        // ✨ 修改：调用 fetchCampaigns 而不是 api.get('/upgradeTasks')
+        // 并且传入 productId 进行筛选
+        const data = await fetchCampaigns({ productId: props.product.id })
 
         // 简单排序：最新的在前面
-        taskList.value = allTasks.reverse()
+        taskList.value = data || []
     } catch (e) {
         console.error(e)
     } finally {

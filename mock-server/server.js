@@ -30,7 +30,8 @@ function preSeedDatabase() {
     deviceLogs: [],
     products: [],
     firmwares: [],
-    upgradeTasks: []
+    upgradeTasks: [],
+    campaigns: []
   }
 
   console.log('--- [Mock Server] 正在重新生成所有模拟数据... ---')
@@ -376,13 +377,110 @@ server.get('/api/upgrade-task/:id', (req, res) => {
   res.json({ code: 200, message: '获取成功', success: true, data: task })
 })
 
+// =========================================
+// ✨✨✨ 阶段三 (Part 3): 批量任务引擎 ✨✨✨
+// =========================================
 
+// 1. 获取符合条件的设备数量 (用于前端预估接口)
+// 注意：虽然前端调用的是 estimateUpgradeImpact，但我们可以在 server.js 里拦截它
+// 或者前端直接自己算。为了简单，我们这里拦截 POST /campaigns 的预处理
+
+// 2. 创建批量推广任务 (Campaign)
+server.post('/api/campaigns', (req, res) => {
+  const db = router.db
+  const { name, productId, firmwareId, firmwareVersion, targetScope, filters } = req.body
+
+  // 1. 计算目标设备
+  let targetDevices = db.get('devices').filter({ productId: productId }).value()
+
+  if (targetScope === 'filter' && filters) {
+    if (filters.dataCenter) {
+      targetDevices = targetDevices.filter(d => d.dataCenter === filters.dataCenter)
+    }
+    // 这里可以添加更多筛选逻辑
+  }
+
+  const totalCount = targetDevices.length
+
+  // 2. 创建 Campaign 对象
+  const newCampaign = {
+    id: 'camp_' + Mock.Random.guid().substring(0, 8),
+    name: name || `批量升级-${firmwareVersion}`,
+    productId,
+    firmwareId,
+    firmwareVersion,
+    status: 'running', // 默认为进行中
+    progress: 0,       // 进度 0%
+    totalDevices: totalCount,
+    successCount: 0,
+    failureCount: 0,
+    targetScope,
+    filters,
+    startedAt: formatTimestamp(Date.now())
+  }
+
+  db.get('campaigns').push(newCampaign).write()
+
+  // 3. (高级模拟) 既然是 Mock，我们不需要真的创建几千个子任务
+  // 我们只需要让 Campaign 的 progress 字段在随后的 GET 请求中“自动增长”即可
+  // 见下方的 GET 拦截逻辑
+
+  res.json({
+    code: 200,
+    message: '批量任务已创建',
+    success: true,
+    data: newCampaign
+  })
+})
+
+// 3. 获取任务列表 (带自动进度模拟)
+server.get('/api/campaigns', (req, res) => {
+  const db = router.db
+  let campaigns = db.get('campaigns').value()
+
+  // ✨ 魔法：每次获取列表时，自动更新 "running" 状态任务的进度
+  campaigns.forEach(camp => {
+    if (camp.status === 'running') {
+      // 每次请求随机增加 5% - 15% 的进度
+      camp.progress += Math.floor(Math.random() * 10) + 5
+
+      if (camp.progress >= 100) {
+        camp.progress = 100
+        camp.status = 'success'
+        camp.successCount = camp.totalDevices // 简单模拟全部成功
+      }
+
+      // 写回数据库
+      db.get('campaigns').find({ id: camp.id }).assign({
+        progress: camp.progress,
+        status: camp.status,
+        successCount: camp.successCount
+      }).write()
+    }
+  })
+
+  // 支持按 productId 筛选
+  const targetProductId = req.query.productId
+  if (targetProductId) {
+    campaigns = campaigns.filter(c => c.productId === targetProductId)
+  }
+
+  // 按时间倒序
+  campaigns.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
+
+  res.json({
+    code: 200,
+    message: '获取成功',
+    success: true,
+    data: campaigns
+  })
+})
 // =========================================
 // 统一返回格式 (✨ 修改)
 // =========================================
 router.render = (req, res) => {
   // ✨ (修改) 扩展分页路由，使其也包含 /firmwares 和 /upgradeTasks
-  const pagedRoutes = ['/devices', '/deviceLogs', '/firmwares', '/upgradeTasks']
+  const pagedRoutes = ['/devices', '/deviceLogs', '/firmwares', '/upgradeTasks', "/campaigns"]
 
   if (req.method === 'GET' && pagedRoutes.includes(req.path)) {
     // json-server 默认会处理 _page 和 _limit, 我们只需要把 data 包裹起来

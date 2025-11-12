@@ -225,11 +225,16 @@ export const createUpgradeCampaign = async (payload: {
   targetScope: 'all' | 'filter'
   filters?: any
 }): Promise<void> => {
-  // 模拟网络延迟
-  await new Promise(r => setTimeout(r, 1000))
+  // 发送真实请求给 mock-server
+  await api.post('/campaigns', payload)
+}
 
-  console.log('--- [Mock API] 创建批量任务 ---', payload)
-  return
+/**
+ * 获取批量任务列表
+ */
+export const fetchCampaigns = async (params: any = {}): Promise<any> => {
+  const res = await api.get('/campaigns', { params })
+  return res.data.data
 }
 
 export default api
