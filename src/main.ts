@@ -1,5 +1,7 @@
 
 import './assets/main.css'
+// ✅ 新增：引入页面布局通用样式
+import './assets/page-layouts.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
