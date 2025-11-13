@@ -54,13 +54,8 @@
                     <div v-if="upgradeScope === 'filter'" class="filter-box">
                         <el-form-item label="数据中心">
                             <el-select v-model="filterForm.dataCenter" placeholder="请选择目标数据中心" style="width: 100%">
-                                <el-option label="中国 (CN)" value="CN" />
-                                <el-option label="美西 (US-WEST)" value="US-WEST" />
-                                <el-option label="中欧 (EU-CENTRAL)" value="EU-CENTRAL" />
-                                <el-option label="印度 (IN)" value="IN" />
-                                <el-option label="美东 (US-EAST)" value="US-EAST" />
-                                <el-option label="西欧 (EU-WEST)" value="EU-WEST" />
-                                <el-option label="新加坡 (SG)" value="SG" />
+                                <el-option v-for="(label, value) in DATA_CENTER_MAP" :key="value"
+                                    :label="`${label} (${value})`" :value="value" />
                             </el-select>
                         </el-form-item>
                     </div>
@@ -141,6 +136,7 @@ import { DataLine } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
 import type { Product, Firmware } from '@/types'
 import { fetchFirmwares, estimateUpgradeImpact, createUpgradeCampaign } from '@/api'
+import { DATA_CENTER_MAP } from '@/constants/dictionaries'
 
 const props = defineProps<{
     modelValue: boolean

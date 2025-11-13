@@ -3,9 +3,10 @@ import {
     fetchFirmwares,
     updateFirmware,
     deleteFirmware,
-    type Firmware
 } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { Firmware } from '@/types'
+
 
 export function useFirmwareManagement(productId?: string) {
     const loading = ref(false)

@@ -29,7 +29,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Box, ArrowRight, Search } from '@element-plus/icons-vue'
-import { fetchProducts, type Product } from '@/api'
+import { fetchProducts } from '@/api'
+import type { Product } from '@/types'
 
 // 定义事件
 const emit = defineEmits(['select'])

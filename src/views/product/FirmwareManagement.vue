@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Product } from '@/api'
+import type { Product } from '@/types'
 
 // 引入子组件
 import ProductSidebar from './components/ProductSidebar.vue'

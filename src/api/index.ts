@@ -1,6 +1,15 @@
 // src/api/index.ts
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import type {
+  ApiResponse,
+  Product,
+  Firmware,
+  FirmwareUploadData,
+  UpgradeTask,
+  PaginationParams,
+  PaginatedResponse
+} from '@/types'
 // 注意：为了防止循环依赖，建议不要在这里直接 import router
 // 如果需要跳转登录页，可以使用 window.location.href = '/login'
 
@@ -13,6 +22,12 @@ const api = axios.create({
 // =================================================================
 // 1. 拦截器配置
 // =================================================================
+// 扩展 Axios Request Config 类型 (可选)
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    _silent?: boolean; // 自定义属性：是否静默处理错误
+  }
+}
 
 // 全局请求拦截器
 api.interceptors.request.use(
@@ -33,6 +48,14 @@ api.interceptors.request.use(
     return config
   },
   (error) => {
+    // 如果配置了 _silent，就不弹窗，留给业务代码自己 catch 处理
+    if (!error.config?._silent) {
+      if (error.response && error.response.status === 401) {
+        // ... 401 处理
+      } else {
+        ElMessage.error(error.message || '网络错误')
+      }
+    }
     return Promise.reject(error)
   }
 )
@@ -62,66 +85,6 @@ api.interceptors.response.use(
   }
 )
 
-// =================================================================
-// 2. 类型定义
-// =================================================================
-
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  success: boolean
-  data: T
-}
-
-export interface Product {
-  id: string
-  name: string
-  type: string
-}
-
-export interface Firmware {
-  id: string
-  version: string
-  productId: string
-  productName: string;
-  releaseNotes: string
-  fileUrl: string
-  uploadedAt: string
-  // ✨ [修复] 补全 verified 属性，用于标记固件是否已验证通过
-  verified?: boolean
-}
-
-export interface FirmwareUploadData {
-  version: string
-  productId: string
-  releaseNotes: string
-}
-
-export type UpgradeTaskStatus = 'pending' | 'downloading' | 'installing' | 'success' | 'failed' | 'idle'
-
-export interface UpgradeTask {
-  id: string
-  deviceId: string // 注意：mock-server 中的结构可能需要适配
-  deviceName?: string
-  firmwareId: string
-  firmwareVersion: string
-  status: UpgradeTaskStatus
-  progress: number
-  errorMessage: string | null
-  startedAt: string
-  finishedAt: string | null
-}
-
-export interface PaginationParams {
-  _page: number
-  _limit: number
-  [key: string]: any
-}
-
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-}
 
 // =================================================================
 // 3. API 函数

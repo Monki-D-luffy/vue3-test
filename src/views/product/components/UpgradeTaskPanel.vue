@@ -48,16 +48,16 @@
             </el-table-column>
         </el-table>
 
-        <CreateTaskWizard v-model="isCreateVisible" :product="product" @success="fetchList(false)" />
+        <CreateTaskWizard v-if="product" v-model="isCreateVisible" :product="product" @success="fetchList(false)" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, toRef } from 'vue'
 import { Refresh, Plus } from '@element-plus/icons-vue'
-import type { Product } from '@/types'
 import CreateTaskWizard from './CreateTaskWizard.vue'
 import { useUpgradeCampaigns } from '@/composables/useUpgradeCampaigns'
+import type { Product } from '@/types'
 
 const props = defineProps<{
     product: Product | null

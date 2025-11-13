@@ -63,3 +63,59 @@ export interface FirmwareUploadData {
     productId: string;
     releaseNotes: string;
 }
+export interface ApiResponse<T> {
+    code: number
+    message: string
+    success: boolean
+    data: T
+}
+
+// export interface Product {
+//   id: string
+//   name: string
+//   type: string
+// }
+
+export interface Firmware {
+    id: string
+    version: string
+    productId: string
+    productName: string;
+    releaseNotes: string
+    fileUrl: string
+    uploadedAt: string
+    // ✨ [修复] 补全 verified 属性，用于标记固件是否已验证通过
+    verified?: boolean
+}
+
+export interface FirmwareUploadData {
+    version: string
+    productId: string
+    releaseNotes: string
+}
+
+export type UpgradeTaskStatus = 'pending' | 'downloading' | 'installing' | 'success' | 'failed' | 'idle'
+
+export interface UpgradeTask {
+    id: string
+    deviceId: string // 注意：mock-server 中的结构可能需要适配
+    deviceName?: string
+    firmwareId: string
+    firmwareVersion: string
+    status: UpgradeTaskStatus
+    progress: number
+    errorMessage: string | null
+    startedAt: string
+    finishedAt: string | null
+}
+
+export interface PaginationParams {
+    _page: number
+    _limit: number
+    [key: string]: any
+}
+
+export interface PaginatedResponse<T> {
+    items: T[]
+    total: number
+}
