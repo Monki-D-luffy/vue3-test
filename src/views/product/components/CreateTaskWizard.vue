@@ -45,8 +45,8 @@
 
                 <el-form-item label="推送策略">
                     <el-radio-group v-model="upgradeScope">
-                        <el-radio-button label="all">全量推送 (All)</el-radio-button>
-                        <el-radio-button label="filter">按区域筛选 (Filter)</el-radio-button>
+                        <el-radio-button value="all">全量推送 (All)</el-radio-button>
+                        <el-radio-button value="filter">按区域筛选 (Filter)</el-radio-button>
                     </el-radio-group>
                 </el-form-item>
 
@@ -106,7 +106,7 @@
                         <div class="confirm-item">
                             <span class="label">覆盖范围：</span>
                             <span class="value">{{ upgradeScope === 'all' ? '全量设备' : `区域: ${filterForm.dataCenter}`
-                                }}</span>
+                            }}</span>
                         </div>
                         <div class="confirm-item">
                             <span class="label">预计升级：</span>
