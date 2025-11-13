@@ -183,7 +183,7 @@ watch(() => props.product.id, () => {
 
 <style scoped>
 .task-panel {
-    padding: 0 20px 20px 20px;
+    padding: 0 20px 10px 20px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -193,7 +193,7 @@ watch(() => props.product.id, () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
+    padding: 10px 0;
 }
 
 .task-id {

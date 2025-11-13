@@ -13,12 +13,14 @@
                 <el-input v-model="form.releaseNotes" type="textarea" :rows="4" placeholder="请输入修复的Bug或新增功能..." />
             </el-form-item>
 
-            <el-form-item label="固件文件 (.bin)" prop="file">
-                <el-upload class="upload-demo" drag action="#" :auto-upload="false" :limit="1"
-                    :on-change="handleFileChange" :on-remove="handleFileRemove">
+            <el-form-item label="固件文件 (.bin / .hex)" prop="file">
+                <el-upload ref="uploadRef" class="upload-demo" drag action="#" :auto-upload="false" :limit="1"
+                    accept=".bin,.hex" :on-change="handleFileChange" :on-remove="handleFileRemove"
+                    :on-exceed="handleExceed">
                     <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                     <div class="el-upload__text">
                         拖拽文件到此处 或 <em>点击上传</em>
+                        <div class="el-upload__tip">仅支持 .bin 或 .hex 格式文件</div>
                     </div>
                 </el-upload>
             </el-form-item>
@@ -36,11 +38,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
-import { ElMessage, type FormInstance } from 'element-plus'
+import { ref, reactive, computed } from 'vue'
+import { ElMessage, type FormInstance, type UploadProps, type UploadUserFile, type UploadInstance } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { uploadFirmware } from '@/api'
-import type { Product } from '@/types'
+import type { Product } from '@/types' // 如果路径不对请自行调整，例如 '@/api'
 
 const props = defineProps<{
     modelValue: boolean
@@ -52,6 +54,7 @@ const emit = defineEmits(['update:modelValue', 'success'])
 // --- 状态 ---
 const uploading = ref(false)
 const formRef = ref<FormInstance>()
+const uploadRef = ref<UploadInstance>() // ✨ 获取 upload 实例引用
 const hasFile = ref(false)
 
 const form = reactive({
@@ -59,7 +62,6 @@ const form = reactive({
     releaseNotes: ''
 })
 
-// 简单的版本号正则
 const rules = {
     version: [
         { required: true, message: '请输入版本号', trigger: 'blur' },
@@ -70,19 +72,41 @@ const rules = {
     ]
 }
 
-// --- 计算属性实现 v-model ---
 const visible = computed({
     get: () => props.modelValue,
     set: (val) => emit('update:modelValue', val)
 })
 
-// --- 文件处理 (模拟) ---
-const handleFileChange = (file: any) => {
+// --- ✨ 核心修复: 文件校验逻辑 ---
+const handleFileChange: UploadProps['onChange'] = (file, fileList) => {
+    // 1. 获取文件名后缀
+    const fileName = file.name
+    const fileExt = fileName.substring(fileName.lastIndexOf('.')).toLowerCase()
+    const isAllowed = fileExt === '.bin' || fileExt === '.hex'
+
+    // 2. 校验失败处理
+    if (!isAllowed) {
+        ElMessage.error('文件格式错误！仅支持 .bin 或 .hex 文件')
+        // 移除错误文件
+        uploadRef.value!.clearFiles()
+        hasFile.value = false
+        return
+    }
+
+    // 3. 校验通过
     hasFile.value = true
-    // 实际项目中这里会处理 file.raw
+    // 可以在这里读取 file.raw 进行进一步处理
 }
+
 const handleFileRemove = () => {
     hasFile.value = false
+}
+
+// 处理文件超出限制（覆盖上一个）
+const handleExceed: UploadProps['onExceed'] = (files) => {
+    uploadRef.value!.clearFiles()
+    const file = files[0] as any
+    uploadRef.value!.handleStart(file)
 }
 
 // --- 提交 ---
@@ -98,7 +122,6 @@ const submitUpload = async () => {
 
             uploading.value = true
             try {
-                // 模拟上传延迟
                 await new Promise(resolve => setTimeout(resolve, 1000))
 
                 await uploadFirmware({
@@ -108,7 +131,7 @@ const submitUpload = async () => {
                 })
 
                 ElMessage.success('固件上传成功！')
-                emit('success') // 通知父组件刷新列表
+                emit('success')
                 handleClose()
             } catch (error) {
                 console.error(error)
@@ -122,9 +145,19 @@ const submitUpload = async () => {
 const handleClose = () => {
     if (uploading.value) return
     visible.value = false
-    // 重置表单
     form.version = ''
     form.releaseNotes = ''
     hasFile.value = false
+    if (uploadRef.value) {
+        uploadRef.value.clearFiles()
+    }
 }
 </script>
+
+<style scoped>
+.el-upload__tip {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+}
+</style>

@@ -149,6 +149,7 @@ watch(() => props.product.id, () => {
 
 <style scoped>
 .firmware-panel {
+    padding: 0 20px 10px 20px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -158,8 +159,7 @@ watch(() => props.product.id, () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding: 0 10px;
+    padding: 10px 0;
 }
 
 .text-ellipsis {

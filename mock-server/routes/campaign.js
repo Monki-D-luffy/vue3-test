@@ -28,6 +28,12 @@ module.exports = function (server, db) {
     // 获取 Campaign 列表 (带进度模拟)
     server.get('/api/campaigns', (req, res) => {
         let campaigns = db.get('campaigns').value()
+        // 手动处理 productId 过滤
+        const targetProductId = req.query.productId
+        if (targetProductId) {
+            campaigns = campaigns.filter(c => c.productId === targetProductId)
+        }
+
         campaigns.forEach(camp => {
             if (camp.status === 'running') {
                 camp.progress += Math.floor(Math.random() * 10) + 5
