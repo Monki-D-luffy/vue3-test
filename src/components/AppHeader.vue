@@ -7,9 +7,6 @@
 
         <div class="header-right">
             <el-icon class="header-icon">
-                <ShoppingCart />
-            </el-icon>
-            <el-icon class="header-icon">
                 <Bell />
             </el-icon>
             <el-icon class="header-icon">

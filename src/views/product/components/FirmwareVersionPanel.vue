@@ -51,14 +51,18 @@
 
             <el-table-column label="操作" width="200" fixed="right">
                 <template #default="{ row }">
-                    <el-button v-if="!row.verified" type="success" link @click="verifyFirmware(row, refreshData)">
-                        通过验证
-                    </el-button>
-                    <el-button v-else type="info" link disabled>已就绪</el-button>
-
-                    <el-button type="danger" link @click="removeFirmware(row, refreshData)">
-                        删除
-                    </el-button>
+                    <div class="action-group">
+                        <div class="status-btn-wrapper">
+                            <el-button v-if="!row.verified" type="success" link
+                                @click="verifyFirmware(row, refreshData)">
+                                通过验证
+                            </el-button>
+                            <el-button v-else type="info" link disabled>已就绪</el-button>
+                        </div>
+                        <el-button type="danger" link @click="removeFirmware(row, refreshData)">
+                            删除
+                        </el-button>
+                    </div>
                 </template>
             </el-table-column>
 
@@ -131,5 +135,22 @@ watch(() => props.product.id, () => {
 
 .ml-2 {
     margin-left: 8px;
+}
+
+.action-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    /* 左对齐，配合定宽容器 */
+}
+
+.status-btn-wrapper {
+    width: 75px;
+    /* 设定一个足够放下“通过验证”的宽度 */
+    display: flex;
+    justify-content: center;
+    /* 让按钮在定宽容器内居中，美观一些 */
+    margin-right: 10px;
+    /* 确保和删除按钮之间有固定间距 */
 }
 </style>

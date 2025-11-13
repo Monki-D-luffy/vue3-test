@@ -1,6 +1,6 @@
 <template>
     <div class="firmware-management">
-        <ResizableLayout :initial-width="280">
+        <ResizableLayout :initial-width="200">
 
             <template #sidebar>
                 <ProductSidebar @select="handleProductSelect" />
@@ -63,7 +63,7 @@ const handleProductSelect = (product: Product) => {
     /* 如果外层没有圆角/背景，可以在这里加，也可以在 ResizableLayout 里加 */
     background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 4px rgba(35, 164, 193, 0.864);
     overflow: hidden;
 }
 

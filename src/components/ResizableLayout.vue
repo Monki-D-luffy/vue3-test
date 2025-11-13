@@ -18,8 +18,8 @@ import { ref, onUnmounted } from 'vue'
 
 // 定义 Props，允许外部自定义宽度限制
 const props = defineProps({
-    initialWidth: { type: Number, default: 280 },
-    minWidth: { type: Number, default: 200 },
+    initialWidth: { type: Number, default: 180 },
+    minWidth: { type: Number, default: 180 },
     maxWidth: { type: Number, default: 600 }
 })
 

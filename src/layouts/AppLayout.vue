@@ -4,7 +4,7 @@
             <AppSidebar :is-collapsed="isCollapsed" @toggle-collapse="toggleCollapse" />
 
             <el-container>
-                <el-header style="padding: 0; height: 60px;">
+                <el-header class="app-header">
                     <AppHeader :is-collapsed="isCollapsed" @toggle-collapse="toggleCollapse" />
                 </el-header>
 
@@ -43,6 +43,12 @@ const toggleCollapse = () => {
     /* 60px 是 AppHeader.vue 里的 .el-header 默认高度 */
     height: calc(100vh - 60px);
     overflow-y: auto;
-    padding: 20px;
+    padding: 10px 0px 0px 0px;
+}
+
+.app-header {
+    /* Element Plus 默认可能是行内样式，这里可能需要 !important 或者直接用 height 属性 */
+    height: 50px !important;
+    padding: 0 20px 0px 0px;
 }
 </style>
