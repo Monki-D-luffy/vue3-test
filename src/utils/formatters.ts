@@ -51,3 +51,23 @@ export const getDeviceStatusType = (status: string): string => {
     }
     return map[status] || ''
 }
+
+/**
+ * 格式化文件大小 (Bytes -> KB/MB)
+ */
+export const formatFileSize = (bytes: number | undefined): string => {
+    if (bytes === undefined || bytes === null || isNaN(bytes)) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+/**
+ * 获取固件验证状态的 Tag 颜色
+ */
+export const getFirmwareVerifiedStatus = (verified?: boolean) => {
+    return verified
+        ? { label: '已验证', type: 'success' }
+        : { label: '未验证', type: 'warning' }
+}
