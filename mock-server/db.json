@@ -28180,5 +28180,66 @@
       "finishedAt": "2024-10-26 19:02:00"
     }
   ],
-  "campaigns": []
+  "campaigns": [
+    {
+      "id": "camp_fA06BdDc",
+      "name": "智能灯泡_v1.1.0_2025-11-13_Campaign",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_001",
+      "firmwareVersion": "1.1.0",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 33,
+      "successCount": 33,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {},
+      "startedAt": "2025-11-13 14:12:36"
+    },
+    {
+      "id": "camp_99F9FAdA",
+      "name": "智能插座_v1.0.1_2025-11-13_Campaign",
+      "productId": "prod_socket_01",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "running",
+      "progress": 8,
+      "totalDevices": 42,
+      "successCount": 0,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {},
+      "startedAt": "2025-11-13 14:13:02"
+    },
+    {
+      "id": "camp_b4AceA8f",
+      "name": "智能灯泡_v1.1.0_2025-11-13_Campaign",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_001",
+      "firmwareVersion": "1.1.0",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 33,
+      "successCount": 33,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {},
+      "startedAt": "2025-11-13 14:14:05"
+    },
+    {
+      "id": "camp_d2b3dcCB",
+      "name": "智能灯泡_v1.1.0_2025-11-13_Campaign",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_001",
+      "firmwareVersion": "1.1.0",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 33,
+      "successCount": 33,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {},
+      "startedAt": "2025-11-13 14:15:38"
+    }
+  ]
 }
