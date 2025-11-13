@@ -1,11 +1,12 @@
 <template>
     <div class="firmware-management">
-        <div class="layout-container">
-            <div class="left-panel">
-                <ProductSidebar @select="handleProductSelect" />
-            </div>
+        <ResizableLayout :initial-width="280">
 
-            <div class="right-panel">
+            <template #sidebar>
+                <ProductSidebar @select="handleProductSelect" />
+            </template>
+
+            <template #content>
                 <div v-if="currentProduct" class="content-wrapper">
                     <div class="content-header">
                         <div class="header-info">
@@ -15,8 +16,7 @@
                             </h2>
                             <p class="product-id">Product ID: {{ currentProduct.id }}</p>
                         </div>
-                        <div class="header-stats">
-                        </div>
+                        <div class="header-stats"></div>
                     </div>
 
                     <div class="content-body">
@@ -34,16 +34,17 @@
                 <div v-else class="empty-wrapper">
                     <el-empty description="请在左侧选择一个产品进行管理" />
                 </div>
-            </div>
-        </div>
+            </template>
+
+        </ResizableLayout>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Product } from '@/types'
-
-// 引入子组件
+// 引入组件
+import ResizableLayout from '@/components/ResizableLayout.vue'
 import ProductSidebar from './components/ProductSidebar.vue'
 import FirmwareVersionPanel from './components/FirmwareVersionPanel.vue'
 import UpgradeTaskPanel from './components/UpgradeTaskPanel.vue'
@@ -51,50 +52,22 @@ import UpgradeTaskPanel from './components/UpgradeTaskPanel.vue'
 const currentProduct = ref<Product | null>(null)
 const activeTab = ref('versions')
 
-// 处理左侧选择
 const handleProductSelect = (product: Product) => {
     currentProduct.value = product
-    // 切换产品时，重置 Tab 或执行其他初始化
-    console.log('Switched to product:', product.name)
 }
 </script>
 
 <style scoped>
 .firmware-management {
-    /* 铺满父容器 (AppLayout 的 el-main) */
     height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.layout-container {
-    display: flex;
-    flex: 1;
+    /* 如果外层没有圆角/背景，可以在这里加，也可以在 ResizableLayout 里加 */
     background-color: #fff;
     border-radius: 8px;
-    overflow: hidden;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-    /* 确保容器高度撑满 */
-    height: 100%;
-}
-
-/* 左侧定宽 */
-.left-panel {
-    width: 280px;
-    flex-shrink: 0;
-    height: 100%;
-}
-
-/* 右侧自适应 */
-.right-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
     overflow: hidden;
-    background-color: #fff;
 }
 
+/* 下面的样式只跟当前页面的具体内容有关 */
 .content-wrapper {
     display: flex;
     flex-direction: column;
@@ -133,12 +106,10 @@ const handleProductSelect = (product: Product) => {
 .content-body {
     flex: 1;
     overflow: hidden;
-    /* 让 tabs 内容自己滚动 */
     display: flex;
     flex-direction: column;
 }
 
-/* 深度调整 el-tabs 样式让它撑满 */
 .main-tabs {
     height: 100%;
     display: flex;
