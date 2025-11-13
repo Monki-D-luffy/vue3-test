@@ -1,156 +1,211 @@
 <template>
-    <div class="firmware-panel">
-        <div class="panel-toolbar">
-            <div class="left">
-                <el-text class="mx-1" type="info">
-                    <el-icon>
-                        <InfoFilled />
-                    </el-icon>
-                    仅“验证通过”的固件可用于批量推送
-                </el-text>
-            </div>
-            <div class="right">
-                <el-button type="primary" :icon="Upload" @click="isUploadVisible = true">
-                    上传新版本
-                </el-button>
-            </div>
+    <el-card v-if="!firmware" class="detail-card" shadow="never">
+        <div class="empty-wrapper">
+            <el-empty description="请点击左侧列表查看固件详情" :image-size="120" />
         </div>
+    </el-card>
 
-        <el-table :data="firmwareList" v-loading="loading" style="width: 100%">
-            <el-table-column prop="version" label="版本号" width="120">
-                <template #default="{ row, $index }">
-                    <span style="font-weight: bold;">{{ row.version }}</span>
-                    <el-tag v-if="$index === 0" size="small" type="danger" effect="plain" class="ml-2">Latest</el-tag>
-                </template>
-            </el-table-column>
-
-            <el-table-column prop="uploadedAt" label="上传时间" width="180">
-                <template #default="{ row }">
-                    {{ formatDateTime(row.uploadedAt) }}
-                </template>
-            </el-table-column>
-
-            <el-table-column label="状态" width="120">
-                <template #default="{ row }">
-                    <el-tag v-if="row.verified" type="success" effect="dark">
-                        <el-icon>
-                            <CircleCheck />
-                        </el-icon> 已验证
+    <el-card v-else class="detail-card" shadow="never">
+        <template #header>
+            <div class="detail-header-group">
+                <div class="header-left">
+                    <h2 class="detail-title">{{ firmware.productName }}</h2>
+                    <el-tag class="ml-3" effect="dark" :type="getFirmwareVerifiedStatus(firmware.verified).type">
+                        {{ firmware.version }}
                     </el-tag>
-                    <el-tag v-else type="warning" effect="plain">
-                        未验证
+                </div>
+
+                <div class="header-actions">
+                    <el-button plain icon="Download" @click="onDownload">下载</el-button>
+                    <el-button type="primary" icon="VideoPlay" @click="$emit('create-task', firmware)">
+                        创建升级任务
+                    </el-button>
+                </div>
+            </div>
+        </template>
+
+        <div class="detail-body">
+
+            <el-descriptions title="版本信息" :column="2" border class="info-table">
+                <el-descriptions-item label="版本号">
+                    <span class="mono-text">{{ firmware.version }}</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="适用产品">
+                    {{ firmware.productName }}
+                </el-descriptions-item>
+                <el-descriptions-item label="上传时间">
+                    {{ formatDateTime(firmware.uploadedAt) }}
+                </el-descriptions-item>
+                <el-descriptions-item label="验证状态">
+                    <el-tag size="small" :type="getFirmwareVerifiedStatus(firmware.verified).type">
+                        {{ getFirmwareVerifiedStatus(firmware.verified).label }}
                     </el-tag>
-                </template>
-            </el-table-column>
+                </el-descriptions-item>
+                <el-descriptions-item label="文件链接" :span="2">
+                    <el-link type="primary" :href="firmware.fileUrl" target="_blank" :underline="false">
+                        {{ firmware.fileUrl }}
+                    </el-link>
+                </el-descriptions-item>
+            </el-descriptions>
 
-            <el-table-column prop="releaseNotes" label="发布说明" min-width="200">
-                <template #default="{ row }">
-                    <div class="text-ellipsis" :title="row.releaseNotes">{{ row.releaseNotes }}</div>
-                </template>
-            </el-table-column>
+            <div class="section-block">
+                <h3 class="section-title">发布说明</h3>
+                <div class="release-notes-box">
+                    <pre>{{ firmware.releaseNotes || '暂无发布说明...' }}</pre>
+                </div>
+            </div>
 
-            <el-table-column label="操作" width="200" fixed="right">
-                <template #default="{ row }">
-                    <div class="action-group">
-                        <div class="status-btn-wrapper">
-                            <el-button v-if="!row.verified" type="success" link
-                                @click="verifyFirmware(row, refreshData)">
-                                通过验证
-                            </el-button>
-                            <el-button v-else type="info" link disabled>已就绪</el-button>
+            <div class="section-block">
+                <h3 class="section-title">版本演进</h3>
+                <el-timeline>
+                    <el-timeline-item :timestamp="formatDate(firmware.uploadedAt)" placement="top" type="primary" hollow
+                        size="large">
+                        <el-card shadow="hover" class="timeline-card active">
+                            <h4>{{ firmware.version }} (当前选中)</h4>
+                            <p>刚刚上传的最新版本，请确保在小范围设备上验证通过后再全量推送。</p>
+                        </el-card>
+                    </el-timeline-item>
+
+                    <el-timeline-item timestamp="2023-10-01" placement="top" color="#909399">
+                        <div class="history-item">
+                            <span class="text-bold">v1.5.0</span>
+                            <span class="text-gray ml-2">- 稳定性修复补丁</span>
                         </div>
-                        <el-button type="danger" link @click="removeFirmware(row, refreshData)">
-                            删除
-                        </el-button>
-                    </div>
-                </template>
-            </el-table-column>
+                    </el-timeline-item>
+                    <el-timeline-item timestamp="2023-09-15" placement="top" color="#e4e7ed">
+                        <div class="history-item">
+                            <span class="text-bold">v1.0.0</span>
+                            <span class="text-gray ml-2">- 初始发布版本</span>
+                        </div>
+                    </el-timeline-item>
+                </el-timeline>
+            </div>
 
-            <template #empty>
-                <el-empty description="该产品暂无固件，请点击右上角上传" />
-            </template>
-        </el-table>
-
-        <FirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="refreshData" />
-    </div>
+        </div>
+    </el-card>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { Upload, InfoFilled, CircleCheck } from '@element-plus/icons-vue'
-import { formatDateTime } from '@/utils/formatters'
-import type { Product } from '@/types'
-import FirmwareUploadWizard from './FirmwareUploadWizard.vue'
-import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
+import { type PropType } from 'vue'
+import { Download, VideoPlay } from '@element-plus/icons-vue'
+import type { Firmware } from '@/types/index'
+import { formatDateTime, formatDate, getFirmwareVerifiedStatus } from '@/utils/formatters'
+import { ElMessage } from 'element-plus'
 
-const props = defineProps<{
-    product: Product
-}>()
+const props = defineProps({
+    firmware: {
+        type: Object as PropType<Firmware | null>,
+        default: null
+    }
+})
 
-const isUploadVisible = ref(false)
+const emit = defineEmits(['create-task'])
 
-// ✨ 引入 Composable
-const {
-    loading,
-    firmwareList,
-    getFirmwares,
-    verifyFirmware,
-    removeFirmware
-} = useFirmwareManagement()
-
-// 封装刷新函数
-const refreshData = () => {
-    if (props.product?.id) {
-        getFirmwares(props.product.id)
+const onDownload = () => {
+    if (props.firmware?.fileUrl) {
+        window.open(props.firmware.fileUrl, '_blank')
+    } else {
+        ElMessage.warning('无效的下载链接')
     }
 }
-
-// 监听 Product ID 变化
-watch(() => props.product.id, () => {
-    refreshData()
-}, { immediate: true })
-
 </script>
 
 <style scoped>
-.firmware-panel {
-    padding: 0 20px 10px 20px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.panel-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-}
-
-.text-ellipsis {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.ml-2 {
-    margin-left: 8px;
-}
-
-.action-group {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    /* 左对齐，配合定宽容器 */
-}
-
-.status-btn-wrapper {
-    width: 75px;
-    /* 设定一个足够放下“通过验证”的宽度 */
+/* 局部样式微调 */
+.empty-wrapper {
     display: flex;
     justify-content: center;
-    /* 让按钮在定宽容器内居中，美观一些 */
-    margin-right: 10px;
-    /* 确保和删除按钮之间有固定间距 */
+    align-items: center;
+    height: 100%;
+    min-height: 400px;
+}
+
+.ml-3 {
+    margin-left: 12px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+/* 详情部分间距 */
+.detail-body {
+    padding-top: 8px;
+}
+
+.info-table {
+    margin-bottom: 32px;
+}
+
+/* 单宽字体，适合显示版本号和哈希值 */
+.mono-text {
+    font-family: 'Roboto Mono', monospace;
+    color: #303133;
+    background: #f5f7fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.section-block {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 16px;
+    border-left: 4px solid #409eff;
+    padding-left: 12px;
+}
+
+/* 发布说明样式框 */
+.release-notes-box {
+    background-color: #282c34;
+    /* 代码风格深色背景 */
+    color: #abb2bf;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    line-height: 1.6;
+    overflow-x: auto;
+}
+
+.release-notes-box pre {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* 时间轴卡片微调 */
+.timeline-card.active {
+    border: 1px solid #c6e2ff;
+    background-color: #ecf5ff;
+}
+
+.timeline-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    color: #409eff;
+}
+
+.timeline-card p {
+    margin: 0;
+    font-size: 13px;
+    color: #606266;
+}
+
+.history-item {
+    font-size: 14px;
+}
+
+.text-bold {
+    font-weight: 600;
+    color: #303133;
+}
+
+.text-gray {
+    color: #909399;
+    font-size: 13px;
 }
 </style>
