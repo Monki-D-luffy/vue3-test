@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, CircleCheckFilled, CircleCloseFilled, Loading, Clock } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
@@ -98,24 +98,7 @@ const props = defineProps<{
 const loading = ref(false)
 const taskList = ref<any[]>([])
 const isCreateVisible = ref(false)
-
-// 加载任务数据
-const loadData = async () => {
-    if (!props.product.id) return
-    loading.value = true
-    try {
-        // 调用 fetchCampaigns 而不是 api.get('/upgradeTasks')
-        // 并且传入 productId 进行筛选
-        const data = await fetchCampaigns({ productId: props.product.id })
-
-        // 简单排序：最新的在前面
-        taskList.value = data || []
-    } catch (e) {
-        console.error(e)
-    } finally {
-        loading.value = false
-    }
-}
+let pollingTimer: any = null
 
 const formatStatus = (status: string) => {
     const map: Record<string, string> = {
@@ -128,19 +111,73 @@ const formatStatus = (status: string) => {
     }
     return map[status] || status
 }
+// 加载任务数据
+const loadData = async (isBackground = false) => {
+    if (!props.product.id) return
+    // 只有手动刷新时才显示 loading
+    if (!isBackground) {
+        loading.value = true
+    } try {
+        // 调用 fetchCampaigns 而不是 api.get('/upgradeTasks')
+        // 并且传入 productId 进行筛选
+        const data = await fetchCampaigns({ productId: props.product.id })
+        // 简单排序：最新的在前面
+        taskList.value = Array.isArray(data) ? data : (data.items || [])
+
+        // taskList.value = data || []
+    } catch (e) {
+        console.error('获取任务列表失败:', e)
+        // 自动刷新失败时不弹窗打扰用户，仅控制台报错
+        if (!isBackground) {
+            ElMessage.error('刷新失败')
+        }
+    } finally {
+        loading.value = false
+    }
+}
+
+
 // 处理删除
 const handleDeleteTask = async (task: any) => {
     try {
         await deleteUpgradeCampaign(task.id)
         ElMessage.success('任务删除成功')
         // 刷新列表
-        loadData()
+        loadData(true)
     } catch (error) {
         console.error(error)
     }
 }
+
+// 启动轮询
+const startPolling = () => {
+    stopPolling() // 防止重复启动
+    // 每 3 秒静默刷新一次
+    pollingTimer = setInterval(() => {
+        loadData(true)
+    }, 1000)
+}
+
+// 停止轮询
+const stopPolling = () => {
+    if (pollingTimer) {
+        clearInterval(pollingTimer)
+        pollingTimer = null
+    }
+}
+
+// 生命周期
+onMounted(() => {
+    loadData()      // 首次加载（显示 loading）
+    startPolling()   // 启动自动刷新
+})
+
+onUnmounted(() => {
+    stopPolling()    // 组件销毁时必须清除定时器，防止内存泄漏
+})
+
 watch(() => props.product.id, () => {
-    loadData()
+    loadData(true)
 }, { immediate: true })
 </script>
 
