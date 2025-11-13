@@ -70,11 +70,6 @@ export interface ApiResponse<T> {
     data: T
 }
 
-// export interface Product {
-//   id: string
-//   name: string
-//   type: string
-// }
 
 export interface Firmware {
     id: string
@@ -118,4 +113,11 @@ export interface PaginationParams {
 export interface PaginatedResponse<T> {
     items: T[]
     total: number
+}
+
+
+// 通用分页响应结构 (可选，建议加上)
+export interface PaginatedResponse<T> {
+    items: T[];
+    total: number;
 }

@@ -39,10 +39,9 @@ import {
     ElMessageBox
 } from 'element-plus'
 import { useFirmwareUpgrade } from '@/composables/useFirmwareUpgrade'
-import type { UpgradeTaskStatus } from '@/api/index'
 // 我们需要 Device 类型来定义 prop
-import type { Device } from '@/composables/useDeviceList'
-
+// import type { Device } from '@/composables/useDeviceList'
+import type { UpgradeTaskStatus, Device } from '@/types'
 // === Props & Emits ===
 
 const props = defineProps({
