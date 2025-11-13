@@ -51,14 +51,12 @@
 
             <el-table-column label="操作" width="200" fixed="right">
                 <template #default="{ row }">
-                    <el-button v-if="!row.verified" type="success" link @click="handleVerify(row)">
+                    <el-button v-if="!row.verified" type="success" link @click="verifyFirmware(row, refreshData)">
                         通过验证
                     </el-button>
-                    <el-button v-else type="info" link disabled>
-                        已就绪
-                    </el-button>
+                    <el-button v-else type="info" link disabled>已就绪</el-button>
 
-                    <el-button type="danger" link @click="handleDelete(row)">
+                    <el-button type="danger" link @click="removeFirmware(row, refreshData)">
                         删除
                     </el-button>
                 </template>
@@ -69,80 +67,43 @@
             </template>
         </el-table>
 
-        <FirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="loadData" />
+        <FirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="refreshData" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, InfoFilled, CircleCheck } from '@element-plus/icons-vue'
-import { fetchFirmwares, updateFirmware, deleteFirmware } from '@/api'
 import { formatDateTime } from '@/utils/formatters'
-import type { Product, Firmware } from '@/types'
+import type { Product } from '@/types'
 import FirmwareUploadWizard from './FirmwareUploadWizard.vue'
+import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
 
 const props = defineProps<{
     product: Product
 }>()
 
-const loading = ref(false)
-const firmwareList = ref<Firmware[]>([])
 const isUploadVisible = ref(false)
 
-const loadData = async () => {
-    if (!props.product?.id) return
+// ✨ 引入 Composable
+const {
+    loading,
+    firmwareList,
+    getFirmwares,
+    verifyFirmware,
+    removeFirmware
+} = useFirmwareManagement()
 
-    loading.value = true
-    try {
-        const res = await fetchFirmwares({
-            _page: 1,
-            _limit: 100,
-            productId: props.product.id,
-            _sort: 'uploadedAt',
-            _order: 'desc'
-        })
-        firmwareList.value = res.items
-    } catch (error) {
-        console.error(error)
-    } finally {
-        loading.value = false
+// 封装刷新函数
+const refreshData = () => {
+    if (props.product?.id) {
+        getFirmwares(props.product.id)
     }
 }
 
-const handleVerify = async (row: Firmware) => {
-    try {
-        await ElMessageBox.confirm(
-            `确认将版本 ${row.version} 标记为"验证通过"吗？\n标记后，该版本将出现在批量升级的候选列表中。`,
-            '验证确认',
-            { confirmButtonText: '通过验证', type: 'success' }
-        )
-
-        await updateFirmware(row.id, { verified: true })
-        ElMessage.success(`版本 ${row.version} 已就绪`)
-        loadData()
-    } catch (e) {
-        // cancel
-    }
-}
-
-const handleDelete = async (row: Firmware) => {
-    try {
-        await ElMessageBox.confirm(
-            `确定删除版本 ${row.version} 吗？此操作不可恢复。`,
-            '删除警告',
-            { confirmButtonText: '删除', type: 'warning' }
-        )
-        await deleteFirmware(row.id)
-        ElMessage.success('删除成功')
-        loadData()
-    } catch (e) {
-        // cancel
-    }
-}
-
+// 监听 Product ID 变化
 watch(() => props.product.id, () => {
-    loadData()
+    refreshData()
 }, { immediate: true })
 
 </script>

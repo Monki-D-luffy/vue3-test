@@ -131,10 +131,13 @@ const submitUpload = async () => {
                 })
 
                 ElMessage.success('固件上传成功！')
+
                 emit('success')
+                uploading.value = false
                 handleClose()
             } catch (error) {
-                console.error(error)
+                console.error("固件上传失败", error)
+                uploading.value = false
             } finally {
                 uploading.value = false
             }
