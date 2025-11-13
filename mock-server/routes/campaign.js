@@ -44,4 +44,19 @@ module.exports = function (server, db) {
         campaigns.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
         res.json({ code: 200, message: '获取成功', success: true, data: campaigns })
     })
+
+    // 删除 Campaign
+    server.delete('/api/campaigns/:id', (req, res) => {
+        const id = req.params.id
+        const campaign = db.get('campaigns').find({ id }).value()
+
+        if (!campaign) {
+            return res.status(404).json({ code: 404, message: "任务不存在", success: false })
+        }
+
+        // 执行删除
+        db.get('campaigns').remove({ id }).write()
+
+        res.json({ code: 200, message: '任务已删除', success: true })
+    })
 }

@@ -237,4 +237,11 @@ export const fetchCampaigns = async (params: any = {}): Promise<any> => {
   return res.data.data
 }
 
+/**
+ * 删除批量升级任务
+ */
+export const deleteUpgradeCampaign = async (campaignId: string): Promise<void> => {
+  await api.delete(`/campaigns/${campaignId}`)
+}
+
 export default api

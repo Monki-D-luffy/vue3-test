@@ -61,6 +61,18 @@
                 </template>
             </el-table-column>
 
+            <el-table-column label="操作" width="120" align="center">
+                <template #default="{ row }">
+                    <el-popconfirm title="确定要删除这个任务吗？" confirm-button-text="删除" cancel-button-text="取消"
+                        @confirm="handleDeleteTask(row)">
+                        <template #reference>
+                            <el-button link type="danger">
+                                删除
+                            </el-button>
+                        </template>
+                    </el-popconfirm>
+                </template>
+            </el-table-column>
             <template #empty>
                 <el-empty description="暂无升级任务记录" />
             </template>
@@ -72,12 +84,12 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { Plus, Refresh, CircleCheckFilled, CircleCloseFilled, Loading, Clock } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
 import type { Product } from '@/types'
 import CreateTaskWizard from './CreateTaskWizard.vue'
-import api from '@/api'
-import { fetchCampaigns } from '@/api'
+import { fetchCampaigns, deleteUpgradeCampaign } from '@/api'
 
 const props = defineProps<{
     product: Product
@@ -92,7 +104,7 @@ const loadData = async () => {
     if (!props.product.id) return
     loading.value = true
     try {
-        // ✨ 修改：调用 fetchCampaigns 而不是 api.get('/upgradeTasks')
+        // 调用 fetchCampaigns 而不是 api.get('/upgradeTasks')
         // 并且传入 productId 进行筛选
         const data = await fetchCampaigns({ productId: props.product.id })
 
@@ -116,7 +128,17 @@ const formatStatus = (status: string) => {
     }
     return map[status] || status
 }
-
+// 处理删除
+const handleDeleteTask = async (task: any) => {
+    try {
+        await deleteUpgradeCampaign(task.id)
+        ElMessage.success('任务删除成功')
+        // 刷新列表
+        loadData()
+    } catch (error) {
+        console.error(error)
+    }
+}
 watch(() => props.product.id, () => {
     loadData()
 }, { immediate: true })
