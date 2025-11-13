@@ -264,6 +264,7 @@ const handleSubmit = async () => {
 
         ElMessage.success('批量升级任务已成功创建！')
         emit('success')
+        submitting.value = false
         handleClose()
     } catch (e) {
         console.error(e)
@@ -274,8 +275,10 @@ const handleSubmit = async () => {
 }
 
 const handleClose = () => {
+
     if (submitting.value) return
     visible.value = false
+    console.log('关闭弹窗成功');
     // 关闭后重置状态
     setTimeout(() => {
         activeStep.value = 0
