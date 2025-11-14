@@ -21,8 +21,7 @@ export const formatDateTime = (dateString: string | Date | number | null | undef
 }
 
 /**
- * ✨ [修复] 格式化日期 (YYYY-MM-DD) - 尊重本地时区
- * 用于查询参数构建，避免 toISOString() 导致的跨天问题
+ * 格式化日期 (YYYY-MM-DD)
  */
 export const formatDate = (dateInput: Date | string | number | null | undefined): string => {
     if (!dateInput) return ''
@@ -39,6 +38,24 @@ export const formatDate = (dateInput: Date | string | number | null | undefined)
 }
 
 /**
+ * ✨ [新增] 相对时间格式化 (例如：2小时前)
+ */
+export const formatTimeAgo = (dateInput: string | Date | number): string => {
+    if (!dateInput) return '--'
+    const date = new Date(dateInput)
+    const now = new Date()
+    const diff = (now.getTime() - date.getTime()) / 1000 // 秒数
+
+    if (diff < 60) return '刚刚'
+    if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
+    if (diff < 604800) return `${Math.floor(diff / 86400)}天前`
+
+    // 超过一周直接显示日期
+    return formatDate(date)
+}
+
+/**
  * 根据设备状态返回 Element Plus 的 Tag 类型
  */
 export const getDeviceStatusType = (status: string): string => {
@@ -47,7 +64,7 @@ export const getDeviceStatusType = (status: string): string => {
         '离线': 'info',
         '故障': 'danger',
         '未激活': 'warning',
-        '升级中': 'primary' // 补充升级中状态
+        '升级中': 'primary'
     }
     return map[status] || ''
 }

@@ -27141,7 +27141,7 @@
       "productName": "智能灯泡",
       "fileUrl": "/files/firmware_v5465.bin",
       "uploadedAt": "2025-11-14 15:21:37",
-      "verified": false
+      "verified": true
     }
   ],
   "upgradeTasks": [
