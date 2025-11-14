@@ -95,10 +95,13 @@ api.interceptors.response.use(
  */
 export const fetchFirmwares = async (params: PaginationParams): Promise<PaginatedResponse<Firmware>> => {
   const response = await api.get<ApiResponse<Firmware[]>>('/firmwares', { params })
-  const totalCount = response.headers['x-total-count'] || 0
+
+  // 优先取 body 里的 total，没有则取 header
+  const totalCount = response.data.total || response.headers['x-total-count'] || 0
+
   return {
-    items: response.data.data,
-    total: +totalCount
+    items: response.data.data || [],
+    total: Number(totalCount)
   }
 }
 
@@ -195,9 +198,15 @@ export const createUpgradeCampaign = async (payload: {
 /**
  * 获取批量任务列表
  */
-export const fetchCampaigns = async (params: any = {}): Promise<any> => {
-  const res = await api.get('/campaigns', { params })
-  return res.data.data
+export const fetchCampaigns = async (params: any = {}): Promise<{ items: UpgradeTask[], total: number }> => {
+  const res = await api.get<ApiResponse<UpgradeTask[]>>('/campaigns', { params })
+
+  const totalCount = res.data.total || res.headers['x-total-count'] || 0
+
+  return {
+    items: res.data.data || [],
+    total: Number(totalCount)
+  }
 }
 
 /**
@@ -206,5 +215,7 @@ export const fetchCampaigns = async (params: any = {}): Promise<any> => {
 export const deleteUpgradeCampaign = async (campaignId: string): Promise<void> => {
   await api.delete(`/campaigns/${campaignId}`)
 }
+
+
 
 export default api

@@ -5,9 +5,13 @@
                 <el-icon class="info-icon">
                     <List />
                 </el-icon>
-                <span>批量升级任务记录</span>
+                <span>批量升级任务记录 ({{ pagination.total }})</span>
+                <span v-if="isPolling" class="polling-badge">
+                    <span class="pulse-dot"></span> 实时监控中
+                </span>
             </div>
             <div class="right-action">
+                <el-button :icon="Refresh" circle @click="fetchList(false)" :loading="loading" class="mr-2" />
                 <el-button type="primary" class="tech-btn" @click="openCreateWizard">
                     <el-icon class="mr-1">
                         <Plus />
@@ -18,12 +22,14 @@
         </div>
 
         <div class="table-container">
-            <el-table :data="taskList" v-loading="loading" height="100%" style="width: 100%"
+            <el-table :data="taskList" v-loading="loading && taskList.length === 0" style="width: 100%"
                 :header-cell-style="headerStyle" :row-class-name="tableRowClassName">
+
                 <el-table-column label="任务名称" min-width="180">
                     <template #default="{ row }">
                         <div class="task-info">
-                            <span class="task-name">{{ row.name || `Task_${row.id?.slice(0, 6)}` }}</span>
+                            <span class="task-name" :title="row.name">{{ row.name || `Task_${row.id?.slice(0, 6)}`
+                            }}</span>
                             <span class="task-id">ID: {{ row.id }}</span>
                         </div>
                     </template>
@@ -37,8 +43,9 @@
 
                 <el-table-column label="范围" width="120">
                     <template #default="{ row }">
-                        <el-tag size="small" effect="plain" round type="info">
-                            {{ row.targetScope === 'filter' ? '定向' : '全量' }}
+                        <el-tag size="small" :type="row.targetScope === 'filter' ? 'warning' : 'info'" effect="light"
+                            round>
+                            {{ row.targetScope === 'filter' ? '定向筛选' : '全量推送' }}
                         </el-tag>
                     </template>
                 </el-table-column>
@@ -47,19 +54,32 @@
                     <template #default="{ row }">
                         <div class="progress-wrapper">
                             <div class="progress-info">
-                                <span class="progress-text">{{ row.successCount || 0 }}/{{ row.totalCount || 0 }}
-                                    台</span>
-                                <span class="progress-percent">{{ calculatePercent(row) }}%</span>
+                                <span class="progress-text">
+                                    <template v-if="row.status === 'running'">
+                                        正在推送...
+                                    </template>
+                                    <template v-else-if="row.status === 'success'">
+                                        全部完成
+                                    </template>
+                                    <template v-else>
+                                        已完成 {{ calculatePercent(row) }}%
+                                    </template>
+                                </span>
+                                <span class="progress-num">{{ row.successCount || 0 }}/{{ row.totalDevices ||
+                                    row.totalCount || 0 }}</span>
                             </div>
-                            <el-progress :percentage="calculatePercent(row)" :stroke-width="6" :show-text="false"
-                                :color="getProgressColor(row.status)" class="slim-progress" />
+                            <el-progress :percentage="calculatePercent(row)" :stroke-width="8" :show-text="false"
+                                :color="getProgressColor(row.status)"
+                                :status="row.status === 'failed' ? 'exception' : ''" class="slim-progress"
+                                :indeterminate="row.status === 'running' && calculatePercent(row) < 100"
+                                :duration="3" />
                         </div>
                     </template>
                 </el-table-column>
 
                 <el-table-column label="状态" width="120">
                     <template #default="{ row }">
-                        <div class="status-badge" :class="getStatusClass(row.status)">
+                        <div class="status-badge" :class="`status-${row.status || 'pending'}`">
                             <span class="status-dot"></span>
                             {{ getStatusText(row.status) }}
                         </div>
@@ -68,94 +88,88 @@
 
                 <el-table-column label="创建时间" width="160">
                     <template #default="{ row }">
-                        <span class="time-text">{{ formatDateTime(row.createdAt || row.startTime) }}</span>
+                        <span class="time-text">{{ formatDateTime(row.createdAt || row.startedAt) }}</span>
                     </template>
                 </el-table-column>
 
                 <el-table-column label="操作" width="100" align="right" fixed="right">
-                    <template #default>
-                        <el-button circle size="small" class="action-btn" plain>
-                            <el-icon>
-                                <ArrowRight />
-                            </el-icon>
-                        </el-button>
+                    <template #default="{ row }">
+                        <el-popconfirm title="确定要删除此任务记录吗?" @confirm="removeTask(row.id)">
+                            <template #reference>
+                                <el-button circle size="small" class="action-btn delete-btn" plain>
+                                    <el-icon>
+                                        <Delete />
+                                    </el-icon>
+                                </el-button>
+                            </template>
+                        </el-popconfirm>
                     </template>
                 </el-table-column>
 
                 <template #empty>
-                    <el-empty description="暂无升级任务，请点击右上角新建" :image-size="80" />
+                    <div class="empty-state-wrapper">
+                        <el-empty description="暂无升级任务" :image-size="100">
+                            <template #extra>
+                                <el-button type="primary" @click="openCreateWizard">
+                                    立即创建第一个任务
+                                </el-button>
+                            </template>
+                        </el-empty>
+                    </div>
                 </template>
             </el-table>
         </div>
 
-        <ExpCreateTaskWizard v-model="isCreateVisible" :product="product" @success="refreshData" />
+        <div class="pagination-wrapper" v-if="pagination.total > 0">
+            <AppPagination :total="pagination.total" v-model:current-page="pagination.currentPage"
+                v-model:page-size="pagination.pageSize" @size-change="handlePaginationChange"
+                @current-change="handlePaginationChange" />
+        </div>
+
+        <ExpCreateTaskWizard v-model="isCreateVisible" :product="product" @success="handleTaskCreated" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { Plus, List, ArrowRight } from '@element-plus/icons-vue'
+import { ref, toRef, computed } from 'vue'
+import { Plus, List, Refresh, Delete } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
-import { ElMessage } from 'element-plus'
 import type { Product } from '@/types'
-// 引入 API
-import { fetchCampaigns } from '@/api'
-// 引入组件
 import ExpCreateTaskWizard from './ExpCreateTaskWizard.vue'
+import AppPagination from '@/components/AppPagination.vue'
+import { useUpgradeCampaigns } from '@/composables/useUpgradeCampaigns'
 
 const props = defineProps<{
     product: Product
 }>()
 
 const isCreateVisible = ref(false)
-const loading = ref(false)
-const taskList = ref<any[]>([])
+const productRef = toRef(props, 'product')
 
-// 打开向导
+const {
+    loading,
+    taskList,
+    pagination,
+    fetchList,
+    removeTask,
+    handlePaginationChange
+} = useUpgradeCampaigns(productRef)
+
+const isPolling = computed(() => {
+    return taskList.value.some(t => ['running', 'pending'].includes(t.status))
+})
+
 const openCreateWizard = () => {
     isCreateVisible.value = true
 }
 
-// 刷新列表数据
-const refreshData = () => {
-    loadTasks()
+const handleTaskCreated = () => {
+    fetchList()
 }
 
-// 调用真实 API
-const loadTasks = async () => {
-    if (!props.product?.id) return
-
-    loading.value = true
-    try {
-        // 使用真实接口获取任务列表
-        // 注意：这里假设你的 mock-server 支持 productId 过滤
-        const res = await fetchCampaigns({
-            productId: props.product.id,
-            _sort: 'createdAt',
-            _order: 'desc'
-        })
-
-        // 如果 res 是数组直接使用，如果是对象结构(如 { items: [] })则取 items
-        const items = Array.isArray(res) ? res : (res.items || [])
-        taskList.value = items
-
-    } catch (e) {
-        console.error('获取任务列表失败:', e)
-        ElMessage.error('无法加载任务列表')
-        taskList.value = [] // 出错时清空，而不是显示假数据
-    } finally {
-        loading.value = false
-    }
-}
-
-// 监听产品 ID 变化，自动刷新
-watch(() => props.product.id, () => {
-    loadTasks()
-}, { immediate: true })
-
-// --- 工具函数保持不变 ---
 const calculatePercent = (row: any) => {
-    const total = row.totalCount || 0
+    if (row.progress !== undefined) return row.progress
+    const total = row.totalDevices || row.totalCount || 0
     const success = row.successCount || 0
     if (!total) return 0
     return Math.floor((success / total) * 100)
@@ -163,13 +177,14 @@ const calculatePercent = (row: any) => {
 
 const getProgressColor = (status: string) => {
     if (status === 'failed') return '#ef4444'
-    if (status === 'completed') return '#10b981'
+    if (status === 'success' || status === 'completed') return '#10b981'
     return '#3b82f6'
 }
 
 const getStatusText = (status: string) => {
     const map: Record<string, string> = {
         running: '进行中',
+        success: '已完成',
         completed: '已完成',
         failed: '已失败',
         pending: '等待中',
@@ -178,11 +193,6 @@ const getStatusText = (status: string) => {
     return map[status] || status || '未知'
 }
 
-const getStatusClass = (status: string) => {
-    return `status-${status || 'pending'}`
-}
-
-// 样式配置
 const headerStyle = {
     background: '#f8fafc',
     color: '#64748b',
@@ -195,13 +205,12 @@ const tableRowClassName = () => 'modern-row'
 
 <style scoped>
 .exp-panel {
-    height: 100%;
+    /* 核心修复：移除固定高度和 overflow: hidden，让内容自然撑开 */
     display: flex;
     flex-direction: column;
     padding: 16px 24px;
 }
 
-/* Toolbar */
 .panel-toolbar {
     display: flex;
     justify-content: space-between;
@@ -215,10 +224,56 @@ const tableRowClassName = () => 'modern-row'
     color: #64748b;
     font-size: 14px;
     font-weight: 500;
+    gap: 8px;
 }
 
-.info-icon {
-    margin-right: 8px;
+/* 表格容器 */
+.table-container {
+    /* 核心修复：移除 flex: 1 和 overflow: hidden */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.pagination-wrapper {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+}
+
+/* --- 以下 UI 细节保持不变 --- */
+.polling-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: #ecfdf5;
+    color: #059669;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #10b981;
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse-green 1.5s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
 }
 
 .tech-btn {
@@ -235,11 +290,8 @@ const tableRowClassName = () => 'modern-row'
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
-/* Table Styling */
-.table-container {
-    flex: 1;
-    overflow: hidden;
-    border-radius: 8px;
+.mr-2 {
+    margin-right: 8px;
 }
 
 .task-info {
@@ -269,7 +321,6 @@ const tableRowClassName = () => 'modern-row'
     font-size: 12px;
 }
 
-/* Progress Bar */
 .progress-wrapper {
     padding-right: 12px;
 }
@@ -282,17 +333,17 @@ const tableRowClassName = () => 'modern-row'
     margin-bottom: 4px;
 }
 
+.progress-num {
+    font-family: monospace;
+    font-weight: 600;
+    color: #334155;
+}
+
 :deep(.slim-progress .el-progress-bar__outer) {
     background-color: #f1f5f9 !important;
     border-radius: 4px;
 }
 
-:deep(.slim-progress .el-progress-bar__inner) {
-    border-radius: 4px;
-    transition: width 0.6s ease;
-}
-
-/* Status Badges */
 .status-badge {
     display: inline-flex;
     align-items: center;
@@ -309,7 +360,6 @@ const tableRowClassName = () => 'modern-row'
     margin-right: 6px;
 }
 
-/* Status Colors */
 .status-running {
     background: #eff6ff;
     color: #3b82f6;
@@ -317,14 +367,15 @@ const tableRowClassName = () => 'modern-row'
 
 .status-running .status-dot {
     background: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+.status-success,
 .status-completed {
     background: #ecfdf5;
     color: #10b981;
 }
 
+.status-success .status-dot,
 .status-completed .status-dot {
     background: #10b981;
 }
@@ -347,36 +398,17 @@ const tableRowClassName = () => 'modern-row'
     background: #cbd5e1;
 }
 
-.status-canceled {
-    background: #f3f4f6;
-    color: #9ca3af;
-}
-
-.status-canceled .status-dot {
-    background: #d1d5db;
-}
-
-.time-text {
-    color: #64748b;
-    font-size: 13px;
-}
-
 .action-btn:hover {
-    background-color: #f1f5f9;
-    color: #3b82f6;
-    border-color: #cbd5e1;
+    background-color: #fee2e2;
+    color: #ef4444;
+    border-color: #fee2e2;
 }
 
-/* Table Row Hover */
 :deep(.el-table__row) {
     transition: background-color 0.2s;
 }
 
 :deep(.el-table__row:hover) {
     background-color: #f8fafc !important;
-}
-
-:deep(.el-table__inner-wrapper::before) {
-    display: none;
 }
 </style>

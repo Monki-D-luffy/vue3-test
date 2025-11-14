@@ -22,7 +22,7 @@ export default defineConfig({
         target: 'http://localhost:3000', // 转发给我们的 Mock 服务器
         changeOrigin: true,
         // 必须加上 rewrite 去掉 /api 前缀
-        rewrite: (path) => path.replace(/^\/api/, '')
+        // rewrite: (path) => path.replace(/^\/api/, '')
         //Bx 因为我们的 mock-server 已经配置了 /api 前缀，所以这里不需要重写路径
       }
     }

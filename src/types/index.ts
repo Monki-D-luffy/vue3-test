@@ -1,5 +1,9 @@
 // src/types/index.ts
 
+// ==========================================
+// 1. 基础实体 (User, Device)
+// ==========================================
+
 // 用户信息
 export interface UserInfo {
     userId: string;
@@ -16,30 +20,38 @@ export interface Device {
     firmwareVersion: string;
     puuid: string;
     productId: string;
-    productName?: string; //以此类推
+    productName?: string;
     sn: string;
-    gmtActive: string;     // 建议保持后端传回的字符串格式
-    gmtLastOnline: string;
+    gmtActive: string;     // ISO 8601 字符串
+    gmtLastOnline: string; // ISO 8601 字符串
     isBound: boolean;
     dataCenter: string;
     hasNewFirmware?: boolean;
 }
 
-// 列表筛选参数接口
+// ==========================================
+// 2. 筛选与参数 (Filters, Params)
+// ==========================================
+
+// 设备列表筛选参数
 export interface DeviceListFilters {
     isBound?: string;
     productId?: string;
-    dateRange?: [Date, Date] | null; // Element Plus DatePicker 返回的是 Date 对象数组
+    dateRange?: [Date, Date] | null; // Element Plus 返回的是 Date 对象数组
     keyword?: string;
     dataCenter?: string;
 }
 
-// 常量定义：避免魔术字符串
-export const STORAGE_KEYS = {
-    TOKEN: 'authToken'
-} as const;
+// 通用分页请求参数
+export interface PaginationParams {
+    _page: number;
+    _limit: number;
+    [key: string]: any; // 允许额外的过滤字段
+}
 
-// ---产品与固件相关类型 ---
+// ==========================================
+// 3. 产品与固件 (Product, Firmware)
+// ==========================================
 
 export interface Product {
     id: string;
@@ -55,7 +67,8 @@ export interface Firmware {
     releaseNotes: string;
     fileUrl: string;
     uploadedAt: string;
-    verified?: boolean; // 验证状态
+    // 标记固件是否已验证通过
+    verified?: boolean;
 }
 
 export interface FirmwareUploadData {
@@ -63,61 +76,53 @@ export interface FirmwareUploadData {
     productId: string;
     releaseNotes: string;
 }
-export interface ApiResponse<T> {
-    code: number
-    message: string
-    success: boolean
-    data: T
-}
 
+// ==========================================
+// 4. 升级任务 (Upgrade Tasks)
+// ==========================================
 
-export interface Firmware {
-    id: string
-    version: string
-    productId: string
-    productName: string;
-    releaseNotes: string
-    fileUrl: string
-    uploadedAt: string
-    // ✨ [修复] 补全 verified 属性，用于标记固件是否已验证通过
-    verified?: boolean
-}
-
-export interface FirmwareUploadData {
-    version: string
-    productId: string
-    releaseNotes: string
-}
-
-export type UpgradeTaskStatus = 'pending' | 'downloading' | 'installing' | 'success' | 'failed' | 'idle'
+export type UpgradeTaskStatus = 'pending' | 'downloading' | 'installing' | 'success' | 'failed' | 'idle';
 
 export interface UpgradeTask {
-    id: string
-    deviceId: string // 注意：mock-server 中的结构可能需要适配
-    deviceName?: string
-    firmwareId: string
-    firmwareVersion: string
-    status: UpgradeTaskStatus
-    progress: number
-    errorMessage: string | null
-    startedAt: string
-    finishedAt: string | null
+    id: string;
+    deviceId: string;
+    deviceName?: string;
+    firmwareId: string;
+    firmwareVersion: string;
+    status: UpgradeTaskStatus;
+    progress: number;
+    errorMessage: string | null;
+    startedAt: string;
+    finishedAt: string | null;
+    // 批量任务特有字段
+    targetScope?: 'all' | 'filter';
+    successCount?: number;
+    totalCount?: number;
 }
 
-export interface PaginationParams {
-    _page: number
-    _limit: number
-    [key: string]: any
+// ==========================================
+// 5. API 响应结构 (Responses)
+// ==========================================
+
+// 通用 API 响应
+export interface ApiResponse<T> {
+    code: number;
+    message: string;
+    success: boolean;
+    data: T;
+    total?: number;
 }
 
-export interface PaginatedResponse<T> {
-    items: T[]
-    total: number
-}
-
-
-// 通用分页响应结构 (可选，建议加上)
+// 分页响应结构
 export interface PaginatedResponse<T> {
     items: T[];
     total: number;
 }
+
+// ==========================================
+// 6. 常量 (Constants)
+// ==========================================
+
+export const STORAGE_KEYS = {
+    TOKEN: 'authToken'
+} as const;

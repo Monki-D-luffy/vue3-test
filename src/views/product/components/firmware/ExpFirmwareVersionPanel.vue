@@ -128,8 +128,6 @@ const {
     loading,
     firmwareList,
     getFirmwares,
-    verifyFirmware,
-    removeFirmware
 } = useFirmwareManagement()
 
 const refreshData = () => {
