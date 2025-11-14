@@ -1,52 +1,68 @@
-/* color palette from <https://github.com/vuejs/theme> */
+/* src/assets/base.css */
+
+/* 现代科技风设计系统 (Modern Tech Design System) 
+  遵循 Card-Style 布局规范
+*/
+
 :root {
-  --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+  /* === 核心色板 (Core Palette) === */
+  /* 主色调：科技蓝/紫 (Indigo/Blue) - 用于按钮、高亮、图标底座 */
+  --color-primary: #4f46e5; 
+  --color-primary-hover: #4338ca;
+  --color-primary-light: #e0e7ff; /* 极淡的衬底色 */
 
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
+  /* 功能色 (Functional Colors) */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
 
-  --vt-c-indigo: #2c3e50;
+  /* === 背景体系 (Background System) === */
+  /* 画布背景：极淡的灰冷色，防止大白刺眼 */
+  --bg-canvas: #f5f7fa; 
+  /* 卡片背景：纯白 */
+  --bg-card: #ffffff;
+  /* 悬浮/选中状态背景 */
+  --bg-hover: #f8fafc;
+  /* 模态框遮罩 */
+  --bg-overlay: rgba(15, 23, 42, 0.45);
 
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
+  /* === 文字层级 (Typography Hierarchy) === */
+  /* 一级标题/正文：深灰，接近黑但更柔和 */
+  --text-primary: #1e293b; 
+  /* 二级信息/标签：中灰 */
+  --text-secondary: #64748b;
+  /* 辅助信息/占位符：浅灰 */
+  --text-placeholder: #94a3b8;
+  /* 反白文字 */
+  --text-inverse: #ffffff;
 
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
+  /* === 边框与分割线 (Borders) === */
+  --border-color: #e2e8f0;
+  --border-color-light: #f1f5f9;
+
+  /* === 现代圆角 (Modern Radius) === */
+  --radius-sm: 8px;
+  --radius-md: 12px; /* 按钮、输入框 */
+  --radius-lg: 16px; /* 卡片 */
+  --radius-full: 9999px;
+
+  /* === 弥散阴影 (Diffuse Shadows) === */
+  /* 极淡的阴影，制造悬浮感而非厚重感 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* === 动画 (Animations) === */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* semantic color variables for this project */
-:root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
-
-  --section-gap: 160px;
-}
-
+/* 黑暗模式预留 (Dark Mode Prep - 目前使用变量映射) */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
-
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
-
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
+    /* 暂时保持亮色设计，后续可在此覆盖变量实现黑暗模式 */
   }
 }
 
@@ -55,30 +71,15 @@
 *::after {
   box-sizing: border-box;
   margin: 0;
-  font-weight: normal;
+  position: relative; /* 辅助定位 */
 }
 
 body {
   min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
+  color: var(--text-primary);
+  background: var(--bg-canvas);
   line-height: 1.6;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   font-size: 15px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

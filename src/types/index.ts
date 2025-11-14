@@ -10,6 +10,15 @@ export interface UserInfo {
     nickname: string;
     email: string;
     avatar?: string;
+    token?: string; // 登录响应中通常包含 token
+}
+
+// 注册请求数据
+export interface UserRegisterData {
+    email: string;
+    password: string;
+    nickname?: string; // 可选昵称
+    confirmPassword?: string; // 前端验证用
 }
 
 // 设备对象
@@ -101,7 +110,21 @@ export interface UpgradeTask {
 }
 
 // ==========================================
-// 5. API 响应结构 (Responses)
+// 5. 仪表盘数据 (Dashboard - Phase 2 Prep)
+// ==========================================
+
+export interface DashboardStat {
+    title: string;
+    value: number | string;
+    unit?: string;
+    trend?: number; // 趋势百分比，正数为增长，负数为下降
+    trendType?: 'up' | 'down' | 'neutral';
+    icon?: string; // 图标名称
+    color?: string; // 图标颜色
+}
+
+// ==========================================
+// 6. API 响应结构 (Responses)
 // ==========================================
 
 // 通用 API 响应
@@ -120,9 +143,10 @@ export interface PaginatedResponse<T> {
 }
 
 // ==========================================
-// 6. 常量 (Constants)
+// 7. 常量 (Constants)
 // ==========================================
 
 export const STORAGE_KEYS = {
-    TOKEN: 'authToken'
+    TOKEN: 'authToken',
+    USER_INFO: 'userInfo'
 } as const;
