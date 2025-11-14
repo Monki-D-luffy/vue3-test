@@ -55,12 +55,12 @@ const router = createRouter({
           component: () => import('@/views/system/SystemManagement.vue')
         },
         {
-          // 🆕 实验性功能：固件管理 2.0
+          // 🆕 固件管理 2.0
           path: 'firmware',
-          name: 'ExpFirmwareManagement',
-          component: () => import('../views/product/ExpFirmwareManagement.vue'),
+          name: 'FirmwareManagement',
+          component: () => import('../views/product/FirmwareManagement.vue'),
           meta: {
-            title: '固件管理 (Exp)',
+            title: '固件管理',
             requiresAuth: true
           }
         },
