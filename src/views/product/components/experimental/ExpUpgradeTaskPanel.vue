@@ -8,7 +8,7 @@
                 <span>批量升级任务记录</span>
             </div>
             <div class="right-action">
-                <el-button type="primary" class="tech-btn" @click="isCreateVisible = true">
+                <el-button type="primary" class="tech-btn" @click="openCreateWizard">
                     <el-icon class="mr-1">
                         <Plus />
                     </el-icon>
@@ -20,10 +20,10 @@
         <div class="table-container">
             <el-table :data="taskList" v-loading="loading" height="100%" style="width: 100%"
                 :header-cell-style="headerStyle" :row-class-name="tableRowClassName">
-                <el-table-column label="任务名称" min-width="160">
+                <el-table-column label="任务名称" min-width="180">
                     <template #default="{ row }">
                         <div class="task-info">
-                            <span class="task-name">{{ row.name || `Task_${row.id.slice(0, 8)}` }}</span>
+                            <span class="task-name">{{ row.name || `Task_${row.id?.slice(0, 6)}` }}</span>
                             <span class="task-id">ID: {{ row.id }}</span>
                         </div>
                     </template>
@@ -31,15 +31,24 @@
 
                 <el-table-column label="目标版本" width="140">
                     <template #default="{ row }">
-                        <span class="version-code">{{ row.targetVersion }}</span>
+                        <span class="version-code">{{ row.firmwareVersion || row.targetVersion || '--' }}</span>
                     </template>
                 </el-table-column>
 
-                <el-table-column label="升级进度" min-width="200">
+                <el-table-column label="范围" width="120">
+                    <template #default="{ row }">
+                        <el-tag size="small" effect="plain" round type="info">
+                            {{ row.targetScope === 'filter' ? '定向' : '全量' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="升级进度" min-width="220">
                     <template #default="{ row }">
                         <div class="progress-wrapper">
                             <div class="progress-info">
-                                <span class="progress-text">{{ row.successCount }}/{{ row.totalCount }} 台</span>
+                                <span class="progress-text">{{ row.successCount || 0 }}/{{ row.totalCount || 0 }}
+                                    台</span>
                                 <span class="progress-percent">{{ calculatePercent(row) }}%</span>
                             </div>
                             <el-progress :percentage="calculatePercent(row)" :stroke-width="6" :show-text="false"
@@ -59,7 +68,7 @@
 
                 <el-table-column label="创建时间" width="160">
                     <template #default="{ row }">
-                        <span class="time-text">{{ formatDateTime(row.createdAt) }}</span>
+                        <span class="time-text">{{ formatDateTime(row.createdAt || row.startTime) }}</span>
                     </template>
                 </el-table-column>
 
@@ -74,11 +83,12 @@
                 </el-table-column>
 
                 <template #empty>
-                    <el-empty description="暂无升级任务" :image-size="80" />
+                    <el-empty description="暂无升级任务，请点击右上角新建" :image-size="80" />
                 </template>
             </el-table>
         </div>
 
+        <ExpCreateTaskWizard v-model="isCreateVisible" :product="product" @success="refreshData" />
     </div>
 </template>
 
@@ -86,9 +96,12 @@
 import { ref, watch } from 'vue'
 import { Plus, List, ArrowRight } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
+import { ElMessage } from 'element-plus'
 import type { Product } from '@/types'
-// 这里我们暂时模拟数据，因为你提到“先做下一步，数据处理延后”
-// 后续可以替换为真实的 useUpgradeTask()
+// 引入 API
+import { fetchCampaigns } from '@/api'
+// 引入组件
+import ExpCreateTaskWizard from './ExpCreateTaskWizard.vue'
 
 const props = defineProps<{
     product: Product
@@ -96,56 +109,56 @@ const props = defineProps<{
 
 const isCreateVisible = ref(false)
 const loading = ref(false)
-// 模拟的任务数据，为了让你能看到效果
 const taskList = ref<any[]>([])
 
-const mockData = [
-    {
-        id: 'job-109238',
-        name: '全量升级 v2.1.0',
-        targetVersion: 'v2.1.0',
-        totalCount: 100,
-        successCount: 45,
-        status: 'running',
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: 'job-109239',
-        name: '灰度测试 v2.2.0-beta',
-        targetVersion: 'v2.2.0-beta',
-        totalCount: 20,
-        successCount: 20,
-        status: 'completed',
-        createdAt: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-        id: 'job-109240',
-        name: '紧急修复补丁',
-        targetVersion: 'v2.0.1',
-        totalCount: 50,
-        successCount: 0,
-        status: 'failed',
-        createdAt: new Date(Date.now() - 172800000).toISOString()
-    }
-]
-
-const loadTasks = () => {
-    loading.value = true
-    // 模拟异步
-    setTimeout(() => {
-        taskList.value = mockData
-        loading.value = false
-    }, 500)
+// 打开向导
+const openCreateWizard = () => {
+    isCreateVisible.value = true
 }
 
+// 刷新列表数据
+const refreshData = () => {
+    loadTasks()
+}
+
+// ✨✨✨ 核心修改：调用真实 API
+const loadTasks = async () => {
+    if (!props.product?.id) return
+
+    loading.value = true
+    try {
+        // 使用真实接口获取任务列表
+        // 注意：这里假设你的 mock-server 支持 productId 过滤
+        const res = await fetchCampaigns({
+            productId: props.product.id,
+            _sort: 'createdAt',
+            _order: 'desc'
+        })
+
+        // 如果 res 是数组直接使用，如果是对象结构(如 { items: [] })则取 items
+        const items = Array.isArray(res) ? res : (res.items || [])
+        taskList.value = items
+
+    } catch (e) {
+        console.error('获取任务列表失败:', e)
+        ElMessage.error('无法加载任务列表')
+        taskList.value = [] // 出错时清空，而不是显示假数据
+    } finally {
+        loading.value = false
+    }
+}
+
+// 监听产品 ID 变化，自动刷新
 watch(() => props.product.id, () => {
     loadTasks()
 }, { immediate: true })
 
-// 工具函数
+// --- 工具函数保持不变 ---
 const calculatePercent = (row: any) => {
-    if (!row.totalCount) return 0
-    return Math.floor((row.successCount / row.totalCount) * 100)
+    const total = row.totalCount || 0
+    const success = row.successCount || 0
+    if (!total) return 0
+    return Math.floor((success / total) * 100)
 }
 
 const getProgressColor = (status: string) => {
@@ -159,13 +172,14 @@ const getStatusText = (status: string) => {
         running: '进行中',
         completed: '已完成',
         failed: '已失败',
-        pending: '等待中'
+        pending: '等待中',
+        canceled: '已取消'
     }
-    return map[status] || status
+    return map[status] || status || '未知'
 }
 
 const getStatusClass = (status: string) => {
-    return `status-${status}`
+    return `status-${status || 'pending'}`
 }
 
 // 样式配置
@@ -331,6 +345,15 @@ const tableRowClassName = () => 'modern-row'
 
 .status-pending .status-dot {
     background: #cbd5e1;
+}
+
+.status-canceled {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+
+.status-canceled .status-dot {
+    background: #d1d5db;
 }
 
 .time-text {

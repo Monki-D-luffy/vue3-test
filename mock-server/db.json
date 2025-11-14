@@ -28207,7 +28207,7 @@
       "releaseNotes": "",
       "fileUrl": "http://oss.iot.com/firmware/parameter.hex",
       "uploadedAt": "2025-11-14T02:10:40.528Z",
-      "verified": false,
+      "verified": true,
       "id": "OCO6Uc1"
     }
   ],
