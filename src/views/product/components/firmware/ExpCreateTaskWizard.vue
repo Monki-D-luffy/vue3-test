@@ -81,8 +81,8 @@
                     <h2 class="step-title">2. 设定升级范围</h2>
 
                     <el-radio-group v-model="form.targetScope" class="scope-selector">
-                        <el-radio-button label="all">全量推送 (All)</el-radio-button>
-                        <el-radio-button label="filter">定向筛选 (Filter)</el-radio-button>
+                        <el-radio-button value="all">全量推送 (All)</el-radio-button>
+                        <el-radio-button value="filter">定向筛选 (Filter)</el-radio-button>
                     </el-radio-group>
 
                     <div v-if="form.targetScope === 'filter'" class="filter-panel">

@@ -45,9 +45,9 @@ import { ref } from 'vue'
 import type { Product } from '@/types'
 // 引入组件
 import ResizableLayout from '@/components/ResizableLayout.vue'
-import ProductSidebar from './components/ProductSidebar.vue'
-import FirmwareVersionPanel from './components/FirmwareVersionPanel.vue'
-import UpgradeTaskPanel from './components/UpgradeTaskPanel.vue'
+import ProductSidebar from './components/firmwareOld/ProductSidebar.vue'
+import FirmwareVersionPanel from './components/firmwareOld/FirmwareVersionPanel.vue'
+import UpgradeTaskPanel from './components/firmwareOld/UpgradeTaskPanel.vue'
 
 const currentProduct = ref<Product | null>(null)
 const activeTab = ref('versions')
