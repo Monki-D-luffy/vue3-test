@@ -1,103 +1,163 @@
-<!-- 统计卡片 -->
 <template>
-    <el-col :span="8">
-        <el-card shadow="hover" class="stat-card">
-            <div class="stat-item">
-                <div class="stat-icon" :class="colorTheme">
-                    <el-icon>
-                        <component :is="iconComponent" />
-                    </el-icon>
-                </div>
-                <div class="stat-info">
-                    <span class="label">{{ label }}</span>
+    <div class="stat-card card-base hover-lift">
+        <div class="stat-content">
+            <div class="stat-text">
+                <span class="label">{{ label }}</span>
+                <div class="value-group">
                     <span class="value">{{ value }}</span>
+                    <span v-if="unit" class="unit">{{ unit }}</span>
                 </div>
             </div>
-        </el-card>
-    </el-col>
+
+            <div class="icon-wrapper" :class="colorTheme">
+                <el-icon :size="24">
+                    <component :is="iconComponent" />
+                </el-icon>
+            </div>
+        </div>
+
+        <div class="stat-footer" v-if="trend !== undefined">
+            <span class="trend-badge" :class="trend >= 0 ? 'trend-up' : 'trend-down'">
+                <el-icon>
+                    <component :is="trend >= 0 ? 'Top' : 'Bottom'" />
+                </el-icon>
+                {{ Math.abs(trend) }}%
+            </span>
+            <span class="trend-desc">较昨日</span>
+        </div>
+    </div>
 </template>
 
-<script setup>
-import { defineProps } from 'vue'
+<script setup lang="ts">
+import type { Component } from 'vue'
 
-// 1. 定义这个组件接收哪些参数
-defineProps({
-    label: {
-        type: String,
-        required: true
-    },
-    value: {
-        type: [String, Number],
-        required: true
-    },
-    // 2. 我们可以直接把图标组件本身作为 prop 传进来
-    iconComponent: {
-        type: Object, // Vue 组件是 Object 类型
-        required: true
-    },
-    // 3. 用一个 prop 来控制颜色主题
-    colorTheme: {
-        type: String,
-        default: 'blue-bg' // 默认是蓝色
-    }
-})
+defineProps<{
+    label: string
+    value: string | number
+    unit?: string
+    iconComponent: Component
+    colorTheme?: 'blue' | 'green' | 'orange' | 'purple' | 'red'
+    trend?: number
+}>()
 </script>
 
 <style scoped>
-/* 4. 把 DeviceDashboard.vue 里的
-   所有 stat-card 相关的样式 "剪切" 到这里
-*/
-.stat-card :deep(.el-card__body) {
+.stat-card {
     padding: 20px;
-}
-
-.stat-item {
+    height: 100%;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg-card);
+    /* 使用 Phase 0 定义的变量 */
 }
 
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
+.stat-content {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-right: 20px;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
 }
 
-.stat-icon .el-icon {
-    font-size: 30px;
-    color: #fff;
-}
-
-/* 5. 把所有颜色定义都移过来 */
-.blue-bg {
-    background: linear-gradient(135deg, #36d1dc, #5b86e5);
-}
-
-.green-bg {
-    background: linear-gradient(135deg, #67b26f, #4ca2cd);
-}
-
-.purple-bg {
-    background: linear-gradient(135deg, #f6d365, #fda085);
-}
-
-.stat-info {
+.stat-text {
     display: flex;
     flex-direction: column;
 }
 
-.stat-info .label {
+.label {
     font-size: 14px;
-    color: #909399;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
 }
 
-.stat-info .value {
-    font-size: 28px;
-    font-weight: bold;
-    color: #303133;
-    margin-top: 5px;
+.value-group {
+    display: flex;
+    align-items: baseline;
+}
+
+.value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.unit {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-left: 4px;
+}
+
+/* 图标主题系统 */
+.icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover .icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.blue {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.green {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.orange {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+}
+
+.purple {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.red {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* 趋势条样式 */
+.stat-footer {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    border-top: 1px solid var(--border-color-light);
+    padding-top: 12px;
+}
+
+.trend-badge {
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.trend-up {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.trend-down {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+.trend-desc {
+    color: var(--text-placeholder);
 }
 </style>
