@@ -62,10 +62,75 @@
 /* 黑暗模式预留 (Dark Mode Prep - 目前使用变量映射) */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* 暂时保持亮色设计，后续可在此覆盖变量实现黑暗模式 */
-  }
-}
+/* === 核心色板 (保持不变) === */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-light: #e0e7ff;
 
+  /* ... 其他原有变量保持不变 ... */
+  
+  /* 默认(亮色)背景定义 */
+  --bg-canvas: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-hover: #f8fafc;
+  --bg-overlay: rgba(15, 23, 42, 0.45);
+
+  /* 默认(亮色)文字定义 */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-placeholder: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* 默认(亮色)边框 */
+  --border-color: #e2e8f0;
+  --border-color-light: #f1f5f9;
+  
+  /* 默认(亮色)阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  
+  /* ... 动画变量保持不变 ... */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);  }
+}
+/* ✨ 新增：黑暗模式重写 (Dark Mode Overrides) */
+html.dark {
+  /* === 背景体系 (深邃灰) === */
+  /* 画布：极深灰，接近黑 */
+  --bg-canvas: #0f172a; 
+  /* 卡片：深灰，形成层级 */
+  --bg-card: #1e293b; 
+  /* 悬浮：稍亮一点的灰 */
+  --bg-hover: #334155; 
+  /* 遮罩：加深 */
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+
+  /* === 文字层级 (反白) === */
+  --text-primary: #f1f5f9;    /* 亮白 */
+  --text-secondary: #94a3b8;  /* 灰白 */
+  --text-placeholder: #475569; /* 深灰 */
+  --text-inverse: #0f172a;    /* 反转黑 */
+
+  /* === 边框 === */
+  --border-color: #334155;
+  --border-color-light: #1e293b; /* 与卡片背景同色，隐藏内部边框 */
+
+  /* === 阴影 (调整为发光感或更深阴影) === */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  
+  /* 调整 Element Plus 的默认变量以匹配我们的主题 */
+  --el-bg-color: var(--bg-card);
+  --el-bg-color-page: var(--bg-canvas);
+  --el-bg-color-overlay: var(--bg-card);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-color-light);
+  --el-fill-color-blank: var(--bg-card);
+}
 *,
 *::before,
 *::after {

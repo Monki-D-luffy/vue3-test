@@ -12,6 +12,7 @@
             <el-icon class="header-icon">
                 <Grid />
             </el-icon>
+            <el-button circle :icon="isDark ? Sunny : Moon" @click="toggleTheme" class="theme-btn" plain />
 
             <el-divider direction="vertical" />
 
@@ -61,6 +62,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { ElMessage } from 'element-plus';
+import { useTheme } from '@/composables/useTheme'
 import {
     Fold,
     Expand,
@@ -70,8 +72,11 @@ import {
     ArrowDown,
     User,
     Setting,
-    SwitchButton
+    SwitchButton,
+    Moon,
+    Sunny
 } from '@element-plus/icons-vue'
+
 
 // 1. 定义从父组件 AppLayout 接收的 props
 defineProps({
@@ -87,7 +92,7 @@ defineEmits(['toggle-collapse'])
 // 3. 内部逻辑 (和之前一样，完全自洽)
 const router = useRouter()
 const authStore = useAuthStore()
-
+const { isDark, toggleTheme } = useTheme()
 const userDisplayName = computed(() => authStore.userInfo?.nickname || '用户')
 const userEmail = computed(() => authStore.userInfo?.email || '...')
 
@@ -117,12 +122,16 @@ const handleCommand = (command) => {
   全部 "剪切" 到这里
 */
 .el-header {
-    background-color: #fff;
-    box-shadow: none;
-    border-bottom: 1px solid #f0f0f0;
+    height: 60px;
+    /* ✨ 背景色改为变量，适配黑夜模式 */
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-color-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 0 24px;
+    /* 增加过渡效果 */
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
 .collapse-icon {

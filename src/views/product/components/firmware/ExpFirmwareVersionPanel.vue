@@ -151,13 +151,14 @@ const openDeleteDialog = (row: any) => {
     isDeleteVisible.value = true
 }
 
-// ✨ 修改：使用 CSS 变量
+// ✨ [关键修复] 将硬编码颜色替换为 CSS 变量
+// 注意：这里必须是字符串形式的 'var(...)'
 const headerStyle = {
-    background: 'var(--bg-hover)', // 替换 #f8fafc
-    color: 'var(--text-secondary)', // 替换 #64748b
+    background: 'var(--bg-hover)',
+    color: 'var(--text-secondary)',
     fontWeight: '600',
     fontSize: '13px',
-    borderBottom: '1px solid var(--border-color)' // 替换 #e2e8f0
+    borderBottom: '1px solid var(--border-color-light)'
 }
 const tableRowClassName = () => 'modern-row'
 </script>
@@ -179,11 +180,11 @@ const tableRowClassName = () => 'modern-row'
 .left-tip {
     display: flex;
     align-items: center;
-    color: var(--text-placeholder);
-    /* 替换 #94a3b8 */
+    /* ✨ [修复] 文字颜色 */
+    color: var(--text-secondary);
     font-size: 13px;
+    /* ✨ [修复] 背景颜色 */
     background: var(--bg-hover);
-    /* 替换 #f1f5f9 */
     padding: 6px 12px;
     border-radius: 20px;
 }
@@ -199,6 +200,8 @@ const tableRowClassName = () => 'modern-row'
     padding: 9px 18px;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     transition: all 0.2s;
+    color: #fff;
+    /* 按钮文字始终保持白色 */
 }
 
 .tech-btn:hover {
@@ -227,8 +230,8 @@ const tableRowClassName = () => 'modern-row'
 .version-code {
     font-family: 'JetBrains Mono', 'Monaco', monospace;
     font-weight: 600;
+    /* ✨ [修复] */
     color: var(--text-primary);
-    /* 替换 #0f172a */
     font-size: 14px;
 }
 
@@ -237,15 +240,14 @@ const tableRowClassName = () => 'modern-row'
     font-size: 10px;
     background: #fee2e2;
     color: var(--color-danger);
-    /* 替换 #ef4444 */
     padding: 1px 6px;
     border-radius: 4px;
     font-weight: 700;
 }
 
 .time-text {
+    /* ✨ [修复] */
     color: var(--text-secondary);
-    /* 替换 #64748b */
     font-size: 13px;
 }
 
@@ -264,22 +266,20 @@ const tableRowClassName = () => 'modern-row'
 
 .status-dot-wrapper.is-success .dot {
     background-color: var(--color-success);
-    /* 替换 #10b981 */
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
 .status-dot-wrapper.is-success .status-text {
-    color: #059669;
+    color: var(--color-success);
 }
 
 .status-dot-wrapper.is-pending .dot {
     background-color: var(--color-warning);
-    /* 替换 #f59e0b */
     box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 
 .status-dot-wrapper.is-pending .status-text {
-    color: #d97706;
+    color: var(--color-warning);
 }
 
 .status-text {
@@ -288,8 +288,8 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .note-content {
+    /* ✨ [修复] */
     color: var(--text-primary);
-    /* 替换 #334155 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -306,6 +306,8 @@ const tableRowClassName = () => 'modern-row'
 .action-btn {
     border: none;
     transition: all 0.2s;
+    /* ✨ [修复] 按钮背景透明，适配黑夜 */
+    background-color: transparent;
 }
 
 .verify-btn:hover {
@@ -316,12 +318,10 @@ const tableRowClassName = () => 'modern-row'
 .delete-btn:hover {
     background-color: #fee2e2;
     color: var(--color-danger);
-    /* 替换 #dc2626 */
 }
 
 .verified-mark {
     color: var(--text-placeholder);
-    /* 替换 #cbd5e1 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -333,9 +333,9 @@ const tableRowClassName = () => 'modern-row'
     transition: background-color 0.2s;
 }
 
+/* ✨ [修复] 表格悬浮颜色变量 */
 :deep(.el-table__row:hover) {
     background-color: var(--bg-hover) !important;
-    /* 替换 #f8fafc */
 }
 
 :deep(.el-table__inner-wrapper::before) {

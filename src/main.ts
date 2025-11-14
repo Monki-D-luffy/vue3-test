@@ -1,7 +1,9 @@
 
 import './assets/main.css'
-// ✅ 新增：引入页面布局通用样式
+// 引入页面布局通用样式
 import './assets/page-layouts.css'
+// 引入 Element Plus 暗黑变量
+import 'element-plus/theme-chalk/dark/css-vars.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

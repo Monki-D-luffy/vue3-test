@@ -29,7 +29,7 @@
                     <template #default="{ row }">
                         <div class="task-info">
                             <span class="task-name" :title="row.name">{{ row.name || `Task_${row.id?.slice(0, 6)}`
-                                }}</span>
+                            }}</span>
                             <span class="task-id">ID: {{ row.id }}</span>
                         </div>
                     </template>
@@ -193,22 +193,21 @@ const getStatusText = (status: string) => {
     return map[status] || status || '未知'
 }
 
+// ✨ [关键修复] 使用 CSS 变量
 const headerStyle = {
-    background: '#f8fafc',
-    color: '#64748b',
+    background: 'var(--bg-hover)',
+    color: 'var(--text-secondary)',
     fontWeight: '600',
     fontSize: '13px',
-    borderBottom: '1px solid #e2e8f0'
+    borderBottom: '1px solid var(--border-color-light)'
 }
 const tableRowClassName = () => 'modern-row'
 </script>
 
 <style scoped>
 .exp-panel {
-    /* Block 布局，内容自然撑开 */
     padding: 16px 24px;
     padding-bottom: 24px;
-    /* 内部少量留白即可，大留白交给外层 */
 }
 
 .panel-toolbar {
@@ -221,14 +220,14 @@ const tableRowClassName = () => 'modern-row'
 .left-tip {
     display: flex;
     align-items: center;
-    color: #64748b;
+    /* ✨ [修复] */
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;
     gap: 8px;
 }
 
 .table-container {
-    /* 确保没有高度限制 */
     border-radius: 8px;
 }
 
@@ -275,12 +274,13 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .tech-btn {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%);
     border: none;
     border-radius: 8px;
     padding: 9px 18px;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     transition: all 0.2s;
+    color: #fff;
 }
 
 .tech-btn:hover {
@@ -299,23 +299,27 @@ const tableRowClassName = () => 'modern-row'
 
 .task-name {
     font-weight: 600;
-    color: #1e293b;
+    /* ✨ [修复] */
+    color: var(--text-primary);
     font-size: 14px;
 }
 
 .task-id {
     font-size: 12px;
-    color: #94a3b8;
+    /* ✨ [修复] */
+    color: var(--text-placeholder);
     font-family: 'Monaco', monospace;
     margin-top: 2px;
 }
 
 .version-code {
     font-family: 'JetBrains Mono', 'Monaco', monospace;
-    background: #f1f5f9;
+    /* ✨ [修复] */
+    background: var(--bg-hover);
     padding: 2px 6px;
     border-radius: 4px;
-    color: #475569;
+    /* ✨ [修复] */
+    color: var(--text-secondary);
     font-size: 12px;
 }
 
@@ -327,18 +331,21 @@ const tableRowClassName = () => 'modern-row'
     display: flex;
     justify-content: space-between;
     font-size: 12px;
-    color: #64748b;
+    /* ✨ [修复] */
+    color: var(--text-secondary);
     margin-bottom: 4px;
 }
 
 .progress-num {
     font-family: monospace;
     font-weight: 600;
-    color: #334155;
+    /* ✨ [修复] */
+    color: var(--text-primary);
 }
 
+/* 进度条底色适配 */
 :deep(.slim-progress .el-progress-bar__outer) {
-    background-color: #f1f5f9 !important;
+    background-color: var(--border-color-light) !important;
     border-radius: 4px;
 }
 
@@ -388,12 +395,18 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .status-pending {
-    background: #f8fafc;
-    color: #64748b;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
 }
 
 .status-pending .status-dot {
     background: #cbd5e1;
+}
+
+.action-btn {
+    /* ✨ [修复] */
+    background-color: transparent;
+    border: none;
 }
 
 .action-btn:hover {
@@ -407,6 +420,6 @@ const tableRowClassName = () => 'modern-row'
 }
 
 :deep(.el-table__row:hover) {
-    background-color: #f8fafc !important;
+    background-color: var(--bg-hover) !important;
 }
 </style>

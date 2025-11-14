@@ -63,16 +63,16 @@ const handleProductSelect = (product: Product) => {
 .exp-firmware-layout {
     height: 100%;
     width: 100%;
+    /* ✨ [修复] 使用变量，适配黑夜模式 */
     background-color: var(--bg-card);
-    /* 替换 #fff */
     overflow: hidden;
 }
 
 .content-canvas {
     height: 100%;
     overflow-y: auto;
+    /* ✨ [修复] 画布背景色变量 */
     background-color: var(--bg-canvas);
-    /* 替换 #f5f7fa */
     padding: 20px;
     padding-bottom: 40px;
     display: block;
@@ -85,13 +85,13 @@ const handleProductSelect = (product: Product) => {
 }
 
 .section-body {
+    /* ✨ [修复] 卡片背景色变量 */
     background-color: var(--bg-card);
-    /* 替换 #fff */
     border-radius: 12px;
+    /* ✨ [修复] 阴影变量 */
     box-shadow: var(--shadow-card);
-    /* 替换硬编码阴影 */
+    /* ✨ [修复] 边框变量 */
     border: 1px solid var(--border-color-light);
-    /* 替换 #ebeef5 */
     min-height: 400px;
     overflow: visible !important;
 }
@@ -100,10 +100,9 @@ const handleProductSelect = (product: Product) => {
 :deep(.modern-card-tabs .el-tabs__header) {
     margin: 0;
     padding: 0 20px;
+    /* ✨ [修复] */
     border-bottom: 1px solid var(--border-color-light);
-    /* 替换 #f0f2f5 */
     background-color: var(--bg-card);
-    /* 替换 #fff */
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
 }
@@ -111,7 +110,6 @@ const handleProductSelect = (product: Product) => {
 :deep(.modern-card-tabs .el-tabs__nav-wrap::after) {
     height: 1px;
     background-color: var(--border-color-light);
-    /* 替换 #f0f2f5 */
 }
 
 :deep(.modern-card-tabs .el-tabs__item) {
@@ -120,12 +118,11 @@ const handleProductSelect = (product: Product) => {
     font-size: 15px;
     font-weight: 500;
     color: var(--text-secondary);
-    /* 替换 #606266 */
+    /* ✨ [修复] */
 }
 
 :deep(.modern-card-tabs .el-tabs__item.is-active) {
     color: var(--color-primary);
-    /* 替换 #409eff */
     font-weight: 600;
 }
 
@@ -142,11 +139,12 @@ const handleProductSelect = (product: Product) => {
 
 :deep(.el-table) {
     touch-action: auto;
-    /* 确保表格背景也是透明或跟随卡片 */
+    /* ✨ [修复] 强制表格背景透明或跟随卡片，防止表格变成白色方块 */
     --el-table-bg-color: var(--bg-card);
     --el-table-tr-bg-color: var(--bg-card);
     --el-table-header-bg-color: var(--bg-hover);
-    /* 表头微灰 */
+    --el-table-border-color: var(--border-color-light);
+    color: var(--text-primary);
 }
 
 .empty-canvas {
@@ -155,12 +153,12 @@ const handleProductSelect = (product: Product) => {
     align-items: center;
     justify-content: center;
     background-color: var(--bg-canvas);
-    /* 替换 #f5f7fa */
+    /* ✨ [修复] */
 }
 
 .empty-tip {
     color: var(--text-placeholder);
-    /* 替换 #909399 */
+    /* ✨ [修复] */
     font-size: 14px;
     margin-top: 8px;
 }
