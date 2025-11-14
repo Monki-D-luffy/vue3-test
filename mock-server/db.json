@@ -27208,24 +27208,6 @@
       "startedAt": "2025-11-14 14:58:06"
     },
     {
-      "id": "camp_Fbed798d",
-      "name": "升级 1.1.0",
-      "productId": "prod_light_01",
-      "firmwareId": "fw_001",
-      "firmwareVersion": "1.1.0",
-      "status": "success",
-      "progress": 100,
-      "totalDevices": 28,
-      "successCount": 28,
-      "failureCount": 0,
-      "targetScope": "all",
-      "filters": {
-        "dataCenter": "",
-        "status": ""
-      },
-      "startedAt": "2025-11-14 14:59:23"
-    },
-    {
       "id": "camp_8753B1Ec",
       "name": "智能灯泡_v1.1.0_2025-11-14_Campaign",
       "productId": "prod_light_01",
@@ -27365,6 +27347,114 @@
         "status": ""
       },
       "startedAt": "2025-11-14 15:14:36"
+    },
+    {
+      "id": "camp_215fF5fE",
+      "name": "升级 1.0.1",
+      "productId": "prod_socket_01",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 40,
+      "successCount": 40,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 16:01:46"
+    },
+    {
+      "id": "camp_1fCD7FC8",
+      "name": "升级 1.0.1",
+      "productId": "prod_socket_01",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 40,
+      "successCount": 40,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 16:02:11"
+    },
+    {
+      "id": "camp_4c2Ecc3C",
+      "name": "升级 1.0.1",
+      "productId": "prod_socket_01",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 40,
+      "successCount": 40,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 16:02:15"
+    },
+    {
+      "id": "camp_6A68F4d2",
+      "name": "升级 1.0.1",
+      "productId": "prod_socket_01",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 40,
+      "successCount": 40,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 16:02:18"
+    },
+    {
+      "id": "camp_637b22C2",
+      "name": "升级 1.0.1",
+      "productId": "prod_socket_01",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 40,
+      "successCount": 40,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 16:02:21"
+    },
+    {
+      "id": "camp_0e0Bc8d3",
+      "name": "升级 1.0.1",
+      "productId": "prod_socket_01",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 40,
+      "successCount": 40,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 16:02:22"
     }
   ]
 }

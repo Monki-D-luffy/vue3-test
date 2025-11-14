@@ -5,7 +5,7 @@
                 <el-icon class="info-icon">
                     <InfoFilled />
                 </el-icon>
-                <span>仅“验证通过”的固件可推送</span>
+                <span>仅“验证通过”的固件可推送 (共 {{ pagination.total }} 个版本)</span>
             </div>
             <div class="right-action">
                 <el-button type="primary" class="tech-btn" @click="isUploadVisible = true">
@@ -18,13 +18,13 @@
         </div>
 
         <div class="table-container">
-            <el-table :data="firmwareList" v-loading="loading" height="100%" style="width: 100%"
-                :header-cell-style="headerStyle" :row-class-name="tableRowClassName">
+            <el-table :data="firmwareList" v-loading="loading" style="width: 100%" :header-cell-style="headerStyle"
+                :row-class-name="tableRowClassName">
                 <el-table-column label="版本号" min-width="140">
                     <template #default="{ row, $index }">
                         <div class="version-wrapper">
                             <span class="version-code">{{ row.version }}</span>
-                            <span v-if="$index === 0" class="latest-badge">NEW</span>
+                            <span v-if="$index === 0 && pagination.currentPage === 1" class="latest-badge">NEW</span>
                         </div>
                     </template>
                 </el-table-column>
@@ -83,6 +83,11 @@
             </el-table>
         </div>
 
+        <div class="pagination-wrapper" v-if="pagination.total > 0">
+            <AppPagination :total="pagination.total" v-model:current-page="pagination.currentPage"
+                v-model:page-size="pagination.pageSize" @size-change="onPageChange" @current-change="onPageChange" />
+        </div>
+
         <ExpFirmwareVerifyModal v-model="isVerifyVisible" :firmware="currentVerifyRow" @success="refreshData" />
         <ExpFirmwareDeleteModal v-model="isDeleteVisible" :firmware="currentDeleteRow" @success="refreshData" />
         <ExpFirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="refreshData" />
@@ -95,50 +100,62 @@ import { Upload, InfoFilled, Check, Delete, Select } from '@element-plus/icons-v
 import { formatDateTime } from '@/utils/formatters'
 import type { Product } from '@/types'
 import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
+// 引入分页组件
+import AppPagination from '@/components/AppPagination.vue'
 
 import ExpFirmwareUploadWizard from './ExpFirmwareUploadWizard.vue'
 import ExpFirmwareVerifyModal from './ExpFirmwareVerifyModal.vue'
 import ExpFirmwareDeleteModal from './ExpFirmwareDeleteModal.vue'
+
 const props = defineProps<{
     product: Product
 }>()
 
 const isUploadVisible = ref(false)
-
-// 添加新状态来控制验证弹窗
 const isVerifyVisible = ref(false)
-const currentVerifyRow = ref<any>(null) // 暂存当前要验证的行数据
-
-// 新增打开弹窗的方法
-const openVerifyDialog = (row: any) => {
-    currentVerifyRow.value = row
-    isVerifyVisible.value = true
-}
-
-// 添加删除弹窗的状态控制
 const isDeleteVisible = ref(false)
+const currentVerifyRow = ref<any>(null)
 const currentDeleteRow = ref<any>(null)
 
-const openDeleteDialog = (row: any) => {
-    currentDeleteRow.value = row
-    isDeleteVisible.value = true
-}
-// 逻辑完全复用
+// 使用 Composable
 const {
     loading,
     firmwareList,
+    pagination, // 引入分页对象
     getFirmwares,
+    handlePaginationChange // 引入分页回调
 } = useFirmwareManagement()
 
+// 封装刷新函数
 const refreshData = () => {
     if (props.product?.id) {
         getFirmwares(props.product.id)
     }
 }
 
-watch(() => props.product.id, refreshData, { immediate: true })
+// 分页变化处理
+const onPageChange = () => {
+    if (props.product?.id) {
+        handlePaginationChange(props.product.id)
+    }
+}
 
-// 表格头样式
+// 监听 Product ID 变化，重置分页并刷新
+watch(() => props.product.id, () => {
+    pagination.currentPage = 1 // 切换产品时重置到第一页
+    refreshData()
+}, { immediate: true })
+
+const openVerifyDialog = (row: any) => {
+    currentVerifyRow.value = row
+    isVerifyVisible.value = true
+}
+
+const openDeleteDialog = (row: any) => {
+    currentDeleteRow.value = row
+    isDeleteVisible.value = true
+}
+
 const headerStyle = {
     background: '#f8fafc',
     color: '#64748b',
@@ -146,20 +163,18 @@ const headerStyle = {
     fontSize: '13px',
     borderBottom: '1px solid #e2e8f0'
 }
-
 const tableRowClassName = () => 'modern-row'
 </script>
 
 <style scoped>
 .exp-panel {
-    height: 100%;
+    /* 移除 height: 100% 和 overflow: hidden，允许内容自然撑开 */
     display: flex;
     flex-direction: column;
     padding: 16px 24px;
-    /* 内部留白 */
 }
 
-/* --- Toolbar --- */
+/* Toolbar */
 .panel-toolbar {
     display: flex;
     justify-content: space-between;
@@ -181,7 +196,6 @@ const tableRowClassName = () => 'modern-row'
     margin-right: 6px;
 }
 
-/* 科技感按钮 */
 .tech-btn {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     border: none;
@@ -196,15 +210,22 @@ const tableRowClassName = () => 'modern-row'
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
-/* --- Table Area --- */
+/* Table Area */
 .table-container {
-    flex: 1;
-    overflow: hidden;
-    /* 给表格容器加个极淡的圆角边框，但不显眼 */
+    /* 移除 flex: 1 和 overflow: hidden */
     border-radius: 8px;
+    display: flex;
+    flex-direction: column;
 }
 
-/* 版本号样式 */
+/* 分页器容器 */
+.pagination-wrapper {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 10px;
+}
+
 .version-wrapper {
     display: flex;
     align-items: center;
@@ -232,7 +253,6 @@ const tableRowClassName = () => 'modern-row'
     font-size: 13px;
 }
 
-/* --- 状态圆点 (Status Dot) --- */
 .status-dot-wrapper {
     display: flex;
     align-items: center;
@@ -246,10 +266,8 @@ const tableRowClassName = () => 'modern-row'
     position: relative;
 }
 
-/* 成功态 */
 .status-dot-wrapper.is-success .dot {
     background-color: #10b981;
-    /* 翡翠绿 */
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
@@ -257,10 +275,8 @@ const tableRowClassName = () => 'modern-row'
     color: #059669;
 }
 
-/* 待定态 */
 .status-dot-wrapper.is-pending .dot {
     background-color: #f59e0b;
-    /* 琥珀黄 */
     box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 
@@ -273,7 +289,6 @@ const tableRowClassName = () => 'modern-row'
     font-weight: 500;
 }
 
-/* 说明文本 */
 .note-content {
     color: #334155;
     white-space: nowrap;
@@ -282,7 +297,6 @@ const tableRowClassName = () => 'modern-row'
     max-width: 90%;
 }
 
-/* --- Actions --- */
 .actions {
     display: flex;
     justify-content: flex-end;
@@ -314,7 +328,6 @@ const tableRowClassName = () => 'modern-row'
     height: 24px;
 }
 
-/* 深度定制表格行样式 */
 :deep(.el-table__row) {
     transition: background-color 0.2s;
 }
@@ -325,6 +338,5 @@ const tableRowClassName = () => 'modern-row'
 
 :deep(.el-table__inner-wrapper::before) {
     display: none;
-    /* 去掉表格底部那根灰线 */
 }
 </style>

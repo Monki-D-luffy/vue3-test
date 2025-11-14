@@ -54,12 +54,12 @@ const loadProducts = async () => {
         const data = await fetchProducts()
         products.value = data
 
-        // ✨ [修复] 类型安全的写法
-        // 1. 先获取第一个元素
-        const firstProduct = products.value[0]
-        // 2. 判断是否存在 (TypeScript 会自动推断 firstProduct 在 if 块内非 undefined)
-        if (firstProduct && !currentId.value) {
-            handleSelect(firstProduct)
+        // ✨ [修复] 更严谨的写法，消除 TS 报错
+        // 显式检查数组长度
+        if (products.value.length > 0 && !currentId.value) {
+            // 使用 ! 断言它一定存在，或者直接传值
+            const first = products.value[0] as Product
+            handleSelect(first)
         }
     } catch (error) {
         console.error(error)
@@ -79,7 +79,6 @@ const filteredProducts = computed(() => {
 })
 
 const handleSelect = (item: Product) => {
-    // 防御性编程：如果 item 为空直接返回
     if (!item) return
     currentId.value = item.id
     emit('select', item)

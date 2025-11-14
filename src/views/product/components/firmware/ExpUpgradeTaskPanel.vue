@@ -29,7 +29,7 @@
                     <template #default="{ row }">
                         <div class="task-info">
                             <span class="task-name" :title="row.name">{{ row.name || `Task_${row.id?.slice(0, 6)}`
-                            }}</span>
+                                }}</span>
                             <span class="task-id">ID: {{ row.id }}</span>
                         </div>
                     </template>
@@ -205,10 +205,10 @@ const tableRowClassName = () => 'modern-row'
 
 <style scoped>
 .exp-panel {
-    /* 核心修复：移除固定高度和 overflow: hidden，让内容自然撑开 */
-    display: flex;
-    flex-direction: column;
+    /* Block 布局，内容自然撑开 */
     padding: 16px 24px;
+    padding-bottom: 24px;
+    /* 内部少量留白即可，大留白交给外层 */
 }
 
 .panel-toolbar {
@@ -227,21 +227,19 @@ const tableRowClassName = () => 'modern-row'
     gap: 8px;
 }
 
-/* 表格容器 */
 .table-container {
-    /* 核心修复：移除 flex: 1 和 overflow: hidden */
+    /* 确保没有高度限制 */
     border-radius: 8px;
-    display: flex;
-    flex-direction: column;
 }
 
 .pagination-wrapper {
-    margin-top: 16px;
+    margin-top: 12px;
+    margin-bottom: 20px;
     display: flex;
     justify-content: center;
 }
 
-/* --- 以下 UI 细节保持不变 --- */
+/* --- 以下样式保持不变 --- */
 .polling-badge {
     display: inline-flex;
     align-items: center;

@@ -44,28 +44,22 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Product } from '@/types'
-// 引入通用组件
 import ResizableLayout from '@/components/ResizableLayout.vue'
-// 引入新开发的实验性组件
 import ExpFirmwareHeader from './components/firmware/ExpFirmwareHeader.vue'
 import ExpProductSidebar from './components/firmware/ExpProductSidebar.vue'
-
-// 下一步我们将创建这两个组件，届时取消注释
 import ExpFirmwareVersionPanel from './components/firmware/ExpFirmwareVersionPanel.vue'
 import ExpUpgradeTaskPanel from './components/firmware/ExpUpgradeTaskPanel.vue'
 
 const currentProduct = ref<Product | null>(null)
-const activeTab = ref('versions')
+const activeTab = ref('tasks')
 
 const handleProductSelect = (product: Product) => {
     currentProduct.value = product
-    // 切换产品时重置 Tab
     activeTab.value = 'versions'
 }
 </script>
 
 <style scoped>
-/* 全屏容器 */
 .exp-firmware-layout {
     height: 100%;
     width: 100%;
@@ -73,48 +67,46 @@ const handleProductSelect = (product: Product) => {
     overflow: hidden;
 }
 
-/* 画布区域：核心改动 -> 灰色背景，增加 padding */
 .content-canvas {
     height: 100%;
+    overflow-y: auto;
     background-color: #f5f7fa;
-    /* 现代 SaaS 常用的浅灰底色 */
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    /* 卡片之间的间距 */
-    overflow: hidden;
+    padding: 20px;
+    /* 底部留白 */
+    padding-bottom: 40px;
+    display: block;
+    /* 优化滚动性能，防止卡顿 */
+    scroll-behavior: smooth;
+    /* 强制启用硬件加速，减少重绘 */
+    will-change: transform;
 }
 
-/* 头部区域：防止被压缩 */
 .section-header {
-    flex-shrink: 0;
+    margin-bottom: 20px;
 }
 
-/* 主体区域：占据剩余空间，自适应 */
 .section-body {
-    flex: 1;
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
     border: 1px solid #ebeef5;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    min-height: 400px;
+    /* 确保 overflow 为 visible，防止内部产生滚动陷阱 */
+    overflow: visible !important;
 }
 
-/* Tabs 样式深度定制 */
-:deep(.modern-card-tabs) {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
+/* Tabs 样式优化 
+   1. 移除了 sticky 吸顶
+   2. 强制 overflow: visible 防止滚动条卡顿
+*/
 :deep(.modern-card-tabs .el-tabs__header) {
     margin: 0;
     padding: 0 20px;
     border-bottom: 1px solid #f0f2f5;
     background-color: #fff;
+    /* ✨ 已移除 position: sticky 及相关属性 */
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 :deep(.modern-card-tabs .el-tabs__nav-wrap::after) {
@@ -136,22 +128,26 @@ const handleProductSelect = (product: Product) => {
 }
 
 :deep(.modern-card-tabs .el-tabs__content) {
-    flex: 1;
-    overflow: hidden;
     padding: 0;
-    /* 内容区无 Padding，交给子组件控制 */
-    position: relative;
+    /* ✨ 关键修复：确保 Tab 内容区不会拦截滚动事件 */
+    overflow: visible !important;
 }
 
-/* 临时占位符样式 */
-.placeholder-box {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* ✨ 额外修复：防止 el-table 内部产生不必要的滚动容器 */
+:deep(.el-table__body-wrapper),
+:deep(.el-table__header-wrapper),
+:deep(.el-table__footer-wrapper) {
+    overflow: visible !important;
 }
 
-/* 空状态样式 */
+/* ✨ 终极修复：如果 el-table 撑开后，鼠标悬停在表格上滚轮失效，
+   通常是因为表格试图处理横向滚动。
+   加上 touch-action 可以优化某些浏览器的行为。
+*/
+:deep(.el-table) {
+    touch-action: auto;
+}
+
 .empty-canvas {
     height: 100%;
     display: flex;
@@ -164,19 +160,5 @@ const handleProductSelect = (product: Product) => {
     color: #909399;
     font-size: 14px;
     margin-top: 8px;
-}
-
-/* 微调背景色，让它更暖一点点，不那么死灰 */
-.content-canvas {
-    background-color: #f2f4f7;
-    /* 稍微调整了灰度 */
-    /* ... */
-}
-
-/* 这里的 tabs 样式建议也加圆角 */
-:deep(.modern-card-tabs .el-tabs__item.is-active) {
-    color: #409eff;
-    font-weight: 600;
-    /* 可以加个底部的光标动画，如果想更高级的话 */
 }
 </style>

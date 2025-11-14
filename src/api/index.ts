@@ -10,8 +10,6 @@ import type {
   PaginationParams,
   PaginatedResponse
 } from '@/types'
-// 注意：为了防止循环依赖，建议不要在这里直接 import router
-// 如果需要跳转登录页，可以使用 window.location.href = '/login'
 
 const API_BASE_URL = '/api'
 
@@ -19,55 +17,27 @@ const api = axios.create({
   baseURL: API_BASE_URL
 })
 
-// =================================================================
-// 1. 拦截器配置
-// =================================================================
-// 扩展 Axios Request Config 类型 (可选)
+// 1. 拦截器配置 (保持不变)
 declare module 'axios' {
   export interface AxiosRequestConfig {
-    _silent?: boolean; // 自定义属性：是否静默处理错误
+    _silent?: boolean;
   }
 }
 
-// 全局请求拦截器
 api.interceptors.request.use(
   (config) => {
-    // 1. 登录请求，直接放行
-    if (config.url && config.url.endsWith('/auth/login')) {
-      return config
-    }
-
-    // 2. 从 localStorage 读取 token
+    if (config.url && config.url.endsWith('/auth/login')) return config
     const token = localStorage.getItem('authToken')
-
-    // 3. 如果 token 存在，就附上
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-
+    if (token) config.headers.Authorization = `Bearer ${token}`
     return config
   },
-  (error) => {
-    // 如果配置了 _silent，就不弹窗，留给业务代码自己 catch 处理
-    if (!error.config?._silent) {
-      if (error.response && error.response.status === 401) {
-        // ... 401 处理
-      } else {
-        ElMessage.error(error.message || '网络错误')
-      }
-    }
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
-// 全局响应拦截器
 api.interceptors.response.use(
   (response) => {
-    // 如果 code 不是 200，视为业务错误
     if (response.data && response.data.code && response.data.code !== 200) {
-      if (response.data.code !== 401) {
-        ElMessage.error(response.data.message || '请求失败')
-      }
+      if (response.data.code !== 401) ElMessage.error(response.data.message || '请求失败')
       return Promise.reject(new Error(response.data.message || 'Error'))
     }
     return response
@@ -76,15 +46,13 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       ElMessage.error('会话已过期，请重新登录。')
       localStorage.removeItem('authToken')
-      // 强制跳转回登录页
       window.location.href = '/login'
     } else {
-      ElMessage.error(error.message || '网络错误')
+      if (!error.config?._silent) ElMessage.error(error.message || '网络错误')
     }
     return Promise.reject(error)
   }
 )
-
 
 // =================================================================
 // 3. API 函数
@@ -95,127 +63,87 @@ api.interceptors.response.use(
  */
 export const fetchFirmwares = async (params: PaginationParams): Promise<PaginatedResponse<Firmware>> => {
   const response = await api.get<ApiResponse<Firmware[]>>('/firmwares', { params })
-
-  // 优先取 body 里的 total，没有则取 header
+  // 优先取 body 里的 total
   const totalCount = response.data.total || response.headers['x-total-count'] || 0
-
   return {
     items: response.data.data || [],
     total: Number(totalCount)
   }
 }
 
-/**
- * 获取所有产品列表
- */
 export const fetchProducts = async (): Promise<Product[]> => {
   const response = await api.get<ApiResponse<Product[]>>('/products')
   return response.data.data
 }
 
-/**
- * 上传新固件
- */
-export const uploadFirmware = async (data: FirmwareUploadData): Promise<Firmware> => {
+export const uploadFirmware = async (data: any): Promise<Firmware> => {
   const response = await api.post<ApiResponse<Firmware>>('/firmwares', {
     ...data,
-    verified: false // 默认为未验证
+    verified: false
   })
   return response.data.data
 }
 
-/**
- * ✨ (新增) 更新固件信息 (用于验证/发布)
- * PATCH /firmwares/:id
- */
 export const updateFirmware = async (id: string, updates: Partial<Firmware>): Promise<Firmware> => {
   const response = await api.patch<ApiResponse<Firmware>>(`/firmwares/${id}`, updates)
   return response.data.data
 }
 
-/**
- * ✨ (新增) 删除固件
- */
 export const deleteFirmware = async (id: string): Promise<void> => {
   await api.delete(`/firmwares/${id}`)
 }
 
-/**
- * 触发单设备升级 (旧功能，保留用于 DeviceDetail)
- */
 export const startDeviceUpgrade = async (deviceId: string): Promise<UpgradeTask> => {
   const response = await api.post<ApiResponse<UpgradeTask>>('/devices/upgrade', { deviceId })
   return response.data.data
 }
 
-/**
- * 轮询升级任务状态 (旧功能，保留)
- */
 export const getUpgradeTaskStatus = async (taskId: string): Promise<UpgradeTask> => {
   const response = await api.get<ApiResponse<UpgradeTask>>(`/upgrade-task/${taskId}`)
   return response.data.data
 }
 
-// --- 👇 阶段三 (批量推送) 预埋接口 👇 ---
-
-/**
- * 预估升级任务的影响范围 (Mock)
- * @param productId 产品ID
- * @param firmwareId 目标固件ID
- * @param filters 筛选条件
- */
 export const estimateUpgradeImpact = async (
   productId: string,
   firmwareId: string,
   filters: any
 ): Promise<{ total: number; online: number }> => {
-  // 模拟网络延迟
-  await new Promise(r => setTimeout(r, 600))
-
-  // 模拟返回：随机生成一个数量，假装后端计算了
+  await new Promise(r => setTimeout(r, 400))
   const total = Math.floor(Math.random() * 50) + 5
-  return {
-    total: total,
-    online: Math.floor(total * 0.6)
-  }
+  return { total: total, online: Math.floor(total * 0.6) }
 }
 
-/**
- * 创建批量升级任务 (Mock)
- */
-export const createUpgradeCampaign = async (payload: {
-  name: string
-  productId: string
-  firmwareId: string
-  firmwareVersion: string
-  targetScope: 'all' | 'filter'
-  filters?: any
-}): Promise<void> => {
-  // 发送真实请求给 mock-server
+export const createUpgradeCampaign = async (payload: any): Promise<void> => {
   await api.post('/campaigns', payload)
 }
 
 /**
  * 获取批量任务列表
+ * ✨ [修复] 增加 total 的智能兜底，解决分页器不显示的问题
  */
 export const fetchCampaigns = async (params: any = {}): Promise<{ items: UpgradeTask[], total: number }> => {
   const res = await api.get<ApiResponse<UpgradeTask[]>>('/campaigns', { params })
 
-  const totalCount = res.data.total || res.headers['x-total-count'] || 0
+  const items = res.data.data || []
+
+  // ✨ 核心修复：如果 mock server 没返回 total，就用当前数据长度兜底
+  let totalCount = res.data.total || res.headers['x-total-count']
+  if (totalCount === undefined || totalCount === 0) {
+    if (items.length > 0) {
+      totalCount = items.length // 临时用数组长度作为总数
+    } else {
+      totalCount = 0
+    }
+  }
 
   return {
-    items: res.data.data || [],
+    items: items,
     total: Number(totalCount)
   }
 }
 
-/**
- * 删除批量升级任务
- */
 export const deleteUpgradeCampaign = async (campaignId: string): Promise<void> => {
   await api.delete(`/campaigns/${campaignId}`)
 }
-
-
 
 export default api

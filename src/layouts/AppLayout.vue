@@ -22,13 +22,11 @@ import { RouterView } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 
-// AppLayout 只保留它需要管理的核心状态
-const isCollapsed = ref(true)
+const isCollapsed = ref(false)
 
 const toggleCollapse = () => {
     isCollapsed.value = !isCollapsed.value
 }
-
 </script>
 
 <style scoped>
@@ -40,15 +38,17 @@ const toggleCollapse = () => {
 
 .el-main {
     background-color: #f5f7fa;
-    /* 60px 是 AppHeader.vue 里的 .el-header 默认高度 */
+    /* 60px 是 header 高度 */
     height: calc(100vh - 60px);
-    overflow-y: auto;
-    padding: 10px 0px 0px 0px;
+    /* 核心修复：隐藏外层滚动，防止双滚动条 */
+    overflow: hidden;
+    /* 核心修复：移除内边距，由子页面自己控制 */
+    padding: 0;
 }
 
 .app-header {
-    /* Element Plus 默认可能是行内样式，这里可能需要 !important 或者直接用 height 属性 */
-    height: 50px !important;
+    height: 60px !important;
     padding: 0 20px 0px 0px;
+    background-color: #fff;
 }
 </style>

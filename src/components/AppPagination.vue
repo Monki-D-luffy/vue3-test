@@ -46,6 +46,7 @@ const emit = defineEmits([
 .pagination-block {
     margin-top: 24px;
     padding-top: 20px;
+    padding-bottom: 20px;
     border-top: 1px solid var(--el-border-color-lighter);
     display: flex;
     justify-content: center;
