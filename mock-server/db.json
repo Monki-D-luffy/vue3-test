@@ -27142,6 +27142,16 @@
       "fileUrl": "/files/firmware_v5465.bin",
       "uploadedAt": "2025-11-14 15:21:37",
       "verified": true
+    },
+    {
+      "id": "fw_6E421522-cBeF-Df19-1d3d-cD8c4D6bC7CA",
+      "version": "v2",
+      "productId": "prod_light_01",
+      "releaseNotes": "",
+      "productName": "智能灯泡",
+      "fileUrl": "/files/firmware_v2.bin",
+      "uploadedAt": "2025-11-14 17:30:36",
+      "verified": false
     }
   ],
   "upgradeTasks": [
@@ -27455,6 +27465,24 @@
         "status": ""
       },
       "startedAt": "2025-11-14 16:02:22"
+    },
+    {
+      "id": "camp_8BCEdb28",
+      "name": "升级 1.1.0",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_001",
+      "firmwareVersion": "1.1.0",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 0,
+      "successCount": 0,
+      "failureCount": 0,
+      "targetScope": "filter",
+      "filters": {
+        "dataCenter": "cn-east",
+        "status": "online"
+      },
+      "startedAt": "2025-11-14 17:30:46"
     }
   ]
 }

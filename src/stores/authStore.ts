@@ -2,9 +2,9 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
-import api from '@/api'
-import type { UserInfo } from '@/types'        // ✨ 引入统一类型
-import { STORAGE_KEYS } from '@/types'         // ✨ 引入常量
+import api, { register as apiRegister } from '@/api' // 确保引入了 api 中的 register
+import type { UserInfo, UserRegisterData } from '@/types'
+import { STORAGE_KEYS } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   // --- State ---
@@ -16,21 +16,12 @@ export const useAuthStore = defineStore('auth', () => {
   // 登录动作
   const login = async (account: string, password: string) => {
     try {
-      // 调用 API
-      // 注意：我们的拦截器已经处理了 HTTP 错误和 code !== 200 的情况
-      // 所以这里只要能拿到 response，说明业务是成功的
-      const response = await api.post(`/auth/login`, {
-        account,
-        password
-      })
-
-      // 这里的类型检查依赖于你的 api 响应泛型，假设 api.post 返回的是 AxiosResponse<ApiResponse<LoginResult>>
-      // 为了简化，我们假设拦截器已经剥离了外层，或者我们直接信任数据
+      const response = await api.post(`/auth/login`, { account, password })
+      // 兼容处理：response.data 可能是直接的数据，也可能是 { data: ... } 结构
       const data = response.data?.data || response.data;
 
-      // 登录成功
       token.value = data.token
-      userInfo.value = data // 假设后端把 userInfo 混在同一个对象里，或者 data.userInfo
+      userInfo.value = data
 
       if (token.value) {
         localStorage.setItem(STORAGE_KEYS.TOKEN, token.value)
@@ -38,12 +29,31 @@ export const useAuthStore = defineStore('auth', () => {
 
       ElMessage.success('登录成功！')
       return true
-
     } catch (error) {
-      // ✨ [关键修复]：拦截器已经弹出了错误提示 (ElMessage.error)，
-      // 这里我们只做控制台记录，不再弹出第二个提示，避免骚扰用户。
       console.warn('Login failed:', error)
       return false
+    }
+  }
+
+  // [新增] 注册动作 - 之前可能缺少了这个，或者没有 return 它
+  const register = async (registerData: UserRegisterData) => {
+    try {
+      // 调用 API 层的新注册接口
+      const data = await apiRegister(registerData);
+
+      // 注册成功后直接帮用户登录
+      token.value = data.token || null;
+      userInfo.value = data;
+
+      if (token.value) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, token.value);
+      }
+
+      ElMessage.success(`欢迎加入，${data.nickname || '用户'}！`);
+      return true;
+    } catch (error) {
+      console.warn('Registration failed:', error);
+      return false;
     }
   }
 
@@ -53,19 +63,13 @@ export const useAuthStore = defineStore('auth', () => {
     userInfo.value = null
     localStorage.removeItem(STORAGE_KEYS.TOKEN)
     ElMessage.info('您已退出登录')
-    // 路由跳转建议在组件层处理，或者在 store 外部使用 router
   }
 
-  // 自动登录尝试 (简单版)
+  // 自动登录尝试
   const tryAutoLogin = async () => {
     const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
     if (storedToken) {
       token.value = storedToken
-      // 这里通常应该调用一个 getUserInfo 接口验证 token 有效性并获取用户信息
-      // try {
-      //    const res = await api.get('/auth/me');
-      //    userInfo.value = res.data.data;
-      // } catch (e) { logout() }
     }
   }
 
@@ -73,6 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     userInfo,
     login,
+    register, // <--- 【关键】必须在这里导出，组件才能使用 authStore.register
     logout,
     tryAutoLogin
   }

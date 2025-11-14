@@ -1,63 +1,158 @@
 <template>
     <div class="login-container">
-        <div class="login-box">
-            <div class="login-header">
-                <h2>物联网平台</h2>
-                <p>IoT Device Management System</p>
+        <div class="background-mesh"></div>
+
+        <div class="auth-card glass-effect hover-lift">
+
+            <div class="card-header">
+                <div class="logo-wrapper">
+                    <img src="@/assets/logo.svg" alt="Logo" class="logo-icon" />
+                </div>
+                <h1 class="app-title">IoT Manager</h1>
+                <p class="app-subtitle">新一代物联网设备管理平台</p>
             </div>
 
-            <el-card class="login-card" shadow="always">
-                <el-form ref="loginFormRef" :model="loginForm" :rules="rules" size="large">
-                    <el-form-item prop="email">
-                        <el-input v-model="loginForm.email" placeholder="请输入邮箱账号" :prefix-icon="User" />
-                    </el-form-item>
-                    <el-form-item prop="password">
-                        <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" show-password
-                            :prefix-icon="Lock" @keyup.enter="handleLogin" />
-                    </el-form-item>
-                    <el-form-item>
-                        <el-button type="primary" :loading="loading" class="login-button" @click="handleLogin">
-                            {{ loading ? '登 录 中...' : '立即登录' }}
+            <Transition name="fade-slide" mode="out-in">
+
+                <div v-if="isLoginMode" key="login" class="form-section">
+                    <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="auth-form"
+                        @keyup.enter="handleLogin">
+                        <el-form-item prop="account">
+                            <el-input v-model="loginForm.account" placeholder="请输入邮箱或账号" :prefix-icon="User"
+                                size="large" class="modern-input" />
+                        </el-form-item>
+                        <el-form-item prop="password">
+                            <el-input v-model="loginForm.password" type="password" placeholder="请输入密码"
+                                :prefix-icon="Lock" show-password size="large" class="modern-input" />
+                        </el-form-item>
+
+                        <div class="form-options">
+                            <el-checkbox v-model="rememberMe">记住我</el-checkbox>
+                            <el-link type="primary" class="no-underline">忘记密码?</el-link>
+                        </div>
+
+                        <el-button type="primary" size="large" class="submit-btn" :loading="loading"
+                            @click="handleLogin">
+                            登 录
                         </el-button>
-                    </el-form-item>
-                </el-form>
-            </el-card>
+                    </el-form>
 
-            <div class="login-footer">
-                <p>© 2025 IoT Platform. All rights reserved.</p>
-            </div>
+                    <div class="switch-mode">
+                        还没有账号？
+                        <el-link type="primary" @click="toggleMode" class="no-underline">立即注册</el-link>
+                    </div>
+                </div>
+
+                <div v-else key="register" class="form-section">
+                    <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" class="auth-form"
+                        @keyup.enter="handleRegister">
+                        <el-form-item prop="email">
+                            <el-input v-model="registerForm.email" placeholder="电子邮箱 (作为登录账号)" :prefix-icon="Message"
+                                size="large" class="modern-input" />
+                        </el-form-item>
+                        <el-form-item prop="nickname">
+                            <el-input v-model="registerForm.nickname" placeholder="您的昵称" :prefix-icon="User"
+                                size="large" class="modern-input" />
+                        </el-form-item>
+                        <el-form-item prop="password">
+                            <el-input v-model="registerForm.password" type="password" placeholder="设置密码 (至少6位)"
+                                :prefix-icon="Lock" show-password size="large" class="modern-input" />
+                        </el-form-item>
+                        <el-form-item prop="confirmPassword">
+                            <el-input v-model="registerForm.confirmPassword" type="password" placeholder="确认密码"
+                                :prefix-icon="Check" show-password size="large" class="modern-input" />
+                        </el-form-item>
+
+                        <el-button type="primary" size="large" class="submit-btn" :loading="loading"
+                            @click="handleRegister">
+                            注 册
+                        </el-button>
+                    </el-form>
+
+                    <div class="switch-mode">
+                        已有账号？
+                        <el-link type="primary" @click="toggleMode" class="no-underline">返回登录</el-link>
+                    </div>
+                </div>
+
+            </Transition>
+        </div>
+
+        <div class="footer-copyright">
+            © 2025 IoT Manager. All Rights Reserved.
         </div>
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
-// 需要引入图标
-import { User, Lock } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/authStore'
+import { User, Lock, Message, Check } from '@element-plus/icons-vue'
+import type { FormInstance, FormRules } from 'element-plus'
 
-const authStore = useAuthStore()
 const router = useRouter()
+const authStore = useAuthStore()
 
-const loginFormRef = ref(null)
+const isLoginMode = ref(true)
 const loading = ref(false)
+const rememberMe = ref(false)
 
+const loginFormRef = ref<FormInstance>()
+const registerFormRef = ref<FormInstance>()
+
+// ✨ 已添加默认值，方便开发
 const loginForm = reactive({
-    email: '1067360038@qq.com',
+    account: 'admin',
     password: '123456'
 })
 
-// 简单的表单验证规则
-const rules = {
+const registerForm = reactive({
+    email: '',
+    nickname: '',
+    password: '',
+    confirmPassword: ''
+})
+
+const loginRules = reactive<FormRules>({
+    account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+    password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+})
+
+const validatePass2 = (rule: any, value: any, callback: any) => {
+    if (value !== registerForm.password) {
+        callback(new Error('两次输入密码不一致!'))
+    } else {
+        callback()
+    }
+}
+
+const registerRules = reactive<FormRules>({
     email: [
-        { required: true, message: '请输入邮箱', TXr: 'blur' },
-        { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] }
+        { required: true, message: '请输入邮箱', trigger: 'blur' },
+        { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
     ],
+    nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
     password: [
         { required: true, message: '请输入密码', trigger: 'blur' },
-        { min: 6, message: '密码不能少于6位', trigger: 'blur' }
+        { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    ],
+    confirmPassword: [
+        { required: true, message: '请确认密码', trigger: 'blur' },
+        { validator: validatePass2, trigger: 'blur' }
     ]
+})
+
+const toggleMode = () => {
+    isLoginMode.value = !isLoginMode.value
+    // 重置表单
+    if (isLoginMode.value) {
+        // 切回登录
+        setTimeout(() => registerFormRef.value?.resetFields(), 300)
+    } else {
+        // 切到注册
+        setTimeout(() => loginFormRef.value?.resetFields(), 300)
+    }
 }
 
 const handleLogin = async () => {
@@ -66,16 +161,32 @@ const handleLogin = async () => {
     await loginFormRef.value.validate(async (valid) => {
         if (valid) {
             loading.value = true
-            try {
-                // 模拟一个延迟，让 loading 效果展示出来，更有交互感
-                // await new Promise(resolve =>QXsetTimeout(resolve, 500)) 
+            // Store 内部已经处理了 try-catch 和 ElMessage
+            const success = await authStore.login(loginForm.account, loginForm.password)
+            loading.value = false
 
-                const success = await authStore.login(loginForm.email, loginForm.password)
-                if (success) {
-                    router.push('/overview')
-                }
-            } finally {
-                loading.value = false
+            if (success) {
+                router.push('/')
+            }
+        }
+    })
+}
+
+const handleRegister = async () => {
+    if (!registerFormRef.value) return
+
+    await registerFormRef.value.validate(async (valid) => {
+        if (valid) {
+            loading.value = true
+            const success = await authStore.register({
+                email: registerForm.email,
+                password: registerForm.password,
+                nickname: registerForm.nickname
+            })
+            loading.value = false
+
+            if (success) {
+                router.push('/')
             }
         }
     })
@@ -83,76 +194,163 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
+/* 布局容器 */
 .login-container {
-    min-height: 100vh;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* 使用深色渐变背景提升科技感 */
-    background: linear-gradient(135deg, #2d3a4b 0%, #1c232d 100%);
-    background-size: cover;
+    overflow: hidden;
+    background-color: var(--bg-canvas);
 }
 
-.login-box {
-    width: 100%;
-    max-width: 420px;
-    padding: 20px;
+/* 动态背景 */
+.background-mesh {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%,
+            rgba(79, 70, 229, 0.15),
+            rgba(59, 130, 246, 0.1),
+            rgba(245, 247, 250, 0) 50%);
+    animation: mesh-move 20s infinite linear;
+    z-index: 0;
 }
 
-.login-header {
+@keyframes mesh-move {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 玻璃拟态卡片 */
+.auth-card {
+    position: relative;
+    z-index: 1;
+    width: 420px;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.card-header {
     text-align: center;
-    margin-bottom: 30px;
-    color: #fff;
+    margin-bottom: 32px;
 }
 
-.login-header h2 {
-    font-size: 28px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    letter-spacing: 2px;
+.logo-wrapper {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: var(--color-primary-light);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
 }
 
-.login-header p {
+.logo-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.app-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.app-subtitle {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: var(--text-secondary);
 }
 
-.login-card {
-    border: none;
-    border-radius: 12px;
-    /* 给卡片加一点透明度和模糊效果 */
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
-    padding: 20px 10px;
+.modern-input :deep(.el-input__wrapper) {
+    box-shadow: none;
+    background-color: var(--bg-hover);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
 
-.login-button {
+.modern-input :deep(.el-input__wrapper:hover),
+.modern-input :deep(.el-input__wrapper.is-focus) {
+    background-color: #fff;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+/* 去除链接下划线的类 */
+.no-underline :deep(.el-link__inner) {
+    text-decoration: none !important;
+}
+
+.no-underline:hover :deep(.el-link__inner) {
+    text-decoration: none !important;
+}
+
+.submit-btn {
     width: 100%;
+    height: 48px;
     font-size: 16px;
-    padding: 20px 0;
-    letter-spacing: 4px;
-    font-weight: bold;
-    transition: all 0.3s;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.login-button:hover {
+.submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+    box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
 }
 
-.login-footer {
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.switch-mode {
+    margin-top: 24px;
     text-align: center;
-    margin-top: 40px;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 12px;
+    font-size: 14px;
+    color: var(--text-secondary);
 }
 
-/* 响应式调整 */
+.footer-copyright {
+    position: absolute;
+    bottom: 24px;
+    font-size: 12px;
+    color: var(--text-placeholder);
+    z-index: 1;
+}
+
 @media (max-width: 480px) {
-    .login-box {
+    .auth-card {
         width: 90%;
+        padding: 24px;
     }
 }
 </style>
