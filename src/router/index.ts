@@ -33,19 +33,19 @@ const router = createRouter({
         {
           path: 'devices', // 匹配 /devices
           name: 'device-list',
-          // ✨ (关键修改) 路径已更新
+          // 路径已更新
           component: () => import('@/views/device/DeviceDashboard.vue')
         },
         {
           path: 'devices/log', // 匹配 /devices/log
           name: 'device-log',
-          // ✨ (关键修改) 路径已更新
+          // 路径已更新
           component: () => import('@/views/device/DeviceLog.vue')
         },
         {
           path: 'products', // 匹配 /products
           name: 'product-list',
-          // ✨ (关键修改) 路径已更新
+          //  路径已更新
           component: () => import('@/views/product/ProductManagement.vue')
         },
         {
@@ -56,9 +56,19 @@ const router = createRouter({
         {
           path: 'system', // 匹配 /system
           name: 'system-management',
-          // ✨ (关键修改) 路径已更新
+          //  路径已更新
           component: () => import('@/views/system/SystemManagement.vue')
-        }
+        },
+        {
+          // 🆕 实验性功能：固件管理 2.0
+          path: 'firmware-exp',
+          name: 'ExpFirmwareManagement',
+          component: () => import('../views/product/ExpFirmwareManagement.vue'),
+          meta: {
+            title: '固件管理 (Exp)',
+            requiresAuth: true
+          }
+        },
       ]
     },
 

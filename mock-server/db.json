@@ -28192,6 +28192,33 @@
       "fileUrl": "/files/firmware_1.2.3.bin",
       "uploadedAt": "2025-11-13 16:11:11",
       "verified": true
+    },
+    {
+      "productId": "P001",
+      "productName": "智能温控器 Pro",
+      "version": "v22",
+      "releaseNotes": "",
+      "fileUrl": "http://oss.iot.com/firmware/parameter.hex",
+      "uploadedAt": "2025-11-13T11:16:34.614Z",
+      "verified": true,
+      "id": "Asy15tC"
+    },
+    {
+      "productId": "prod_light_01",
+      "version": "1.2.3",
+      "releaseNotes": "二点",
+      "verified": false,
+      "id": "2zvf0B8"
+    },
+    {
+      "productId": "P001",
+      "productName": "智能温控器 Pro",
+      "version": "v1",
+      "releaseNotes": "",
+      "fileUrl": "http://oss.iot.com/firmware/parameter.hex",
+      "uploadedAt": "2025-11-14T01:49:29.077Z",
+      "verified": false,
+      "id": "yTrRohQ"
     }
   ],
   "upgradeTasks": [

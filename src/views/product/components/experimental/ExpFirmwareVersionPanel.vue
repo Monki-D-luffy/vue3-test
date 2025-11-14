@@ -1,0 +1,310 @@
+<template>
+    <div class="exp-panel">
+        <div class="panel-toolbar">
+            <div class="left-tip">
+                <el-icon class="info-icon">
+                    <InfoFilled />
+                </el-icon>
+                <span>仅“验证通过”的固件可推送</span>
+            </div>
+            <div class="right-action">
+                <el-button type="primary" class="tech-btn" @click="isUploadVisible = true">
+                    <el-icon class="mr-1">
+                        <Upload />
+                    </el-icon>
+                    上传新版本
+                </el-button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <el-table :data="firmwareList" v-loading="loading" height="100%" style="width: 100%"
+                :header-cell-style="headerStyle" :row-class-name="tableRowClassName">
+                <el-table-column label="版本号" min-width="140">
+                    <template #default="{ row, $index }">
+                        <div class="version-wrapper">
+                            <span class="version-code">{{ row.version }}</span>
+                            <span v-if="$index === 0" class="latest-badge">NEW</span>
+                        </div>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="发布时间" width="180">
+                    <template #default="{ row }">
+                        <span class="time-text">{{ formatDateTime(row.uploadedAt) }}</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="状态" width="140">
+                    <template #default="{ row }">
+                        <div class="status-dot-wrapper" :class="row.verified ? 'is-success' : 'is-pending'">
+                            <div class="dot"></div>
+                            <span class="status-text">{{ row.verified ? '已验证' : '待验证' }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="发布说明" min-width="240">
+                    <template #default="{ row }">
+                        <div class="note-content" :title="row.releaseNotes">
+                            {{ row.releaseNotes }}
+                        </div>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="操作" width="160" align="right" fixed="right">
+                    <template #default="{ row }">
+                        <div class="actions">
+                            <el-tooltip content="通过验证" placement="top" v-if="!row.verified">
+                                <el-button circle size="small" type="success" plain class="action-btn verify-btn"
+                                    @click="verifyFirmware(row, refreshData)">
+                                    <el-icon>
+                                        <Check />
+                                    </el-icon>
+                                </el-button>
+                            </el-tooltip>
+                            <span v-else class="verified-mark"><el-icon><Select /></el-icon></span>
+
+                            <el-tooltip content="删除版本" placement="top">
+                                <el-button circle size="small" type="danger" plain class="action-btn delete-btn"
+                                    @click="removeFirmware(row, refreshData)">
+                                    <el-icon>
+                                        <Delete />
+                                    </el-icon>
+                                </el-button>
+                            </el-tooltip>
+                        </div>
+                    </template>
+                </el-table-column>
+
+                <template #empty>
+                    <el-empty description="暂无固件版本" :image-size="80" />
+                </template>
+            </el-table>
+        </div>
+
+        <ExpFirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="refreshData" />
+    </div>
+</template>
+
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import { Upload, InfoFilled, Check, Delete, Select } from '@element-plus/icons-vue'
+import { formatDateTime } from '@/utils/formatters'
+import type { Product } from '@/types'
+import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
+
+import ExpFirmwareUploadWizard from './ExpFirmwareUploadWizard.vue'
+const props = defineProps<{
+    product: Product
+}>()
+
+const isUploadVisible = ref(false)
+
+// 逻辑完全复用
+const {
+    loading,
+    firmwareList,
+    getFirmwares,
+    verifyFirmware,
+    removeFirmware
+} = useFirmwareManagement()
+
+const refreshData = () => {
+    if (props.product?.id) {
+        getFirmwares(props.product.id)
+    }
+}
+
+watch(() => props.product.id, refreshData, { immediate: true })
+
+// 表格头样式
+const headerStyle = {
+    background: '#f8fafc',
+    color: '#64748b',
+    fontWeight: '600',
+    fontSize: '13px',
+    borderBottom: '1px solid #e2e8f0'
+}
+
+const tableRowClassName = () => 'modern-row'
+</script>
+
+<style scoped>
+.exp-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 24px;
+    /* 内部留白 */
+}
+
+/* --- Toolbar --- */
+.panel-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.left-tip {
+    display: flex;
+    align-items: center;
+    color: #94a3b8;
+    font-size: 13px;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.info-icon {
+    margin-right: 6px;
+}
+
+/* 科技感按钮 */
+.tech-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    transition: all 0.2s;
+}
+
+.tech-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* --- Table Area --- */
+.table-container {
+    flex: 1;
+    overflow: hidden;
+    /* 给表格容器加个极淡的圆角边框，但不显眼 */
+    border-radius: 8px;
+}
+
+/* 版本号样式 */
+.version-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.version-code {
+    font-family: 'JetBrains Mono', 'Monaco', monospace;
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.latest-badge {
+    margin-left: 8px;
+    font-size: 10px;
+    background: #fee2e2;
+    color: #ef4444;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.time-text {
+    color: #64748b;
+    font-size: 13px;
+}
+
+/* --- 状态圆点 (Status Dot) --- */
+.status-dot-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    position: relative;
+}
+
+/* 成功态 */
+.status-dot-wrapper.is-success .dot {
+    background-color: #10b981;
+    /* 翡翠绿 */
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.status-dot-wrapper.is-success .status-text {
+    color: #059669;
+}
+
+/* 待定态 */
+.status-dot-wrapper.is-pending .dot {
+    background-color: #f59e0b;
+    /* 琥珀黄 */
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.status-dot-wrapper.is-pending .status-text {
+    color: #d97706;
+}
+
+.status-text {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* 说明文本 */
+.note-content {
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%;
+}
+
+/* --- Actions --- */
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn {
+    border: none;
+    transition: all 0.2s;
+}
+
+.verify-btn:hover {
+    background-color: #dcfce7;
+    color: #16a34a;
+}
+
+.delete-btn:hover {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.verified-mark {
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+/* 深度定制表格行样式 */
+:deep(.el-table__row) {
+    transition: background-color 0.2s;
+}
+
+:deep(.el-table__row:hover) {
+    background-color: #f8fafc !important;
+}
+
+:deep(.el-table__inner-wrapper::before) {
+    display: none;
+    /* 去掉表格底部那根灰线 */
+}
+</style>
