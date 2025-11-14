@@ -57,7 +57,7 @@
                         <div class="actions">
                             <el-tooltip content="通过验证" placement="top" v-if="!row.verified">
                                 <el-button circle size="small" type="success" plain class="action-btn verify-btn"
-                                    @click="verifyFirmware(row, refreshData)">
+                                    @click="openVerifyDialog(row)">
                                     <el-icon>
                                         <Check />
                                     </el-icon>
@@ -67,7 +67,7 @@
 
                             <el-tooltip content="删除版本" placement="top">
                                 <el-button circle size="small" type="danger" plain class="action-btn delete-btn"
-                                    @click="removeFirmware(row, refreshData)">
+                                    @click="openDeleteDialog(row)">
                                     <el-icon>
                                         <Delete />
                                     </el-icon>
@@ -83,6 +83,8 @@
             </el-table>
         </div>
 
+        <ExpFirmwareVerifyModal v-model="isVerifyVisible" :firmware="currentVerifyRow" @success="refreshData" />
+        <ExpFirmwareDeleteModal v-model="isDeleteVisible" :firmware="currentDeleteRow" @success="refreshData" />
         <ExpFirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="refreshData" />
     </div>
 </template>
@@ -95,12 +97,32 @@ import type { Product } from '@/types'
 import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
 
 import ExpFirmwareUploadWizard from './ExpFirmwareUploadWizard.vue'
+import ExpFirmwareVerifyModal from './ExpFirmwareVerifyModal.vue'
+import ExpFirmwareDeleteModal from './ExpFirmwareDeleteModal.vue'
 const props = defineProps<{
     product: Product
 }>()
 
 const isUploadVisible = ref(false)
 
+// 添加新状态来控制验证弹窗
+const isVerifyVisible = ref(false)
+const currentVerifyRow = ref<any>(null) // 暂存当前要验证的行数据
+
+// 新增打开弹窗的方法
+const openVerifyDialog = (row: any) => {
+    currentVerifyRow.value = row
+    isVerifyVisible.value = true
+}
+
+// 添加删除弹窗的状态控制
+const isDeleteVisible = ref(false)
+const currentDeleteRow = ref<any>(null)
+
+const openDeleteDialog = (row: any) => {
+    currentDeleteRow.value = row
+    isDeleteVisible.value = true
+}
 // 逻辑完全复用
 const {
     loading,

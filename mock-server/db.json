@@ -28194,16 +28194,6 @@
       "verified": true
     },
     {
-      "productId": "P001",
-      "productName": "智能温控器 Pro",
-      "version": "v22",
-      "releaseNotes": "",
-      "fileUrl": "http://oss.iot.com/firmware/parameter.hex",
-      "uploadedAt": "2025-11-13T11:16:34.614Z",
-      "verified": true,
-      "id": "Asy15tC"
-    },
-    {
       "productId": "prod_light_01",
       "version": "1.2.3",
       "releaseNotes": "二点",
@@ -28213,12 +28203,12 @@
     {
       "productId": "P001",
       "productName": "智能温控器 Pro",
-      "version": "v1",
+      "version": "v21",
       "releaseNotes": "",
       "fileUrl": "http://oss.iot.com/firmware/parameter.hex",
-      "uploadedAt": "2025-11-14T01:49:29.077Z",
+      "uploadedAt": "2025-11-14T02:10:40.528Z",
       "verified": false,
-      "id": "yTrRohQ"
+      "id": "OCO6Uc1"
     }
   ],
   "upgradeTasks": [
