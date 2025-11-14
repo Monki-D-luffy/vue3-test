@@ -49,7 +49,7 @@ const router = createRouter({
           component: () => import('@/views/product/ProductManagement.vue')
         },
         {
-          path: 'firmware',
+          path: 'firmwareOld',
           name: 'firmware',
           component: () => import('@/views/product/FirmwareManagement.vue')
         },
@@ -61,7 +61,7 @@ const router = createRouter({
         },
         {
           // 🆕 实验性功能：固件管理 2.0
-          path: 'firmware-exp',
+          path: 'firmware',
           name: 'ExpFirmwareManagement',
           component: () => import('../views/product/ExpFirmwareManagement.vue'),
           meta: {

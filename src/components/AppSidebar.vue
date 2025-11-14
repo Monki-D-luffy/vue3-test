@@ -86,7 +86,7 @@ const menuItems = ref([
         children: [
             { index: '/products', title: '产品列表' },
             { index: '/firmware', title: '固件管理' },
-            { index: '/firmware-exp', title: '固件管理2' }
+            { index: '/firmwareOld', title: '固件管理旧' }
         ]
     },
     {

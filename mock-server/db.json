@@ -28197,18 +28197,28 @@
       "productId": "prod_light_01",
       "version": "1.2.3",
       "releaseNotes": "二点",
-      "verified": false,
+      "verified": true,
       "id": "2zvf0B8"
     },
     {
       "productId": "P001",
       "productName": "智能温控器 Pro",
-      "version": "v21",
+      "version": "vwq",
       "releaseNotes": "",
-      "fileUrl": "http://oss.iot.com/firmware/parameter.hex",
-      "uploadedAt": "2025-11-14T02:10:40.528Z",
+      "fileUrl": "http://oss.iot.com/firmware/GD32F30x_Templates.hex",
+      "uploadedAt": "2025-11-14T03:14:54.638Z",
       "verified": true,
-      "id": "OCO6Uc1"
+      "id": "zul3pqq"
+    },
+    {
+      "productId": "P001",
+      "productName": "智能温控器 Pro",
+      "version": "v1",
+      "releaseNotes": "",
+      "fileUrl": "http://oss.iot.com/firmware/GD32F30x_Templates.hex",
+      "uploadedAt": "2025-11-14T06:05:21.578Z",
+      "verified": false,
+      "id": "-UEy7lN"
     }
   ],
   "upgradeTasks": [
@@ -28263,21 +28273,6 @@
   ],
   "campaigns": [
     {
-      "id": "camp_fA06BdDc",
-      "name": "智能灯泡_v1.1.0_2025-11-13_Campaign",
-      "productId": "prod_light_01",
-      "firmwareId": "fw_001",
-      "firmwareVersion": "1.1.0",
-      "status": "success",
-      "progress": 100,
-      "totalDevices": 33,
-      "successCount": 33,
-      "failureCount": 0,
-      "targetScope": "all",
-      "filters": {},
-      "startedAt": "2025-11-13 14:12:36"
-    },
-    {
       "id": "camp_99F9FAdA",
       "name": "智能插座_v1.0.1_2025-11-13_Campaign",
       "productId": "prod_socket_01",
@@ -28291,21 +28286,6 @@
       "targetScope": "all",
       "filters": {},
       "startedAt": "2025-11-13 14:13:02"
-    },
-    {
-      "id": "camp_b4AceA8f",
-      "name": "智能灯泡_v1.1.0_2025-11-13_Campaign",
-      "productId": "prod_light_01",
-      "firmwareId": "fw_001",
-      "firmwareVersion": "1.1.0",
-      "status": "success",
-      "progress": 100,
-      "totalDevices": 33,
-      "successCount": 33,
-      "failureCount": 0,
-      "targetScope": "all",
-      "filters": {},
-      "startedAt": "2025-11-13 14:14:05"
     },
     {
       "id": "camp_d2b3dcCB",
@@ -28366,6 +28346,30 @@
       "targetScope": "all",
       "filters": {},
       "startedAt": "2025-11-13 16:11:39"
+    },
+    {
+      "name": "升级 vwq",
+      "productId": "P001",
+      "firmwareId": "zul3pqq",
+      "firmwareVersion": "vwq",
+      "targetScope": "filter",
+      "filters": {
+        "dataCenter": "cn-east",
+        "status": "online"
+      },
+      "id": "oeUi_V_"
+    },
+    {
+      "name": "升级 vwq",
+      "productId": "P001",
+      "firmwareId": "zul3pqq",
+      "firmwareVersion": "vwq",
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "id": "0V3EbZG"
     }
   ]
 }

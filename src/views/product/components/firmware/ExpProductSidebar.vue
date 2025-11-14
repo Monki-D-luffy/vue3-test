@@ -241,8 +241,8 @@ onMounted(() => {
     transform: translateY(-50%);
     width: 6px;
     height: 6px;
-    background-color: #3b82f6;
+    background-color: #9ae813;
     border-radius: 50%;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 3px rgb(59 246 220 / 20%);
 }
 </style>

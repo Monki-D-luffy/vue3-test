@@ -47,12 +47,12 @@ import type { Product } from '@/types'
 // 引入通用组件
 import ResizableLayout from '@/components/ResizableLayout.vue'
 // 引入新开发的实验性组件
-import ExpFirmwareHeader from './components/experimental/ExpFirmwareHeader.vue'
-import ExpProductSidebar from './components/experimental/ExpProductSidebar.vue'
+import ExpFirmwareHeader from './components/firmware/ExpFirmwareHeader.vue'
+import ExpProductSidebar from './components/firmware/ExpProductSidebar.vue'
 
 // 下一步我们将创建这两个组件，届时取消注释
-import ExpFirmwareVersionPanel from './components/experimental/ExpFirmwareVersionPanel.vue'
-import ExpUpgradeTaskPanel from './components/experimental/ExpUpgradeTaskPanel.vue'
+import ExpFirmwareVersionPanel from './components/firmware/ExpFirmwareVersionPanel.vue'
+import ExpUpgradeTaskPanel from './components/firmware/ExpUpgradeTaskPanel.vue'
 
 const currentProduct = ref<Product | null>(null)
 const activeTab = ref('versions')
