@@ -100,7 +100,6 @@ import { Upload, InfoFilled, Check, Delete, Select } from '@element-plus/icons-v
 import { formatDateTime } from '@/utils/formatters'
 import type { Product } from '@/types'
 import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
-// 引入分页组件
 import AppPagination from '@/components/AppPagination.vue'
 
 import ExpFirmwareUploadWizard from './ExpFirmwareUploadWizard.vue'
@@ -117,32 +116,28 @@ const isDeleteVisible = ref(false)
 const currentVerifyRow = ref<any>(null)
 const currentDeleteRow = ref<any>(null)
 
-// 使用 Composable
 const {
     loading,
     firmwareList,
-    pagination, // 引入分页对象
+    pagination,
     getFirmwares,
-    handlePaginationChange // 引入分页回调
+    handlePaginationChange
 } = useFirmwareManagement()
 
-// 封装刷新函数
 const refreshData = () => {
     if (props.product?.id) {
         getFirmwares(props.product.id)
     }
 }
 
-// 分页变化处理
 const onPageChange = () => {
     if (props.product?.id) {
         handlePaginationChange(props.product.id)
     }
 }
 
-// 监听 Product ID 变化，重置分页并刷新
 watch(() => props.product.id, () => {
-    pagination.currentPage = 1 // 切换产品时重置到第一页
+    pagination.currentPage = 1
     refreshData()
 }, { immediate: true })
 
@@ -156,25 +151,24 @@ const openDeleteDialog = (row: any) => {
     isDeleteVisible.value = true
 }
 
+// ✨ 修改：使用 CSS 变量
 const headerStyle = {
-    background: '#f8fafc',
-    color: '#64748b',
+    background: 'var(--bg-hover)', // 替换 #f8fafc
+    color: 'var(--text-secondary)', // 替换 #64748b
     fontWeight: '600',
     fontSize: '13px',
-    borderBottom: '1px solid #e2e8f0'
+    borderBottom: '1px solid var(--border-color)' // 替换 #e2e8f0
 }
 const tableRowClassName = () => 'modern-row'
 </script>
 
 <style scoped>
 .exp-panel {
-    /* 移除 height: 100% 和 overflow: hidden，允许内容自然撑开 */
     display: flex;
     flex-direction: column;
     padding: 16px 24px;
 }
 
-/* Toolbar */
 .panel-toolbar {
     display: flex;
     justify-content: space-between;
@@ -185,9 +179,11 @@ const tableRowClassName = () => 'modern-row'
 .left-tip {
     display: flex;
     align-items: center;
-    color: #94a3b8;
+    color: var(--text-placeholder);
+    /* 替换 #94a3b8 */
     font-size: 13px;
-    background: #f1f5f9;
+    background: var(--bg-hover);
+    /* 替换 #f1f5f9 */
     padding: 6px 12px;
     border-radius: 20px;
 }
@@ -197,7 +193,7 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .tech-btn {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%);
     border: none;
     border-radius: 8px;
     padding: 9px 18px;
@@ -210,15 +206,12 @@ const tableRowClassName = () => 'modern-row'
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
-/* Table Area */
 .table-container {
-    /* 移除 flex: 1 和 overflow: hidden */
     border-radius: 8px;
     display: flex;
     flex-direction: column;
 }
 
-/* 分页器容器 */
 .pagination-wrapper {
     margin-top: 24px;
     display: flex;
@@ -234,7 +227,8 @@ const tableRowClassName = () => 'modern-row'
 .version-code {
     font-family: 'JetBrains Mono', 'Monaco', monospace;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-primary);
+    /* 替换 #0f172a */
     font-size: 14px;
 }
 
@@ -242,14 +236,16 @@ const tableRowClassName = () => 'modern-row'
     margin-left: 8px;
     font-size: 10px;
     background: #fee2e2;
-    color: #ef4444;
+    color: var(--color-danger);
+    /* 替换 #ef4444 */
     padding: 1px 6px;
     border-radius: 4px;
     font-weight: 700;
 }
 
 .time-text {
-    color: #64748b;
+    color: var(--text-secondary);
+    /* 替换 #64748b */
     font-size: 13px;
 }
 
@@ -267,7 +263,8 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .status-dot-wrapper.is-success .dot {
-    background-color: #10b981;
+    background-color: var(--color-success);
+    /* 替换 #10b981 */
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
@@ -276,7 +273,8 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .status-dot-wrapper.is-pending .dot {
-    background-color: #f59e0b;
+    background-color: var(--color-warning);
+    /* 替换 #f59e0b */
     box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 
@@ -290,7 +288,8 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .note-content {
-    color: #334155;
+    color: var(--text-primary);
+    /* 替换 #334155 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -316,11 +315,13 @@ const tableRowClassName = () => 'modern-row'
 
 .delete-btn:hover {
     background-color: #fee2e2;
-    color: #dc2626;
+    color: var(--color-danger);
+    /* 替换 #dc2626 */
 }
 
 .verified-mark {
-    color: #cbd5e1;
+    color: var(--text-placeholder);
+    /* 替换 #cbd5e1 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -333,7 +334,8 @@ const tableRowClassName = () => 'modern-row'
 }
 
 :deep(.el-table__row:hover) {
-    background-color: #f8fafc !important;
+    background-color: var(--bg-hover) !important;
+    /* 替换 #f8fafc */
 }
 
 :deep(.el-table__inner-wrapper::before) {

@@ -33,19 +33,22 @@ const router = createRouter({
         {
           path: 'devices', // 匹配 /devices
           name: 'device-list',
-          // 路径已更新
           component: () => import('@/views/device/DeviceDashboard.vue')
+        },
+        {
+          path: 'devices2',
+          name: 'devices2',
+          component: () => import('../views/device/ExpDeviceList.vue'), // 指向新文件
+          meta: { title: '设备页' }
         },
         {
           path: 'devices/log', // 匹配 /devices/log
           name: 'device-log',
-          // 路径已更新
           component: () => import('@/views/device/DeviceLog.vue')
         },
         {
           path: 'products', // 匹配 /products
           name: 'product-list',
-          //  路径已更新
           component: () => import('@/views/product/ProductManagement.vue')
         },
         {

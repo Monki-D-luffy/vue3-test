@@ -27483,6 +27483,42 @@
         "status": "online"
       },
       "startedAt": "2025-11-14 17:30:46"
+    },
+    {
+      "id": "camp_dC99BfA3",
+      "name": "升级 v21",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_BE16f3f0-a2d9-7c4B-D4fE-fD5948B0deEe",
+      "firmwareVersion": "v21",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 28,
+      "successCount": 28,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 18:19:31"
+    },
+    {
+      "id": "camp_6d838cc9",
+      "name": "升级 1.1.0",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_001",
+      "firmwareVersion": "1.1.0",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 28,
+      "successCount": 28,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-11-14 18:20:07"
     }
   ]
 }

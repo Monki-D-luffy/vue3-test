@@ -54,10 +54,7 @@ const loadProducts = async () => {
         const data = await fetchProducts()
         products.value = data
 
-        // ✨ [修复] 更严谨的写法，消除 TS 报错
-        // 显式检查数组长度
         if (products.value.length > 0 && !currentId.value) {
-            // 使用 ! 断言它一定存在，或者直接传值
             const first = products.value[0] as Product
             handleSelect(first)
         }
@@ -94,7 +91,8 @@ onMounted(() => {
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: #ffffff;
+    background-color: var(--bg-card);
+    /* 替换 #ffffff */
     padding: 16px 12px;
 }
 
@@ -105,15 +103,18 @@ onMounted(() => {
 
 :deep(.rounded-search .el-input__wrapper) {
     border-radius: 12px;
-    background-color: #f3f5f7;
+    background-color: var(--bg-hover);
+    /* 替换 #f3f5f7 */
     box-shadow: none !important;
     padding: 4px 12px;
     transition: background-color 0.2s;
 }
 
 :deep(.rounded-search .el-input__wrapper.is-focus) {
-    background-color: #fff;
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) !important;
+    background-color: var(--bg-card);
+    /* 替换 #fff */
+    box-shadow: 0 0 0 2px var(--color-primary-light) !important;
+    /* 替换硬编码 rgba */
 }
 
 .product-list {
@@ -143,14 +144,18 @@ onMounted(() => {
 }
 
 .product-card-item:hover {
-    background-color: #f8f9fa;
+    background-color: var(--bg-hover);
+    /* 替换 #f8f9fa */
     transform: translate3d(0, -2px, 0);
 }
 
 .product-card-item.active {
-    background-color: #ffffff;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border-color: #edf2f7;
+    background-color: var(--bg-card);
+    /* 替换 #ffffff */
+    box-shadow: var(--shadow-card);
+    /* 替换硬编码阴影 */
+    border-color: var(--border-color);
+    /* 替换 #edf2f7 */
 }
 
 .icon-base {
@@ -169,6 +174,7 @@ onMounted(() => {
     background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
 }
 
+/* 保留原有渐变色，因为它们属于品牌色，不需要全局变量 */
 .tech-bg-0 {
     background-color: #2563eb;
     background-image: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
@@ -202,7 +208,8 @@ onMounted(() => {
 .p-name {
     font-weight: 600;
     font-size: 15px;
-    color: #1e293b;
+    color: var(--text-primary);
+    /* 替换 #1e293b */
     margin-bottom: 3px;
     white-space: nowrap;
     overflow: hidden;
@@ -211,7 +218,8 @@ onMounted(() => {
 
 .p-type {
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--text-placeholder);
+    /* 替换 #94a3b8 */
 }
 
 .active-halo {
@@ -221,7 +229,8 @@ onMounted(() => {
     transform: translateY(-50%);
     width: 6px;
     height: 6px;
-    background-color: #10b981;
+    background-color: var(--color-success);
+    /* 替换 #10b981 */
     border-radius: 50%;
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }

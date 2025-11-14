@@ -63,21 +63,20 @@ const handleProductSelect = (product: Product) => {
 .exp-firmware-layout {
     height: 100%;
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
+    /* 替换 #fff */
     overflow: hidden;
 }
 
 .content-canvas {
     height: 100%;
     overflow-y: auto;
-    background-color: #f5f7fa;
+    background-color: var(--bg-canvas);
+    /* 替换 #f5f7fa */
     padding: 20px;
-    /* 底部留白 */
     padding-bottom: 40px;
     display: block;
-    /* 优化滚动性能，防止卡顿 */
     scroll-behavior: smooth;
-    /* 强制启用硬件加速，减少重绘 */
     will-change: transform;
 }
 
@@ -86,32 +85,33 @@ const handleProductSelect = (product: Product) => {
 }
 
 .section-body {
-    background-color: #fff;
+    background-color: var(--bg-card);
+    /* 替换 #fff */
     border-radius: 12px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-    border: 1px solid #ebeef5;
+    box-shadow: var(--shadow-card);
+    /* 替换硬编码阴影 */
+    border: 1px solid var(--border-color-light);
+    /* 替换 #ebeef5 */
     min-height: 400px;
-    /* 确保 overflow 为 visible，防止内部产生滚动陷阱 */
     overflow: visible !important;
 }
 
-/* Tabs 样式优化 
-   1. 移除了 sticky 吸顶
-   2. 强制 overflow: visible 防止滚动条卡顿
-*/
+/* Tabs 样式优化 */
 :deep(.modern-card-tabs .el-tabs__header) {
     margin: 0;
     padding: 0 20px;
-    border-bottom: 1px solid #f0f2f5;
-    background-color: #fff;
-    /* ✨ 已移除 position: sticky 及相关属性 */
+    border-bottom: 1px solid var(--border-color-light);
+    /* 替换 #f0f2f5 */
+    background-color: var(--bg-card);
+    /* 替换 #fff */
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
 }
 
 :deep(.modern-card-tabs .el-tabs__nav-wrap::after) {
     height: 1px;
-    background-color: #f0f2f5;
+    background-color: var(--border-color-light);
+    /* 替换 #f0f2f5 */
 }
 
 :deep(.modern-card-tabs .el-tabs__item) {
@@ -119,33 +119,34 @@ const handleProductSelect = (product: Product) => {
     line-height: 56px;
     font-size: 15px;
     font-weight: 500;
-    color: #606266;
+    color: var(--text-secondary);
+    /* 替换 #606266 */
 }
 
 :deep(.modern-card-tabs .el-tabs__item.is-active) {
-    color: #409eff;
+    color: var(--color-primary);
+    /* 替换 #409eff */
     font-weight: 600;
 }
 
 :deep(.modern-card-tabs .el-tabs__content) {
     padding: 0;
-    /* ✨ 关键修复：确保 Tab 内容区不会拦截滚动事件 */
     overflow: visible !important;
 }
 
-/* ✨ 额外修复：防止 el-table 内部产生不必要的滚动容器 */
 :deep(.el-table__body-wrapper),
 :deep(.el-table__header-wrapper),
 :deep(.el-table__footer-wrapper) {
     overflow: visible !important;
 }
 
-/* ✨ 终极修复：如果 el-table 撑开后，鼠标悬停在表格上滚轮失效，
-   通常是因为表格试图处理横向滚动。
-   加上 touch-action 可以优化某些浏览器的行为。
-*/
 :deep(.el-table) {
     touch-action: auto;
+    /* 确保表格背景也是透明或跟随卡片 */
+    --el-table-bg-color: var(--bg-card);
+    --el-table-tr-bg-color: var(--bg-card);
+    --el-table-header-bg-color: var(--bg-hover);
+    /* 表头微灰 */
 }
 
 .empty-canvas {
@@ -153,11 +154,13 @@ const handleProductSelect = (product: Product) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f5f7fa;
+    background-color: var(--bg-canvas);
+    /* 替换 #f5f7fa */
 }
 
 .empty-tip {
-    color: #909399;
+    color: var(--text-placeholder);
+    /* 替换 #909399 */
     font-size: 14px;
     margin-top: 8px;
 }
