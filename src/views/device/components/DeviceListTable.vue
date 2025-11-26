@@ -1,5 +1,5 @@
 <template>
-    <div class="table-document-flow">
+    <div class="table-wrapper">
         <el-table ref="tableRef" v-loading="loading" :data="deviceList" style="width: 100%"
             @selection-change="handleSelectionChange" class="modern-table">
             <el-table-column type="selection" width="55" />
@@ -25,11 +25,12 @@
             </el-table-column>
 
             <el-table-column prop="productInfo" label="产品信息" min-width="150" />
-            <el-table-column prop="dataCenter" label="区域" width="100" />
+            <el-table-column prop="dataCenter" label="数据中心" width="100" />
             <el-table-column prop="gmtLastOnline" label="最后在线" width="180" />
 
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column label="操作" width="180" fixed="right">
                 <template #default="{ row }">
+                    <el-button link type="primary" @click="emits('view-logs', row)">查看</el-button>
                     <el-button link type="primary" @click="emits('open-detail', row)">详情</el-button>
                     <el-button link type="danger" @click="emits('unbind', row)">解绑</el-button>
                 </template>
@@ -66,14 +67,23 @@ const emits = defineEmits<{
     (e: 'size-change', size: number): void
     (e: 'open-detail', row: Device): void
     (e: 'unbind', row: Device): void
+    // 🔥 新增事件
+    (e: 'view-logs', row: Device): void
 }>()
 
 const tableRef = ref<InstanceType<typeof ElTable>>()
 
-const clearSelection = () => { tableRef.value?.clearSelection() }
-const handleSelectionChange = (rows: Device[]) => { emits('selection-change', rows) }
+const clearSelection = () => {
+    tableRef.value?.clearSelection()
+}
 
-defineExpose({ clearSelection })
+const handleSelectionChange = (rows: Device[]) => {
+    emits('selection-change', rows)
+}
+
+defineExpose({
+    clearSelection
+})
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -86,7 +96,7 @@ const getStatusClass = (status: string) => {
 </script>
 
 <style scoped>
-/* 移除表格底部的横线 */
+/* 保持原有样式 */
 .modern-table :deep(.el-table__inner-wrapper::before) {
     display: none;
 }
@@ -116,7 +126,6 @@ const getStatusClass = (status: string) => {
     margin-left: 8px;
 }
 
-/* 状态样式 */
 .status-capsule {
     display: inline-flex;
     align-items: center;
@@ -160,14 +169,9 @@ const getStatusClass = (status: string) => {
     background-color: #dc2626;
 }
 
-/* 分页栏样式：
-   确保有足够的上边距，并且是一个普通的 block 元素，
-   这样它会乖乖待在表格被撑开后的最底部。
-*/
 .pagination-bar {
     margin-top: 24px;
     display: flex;
     justify-content: flex-end;
-    padding: 10px 0;
 }
 </style>

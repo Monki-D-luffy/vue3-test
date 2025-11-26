@@ -44,35 +44,35 @@
 <script setup lang="ts">
 import { Search, Refresh, Download, RefreshLeft } from '@element-plus/icons-vue'
 import type { Product } from '@/types'
+// 移除未使用的字典导入
 
-// 接收父组件数据
-const props = defineProps < {
+const props = defineProps<{
     filters: {
         keyword: string;
         productId: string;
         isBound: string;
         dateRange: any;
+        // dataCenter: string; // 🔥 注意：父组件虽然传了这个，但这里不再用它渲染UI，可以保留类型兼容或删除
     };
     products: Product[];
     loading: boolean;
-} > ()
+}>()
 
-// 定义事件
-const emits = defineEmits < {
+const emits = defineEmits<{
     (e: 'update:filters', value: any): void
     (e: 'search'): void
-        (e: 'reset'): void
-            (e: 'refresh'): void
-                (e: 'export'): void
-}> ()
+    (e: 'reset'): void
+    (e: 'refresh'): void
+    (e: 'export'): void
+}>()
 
-// 手动触发更新，解决输入框卡死问题
 const updateFilter = (key: string, value: any) => {
     emits('update:filters', { ...props.filters, [key]: value })
 }
 </script>
 
 <style scoped>
+/* 样式保持简洁，移除 datacenter-select 相关样式 */
 .filter-card {
     padding: 18px 24px;
     background-color: #fff;

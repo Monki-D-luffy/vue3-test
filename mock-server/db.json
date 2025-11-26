@@ -67,7 +67,7 @@
     {
       "id": "2E5BAA25-5a5C-F7C8-be8a-265FFdf2eE56",
       "name": "比增更两点主",
-      "status": "未激活",
+      "status": "升级中",
       "puuid": "PU-20238373",
       "productInfo": "智能插座 / prod_socket_01",
       "deviceType": "智能插座",
@@ -27658,6 +27658,18 @@
       "errorMessage": "设备意外离线",
       "startedAt": "2024-10-26 19:00:00",
       "finishedAt": "2024-10-26 19:02:00"
+    },
+    {
+      "id": "task_0A7c2Cc7-D36c-17FE-Eef4-d9D5Bb9FBeD6",
+      "deviceId": "2E5BAA25-5a5C-F7C8-be8a-265FFdf2eE56",
+      "deviceName": "比增更两点主",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "installing",
+      "progress": 34,
+      "errorMessage": null,
+      "startedAt": "2025-11-26 16:43:27",
+      "finishedAt": null
     }
   ],
   "campaigns": []
