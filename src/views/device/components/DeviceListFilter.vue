@@ -1,13 +1,13 @@
 <template>
-    <div class="toolbar-container card-base">
-        <div class="toolbar-left">
+    <div class="filter-card card-base">
+        <div class="filter-left">
             <el-input :model-value="filters.keyword" @update:model-value="(val) => updateFilter('keyword', val)"
-                placeholder="搜索设备名称/SN..." prefix-icon="Search" clearable class="filter-item search-input"
+                placeholder="搜索设备名称/SN..." :prefix-icon="Search" clearable class="filter-item search-input"
                 @keyup.enter="emits('search')" @clear="emits('search')" />
 
             <el-date-picker :model-value="filters.dateRange"
-                @update:model-value="(val) => updateFilter('dateRange', val)" type="daterange" range-separator="至"
-                start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
+                @update:model-value="(val) => updateFilter('dateRange', val)" type="daterange" unlink-panels
+                range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
                 class="filter-item date-picker-item" @change="emits('search')" />
 
             <el-select :model-value="filters.productId" @update:model-value="(val) => updateFilter('productId', val)"
@@ -21,21 +21,21 @@
                 <el-option label="未绑定" value="false" />
             </el-select>
 
-            <el-button type="primary" icon="Search" @click="emits('search')" :loading="loading" class="action-btn">
+            <el-button type="primary" :icon="Search" @click="emits('search')" :loading="loading" class="action-btn">
                 查询
             </el-button>
 
-            <el-button icon="RefreshLeft" @click="emits('reset')" class="action-btn" plain>
+            <el-button :icon="RefreshLeft" @click="emits('reset')" class="action-btn" plain>
                 重置
             </el-button>
         </div>
 
-        <div class="toolbar-right">
+        <div class="filter-right">
             <el-tooltip content="刷新列表" placement="top">
-                <el-button icon="Refresh" circle @click="emits('refresh')" :loading="loading" />
+                <el-button :icon="Refresh" circle @click="emits('refresh')" :loading="loading" />
             </el-tooltip>
             <el-tooltip content="导出数据" placement="top">
-                <el-button icon="Download" circle @click="emits('export')" />
+                <el-button :icon="Download" circle @click="emits('export')" />
             </el-tooltip>
         </div>
     </div>
@@ -70,27 +70,30 @@ const updateFilter = (key: string, value: any) => {
 </script>
 
 <style scoped>
-/* 转变为独立卡片：
-   1. 使用 card-base 获取阴影和圆角
-   2. 增加 padding 
-*/
-.toolbar-container {
+/* 保持原有样式不变 */
+.filter-card {
+    padding: 18px 24px;
+    background-color: #fff;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
-    padding: 18px 24px;
-    /* 增加内边距 */
-    /* background-color 由 card-base 处理 */
+    margin-bottom: 20px;
 }
 
-.toolbar-left {
+.filter-left {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
     flex: 1;
+}
+
+.filter-right {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .filter-item {
@@ -115,19 +118,13 @@ const updateFilter = (key: string, value: any) => {
     width: 120px;
 }
 
-.toolbar-right {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
 @media (max-width: 1024px) {
-    .toolbar-container {
+    .filter-card {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .toolbar-left {
+    .filter-left {
         width: 100%;
     }
 
@@ -139,7 +136,7 @@ const updateFilter = (key: string, value: any) => {
         width: 100% !important;
     }
 
-    .toolbar-right {
+    .filter-right {
         justify-content: flex-end;
         width: 100%;
         border-top: 1px solid #f0f2f5;

@@ -3,10 +3,11 @@
 
         <DeviceStatsOverview :summary="summary" />
 
-        <div class="card-base main-content-card">
-            <DeviceTableToolbar v-model:filters="filters" :products="products" :loading="loading" @search="handleSearch"
-                @refresh="handleRefresh" @export="handleExport" />
+        <DeviceListFilter :filters="filters" @update:filters="handleFilterUpdate" :products="products"
+            :loading="loading" @search="handleSearch" @reset="handleReset" @refresh="handleRefresh"
+            @export="handleExport" />
 
+        <div class="card-base main-content-card">
             <DeviceListTable ref="tableComponentRef" :device-list="deviceList" :loading="loading"
                 :pagination="pagination" @selection-change="handleSelectionChange" @page-change="handlePageChange"
                 @size-change="handleSizeChange" @open-detail="openDetail" @unbind="handleUnbind" />
@@ -23,12 +24,14 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
+// --- 组件引入 ---
 import DeviceStatsOverview from './components/DeviceStatsOverview.vue'
-import DeviceTableToolbar from './components/DeviceTableToolbar.vue'
+import DeviceListFilter from './components/DeviceListFilter.vue'
 import DeviceListTable from './components/DeviceListTable.vue'
 import DeviceBatchActionBar from './components/DeviceBatchActionBar.vue'
 import ExpDeviceDetailDrawer from '@/components/ExpDeviceDetailDrawer.vue'
 
+// --- Composables ---
 import { useDeviceList } from '@/composables/useDeviceList'
 import { useDeviceSummary } from '@/composables/useDeviceSummary'
 import { fetchProducts } from '@/api'
@@ -41,7 +44,7 @@ const {
     pagination,
     fetchDevices,
     handleSizeChange: _handleSizeChange,
-    handleCurrentChange: _handleCurrentChange
+    handleCurrentChange: _handleCurrentChange,
 } = useDeviceList()
 
 const { summary, fetchSummary } = useDeviceSummary()
@@ -49,7 +52,8 @@ const { summary, fetchSummary } = useDeviceSummary()
 const filters = reactive({
     keyword: '',
     productId: '',
-    isBound: ''
+    isBound: '',
+    dateRange: null as null | [string, string]
 })
 
 const products = ref<Product[]>([])
@@ -65,46 +69,71 @@ onMounted(async () => {
     products.value = await fetchProducts()
 })
 
-const handleSearch = () => { pagination.currentPage = 1; loadData() }
-const handleRefresh = () => { loadData(); fetchSummary(''); ElMessage.success('已刷新') }
-const loadData = () => fetchDevices({ ...filters })
+// --- 🔥🔥 核心修复：安全的更新函数 ---
+const handleFilterUpdate = (newFilters: any) => {
+    // 使用 Object.assign 将新值合并到现有的 reactive 对象中
+    // 这样不会破坏响应性连接，输入框就能正常输入了
+    Object.assign(filters, newFilters)
+}
 
+// --- 核心逻辑 ---
+
+const handleSearch = () => {
+    pagination.currentPage = 1
+    loadData()
+}
+
+const handleReset = () => {
+    filters.keyword = ''
+    filters.productId = ''
+    filters.isBound = ''
+    filters.dateRange = null
+
+    pagination.currentPage = 1
+    loadData()
+    ElMessage.success('筛选条件已重置')
+}
+
+const handleRefresh = () => {
+    loadData()
+    fetchSummary('')
+    ElMessage.success('数据已刷新')
+}
+
+const loadData = () => {
+    fetchDevices({ ...filters })
+}
+
+// --- 事件处理 ---
 const handlePageChange = (val: number) => { _handleCurrentChange(val); loadData() }
 const handleSizeChange = (val: number) => { _handleSizeChange(val); loadData() }
-
 const handleSelectionChange = (rows: Device[]) => { selectedRows.value = rows }
 const clearSelection = () => { tableComponentRef.value?.clearSelection(); selectedRows.value = [] }
-
 const openDetail = (row: Device) => { currentDevice.value = row; drawerVisible.value = true }
+
 const handleUnbind = (row: Device) => {
     ElMessageBox.confirm(`确认解绑 ${row.name}?`, '警告', { type: 'warning' })
         .then(() => { ElMessage.success('已解绑'); loadData() })
 }
-const handleExport = () => ElMessage.info('正在导出...')
 
-// Mock 批量操作
+const handleExport = () => ElMessage.info('正在导出...')
 const handleBatchDelete = () => { ElMessage.success('批量删除成功'); clearSelection(); loadData() }
 const handleBatchRestart = () => { ElMessage.success('批量重启指令已发送'); clearSelection() }
 const handleBatchEnable = () => { ElMessage.success('批量启用成功'); clearSelection() }
 </script>
 
 <style scoped>
-/* 🔥 适配 AppLayout 滚动 🔥 */
+/* 页面容器样式 */
 .firmware-layout-wrapper {
-    /* 高度自动，内容越多越高 */
     height: auto !important;
     min-height: 100%;
     width: 100%;
-
-    /* 移除 overflow-y: visible，因为现在靠 AppLayout 滚动 */
-    /* 但保留它也无害，主要是 height: auto 起作用 */
-
     padding: 20px;
     padding-bottom: 120px;
-    /* 底部留白，给悬浮栏和分页器空间 */
     box-sizing: border-box;
 }
 
+/* 主内容卡片 */
 .main-content-card {
     background: #fff;
     border-radius: 16px;
