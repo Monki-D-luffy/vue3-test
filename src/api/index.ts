@@ -117,6 +117,14 @@ export const deleteFirmware = async (id: string): Promise<void> => {
   await api.delete(`/firmwares/${id}`)
 }
 
+// --- 设备相关  ---
+
+// 🔥🔥 核心修复：添加解绑(删除)设备接口
+export const deleteDevice = async (id: string): Promise<void> => {
+  // json-server 默认支持 DELETE /resource/:id
+  await api.delete(`/devices/${id}`)
+}
+
 // --- 升级任务 ---
 
 export const startDeviceUpgrade = async (deviceId: string): Promise<UpgradeTask> => {

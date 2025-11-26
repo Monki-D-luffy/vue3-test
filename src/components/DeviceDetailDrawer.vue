@@ -23,7 +23,7 @@
                 </div>
                 <div class="hero-actions">
                     <el-button type="primary" size="small" plain @click="handleEdit">编辑</el-button>
-                    <el-button type="danger" size="small" plain @click="handleUnbind">解绑</el-button>
+                    <el-button type="danger" size="small" plain @click="handleTriggerUnbind">解绑</el-button>
                 </div>
             </div>
 
@@ -94,6 +94,7 @@
         <div v-else class="loading-placeholder">
             <el-skeleton :rows="10" animated />
         </div>
+        <DeviceUnbindDialog v-model="unbindDialogVisible" :device="device" @success="handleUnbindSuccess" />
     </el-drawer>
 </template>
 
@@ -104,17 +105,17 @@ import { Monitor, Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Device } from '@/types'
 import { formatDateTime } from '@/utils/formatters'
-
+import DeviceUnbindDialog from '@/components/DeviceUnbindDialog.vue'
 // --- Props & Emits ---
-const props = defineProps < {
+const props = defineProps<{
     modelValue: boolean
     device: Device | null
-} > ()
+}>()
 
-const emit = defineEmits < {
+const emit = defineEmits<{
     (e: 'update:modelValue', val: boolean): void
     (e: 'refresh'): void
-}> ()
+}>()
 
 const router = useRouter()
 const activeTab = ref('basic')
@@ -150,7 +151,21 @@ const handleUnbind = () => {
         emit('refresh')
     })
 }
+// 解绑状态
+const unbindDialogVisible = ref(false)
 
+// 触发解绑
+const handleTriggerUnbind = () => {
+    unbindDialogVisible.value = true
+}
+
+// 解绑成功回调
+const handleUnbindSuccess = () => {
+    // 关闭抽屉
+    emit('update:modelValue', false)
+    // 通知父组件刷新列表
+    emit('refresh')
+}
 const goToFullLogs = () => {
     if (props.device) {
         router.push({
