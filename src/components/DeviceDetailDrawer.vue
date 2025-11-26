@@ -1,165 +1,328 @@
 <template>
-    <el-drawer :model-value="true" title="设备详情" direction="rtl" size="50%" @closed="onClose">
-        <div v-loading="deviceLoading" style="padding: 20px; min-height: 300px;">
-            <div class="action-bar" v-if="deviceDetails">
-                <el-button v-if="deviceDetails.hasNewFirmware && deviceDetails.status !== '升级中'" type="primary"
-                    :icon="Top" @click="onUpgradeClick">
-                    升级固件 ({{ deviceDetails.firmwareVersion }})
-                </el-button>
-                <el-button v-else-if="deviceDetails.status === '升级中'" type="info" loading plain disabled>
-                    正在升级...
-                </el-button>
-                <el-button v-else type="success" :icon="CircleCheck" plain disabled>
-                    已是最新版本 ({{ deviceDetails.firmwareVersion }})
-                </el-button>
+    <el-drawer :model-value="modelValue" @update:model-value="(val) => $emit('update:modelValue', val)" title="设备详情"
+        direction="rtl" size="600px" destroy-on-close class="device-detail-drawer">
+        <template #header>
+            <div class="drawer-header">
+                <span class="drawer-title">设备详情</span>
+                <el-tag v-if="device" :type="getStatusType(device.status)" effect="dark" size="small" class="ml-2">
+                    {{ device.status }}
+                </el-tag>
             </div>
-            <el-divider v-if="deviceDetails" />
+        </template>
 
-            <el-descriptions v-if="deviceDetails" :column="2" border>
-                <template #title>
-                    <div class="card-header">
-                        <span>{{ deviceDetails.name }}</span>
-                        <el-tag :type="getStatusType(deviceDetails.status)" effect="light" round>
-                            {{ deviceDetails.status }}
-                        </el-tag>
+        <div v-if="device" class="drawer-content">
+            <div class="hero-section">
+                <div class="device-icon">
+                    <el-icon :size="32">
+                        <Monitor />
+                    </el-icon>
+                </div>
+                <div class="hero-info">
+                    <h3 class="device-name">{{ device.name }}</h3>
+                    <p class="device-sn">SN: {{ device.sn }}</p>
+                </div>
+                <div class="hero-actions">
+                    <el-button type="primary" size="small" plain @click="handleEdit">编辑</el-button>
+                    <el-button type="danger" size="small" plain @click="handleUnbind">解绑</el-button>
+                </div>
+            </div>
+
+            <el-tabs v-model="activeTab" class="detail-tabs">
+                <el-tab-pane label="基础信息" name="basic">
+                    <el-descriptions :column="1" border>
+                        <el-descriptions-item label="产品名称">{{ device.productName || '未知产品' }}</el-descriptions-item>
+                        <el-descriptions-item label="设备ID">{{ device.id }}</el-descriptions-item>
+                        <el-descriptions-item label="固件版本">{{ device.firmwareVersion || 'v1.0.0'
+                            }}</el-descriptions-item>
+                        <el-descriptions-item label="所属区域">{{ device.dataCenter || 'CN' }}</el-descriptions-item>
+                        <el-descriptions-item label="激活时间">{{ formatDateTime(device.gmtActive) }}</el-descriptions-item>
+                        <el-descriptions-item label="最后在线">{{ formatDateTime(device.gmtLastOnline)
+                            }}</el-descriptions-item>
+                    </el-descriptions>
+
+                    <div class="mt-4">
+                        <h4 class="section-title">标签信息</h4>
+                        <div class="tags-wrapper">
+                            <el-tag v-for="tag in mockTags" :key="tag" class="mr-2 mb-2" size="small">{{ tag }}</el-tag>
+                            <el-button size="small" icon="Plus" circle class="mb-2"></el-button>
+                        </div>
                     </div>
-                </template>
+                </el-tab-pane>
 
-                <el-descriptions-item label="设备ID">{{ deviceDetails.id }}</el-descriptions-item>
-                <el-descriptions-item label="设备SN码">{{ deviceDetails.sn }}</el-descriptions-item>
-                <el-descriptions-item label="生产PUUID">{{ deviceDetails.puuid }}</el-descriptions-item>
-                <el-descriptions-item label="所属产品">{{ deviceDetails.productInfo }}</el-descriptions-item>
-                <el-descriptions-item label="数据中心">
-                    <el-tag size="small">{{ deviceDetails.dataCenter }}</el-tag>
-                </el-descriptions-item>
-                <el-descriptions-item label="是否绑定">
-                    <el-tag :type="deviceDetails.isBound ? 'success' : 'info'" size="small">
-                        {{ deviceDetails.isBound ? '已绑定' : '未绑定' }}
-                    </el-tag>
-                </el-descriptions-item>
-                <el-descriptions-item label="激活时间">{{ formatDateTime(deviceDetails.gmtActive) }}</el-descriptions-item>
-                <el-descriptions-item label="最近上线">{{ formatDateTime(deviceDetails.gmtLastOnline)
-                    }}</el-descriptions-item>
-            </el-descriptions>
+                <el-tab-pane label="运行状态" name="status">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="label">CPU使用率</div>
+                            <el-progress type="dashboard" :percentage="45" :width="80" status="success" />
+                        </div>
+                        <div class="status-item">
+                            <div class="label">内存占用</div>
+                            <el-progress type="dashboard" :percentage="72" :width="80" status="warning" />
+                        </div>
+                        <div class="status-item">
+                            <div class="label">信号强度</div>
+                            <div class="signal-bars">
+                                <div class="bar active"></div>
+                                <div class="bar active"></div>
+                                <div class="bar active"></div>
+                                <div class="bar"></div>
+                            </div>
+                            <span class="value-text">-65 dBm</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="label">运行时间</div>
+                            <span class="value-text highlight">12天 5小时</span>
+                        </div>
+                    </div>
+                </el-tab-pane>
 
-            <el-divider v-if="deviceDetails">原始数据</el-divider>
-            <pre v-if="deviceDetails" class="raw-data">{{ JSON.stringify(deviceDetails, null, 2) }}</pre>
+                <el-tab-pane label="最近日志" name="logs">
+                    <el-empty v-if="!mockLogs.length" description="暂无日志" />
+                    <el-timeline v-else>
+                        <el-timeline-item v-for="(log, index) in mockLogs" :key="index" :type="log.type"
+                            :timestamp="log.timestamp">
+                            {{ log.content }}
+                        </el-timeline-item>
+                    </el-timeline>
+                    <div class="text-center mt-4">
+                        <el-button link type="primary" @click="goToFullLogs">查看完整日志 >></el-button>
+                    </div>
+                </el-tab-pane>
+            </el-tabs>
+        </div>
 
-            <el-empty v-if="!deviceDetails && !deviceLoading" description="未能加载设备数据" />
+        <div v-else class="loading-placeholder">
+            <el-skeleton :rows="10" animated />
         </div>
     </el-drawer>
 </template>
 
-<script setup>
-import { ref, onMounted, defineProps, defineEmits, watch } from 'vue'
-// [修正]：导入需要的组件
-import {
-    ElDrawer,
-    ElDescriptions,
-    ElDescriptionsItem,
-    ElTag,
-    ElEmpty,
-    ElButton,
-    ElDivider,
-    ElMessage
-} from 'element-plus'
-// [新增]：导入图标
-import { Top, CircleCheck } from '@element-plus/icons-vue'
-import api from '@/api' // [沿用] 你的 api 实例
+<script setup lang="ts">
+import { ref, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { Monitor, Plus } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import type { Device } from '@/types'
 import { formatDateTime } from '@/utils/formatters'
 
-// 1. 定义组件的 props (和之前一样)
-const props = defineProps({
-    deviceId: {
-        type: String,
-        required: true
-    }
-})
+// --- Props & Emits ---
+const props = defineProps < {
+    modelValue: boolean
+    device: Device | null
+} > ()
 
-// 2. [修正]：定义组件能发出的事件 (emits)，新增 'trigger-upgrade'
-const emit = defineEmits(['close', 'trigger-upgrade'])
+const emit = defineEmits < {
+    (e: 'update:modelValue', val: boolean): void
+    (e: 'refresh'): void
+}> ()
 
-// 3. 内部状态 (和之前一样)
-// [修正]：移除 visible = ref(true)，因为 model-value 会控制
-const deviceDetails = ref(null)
-const deviceLoading = ref(false)
+const router = useRouter()
+const activeTab = ref('basic')
 
-// 4. API 请求 (和之前一样)
-const fetchDeviceDetails = async (id) => {
-    if (!id) return
-    deviceLoading.value = true
-    deviceDetails.value = null
-    try {
-        const response = await api.get(`/devices/${id}`)
-        deviceDetails.value = response.data.data
-    } catch (error) {
-        ElMessage.error('获取设备详情失败')
-        console.error(error)
-        onClose() // 加载失败时自动关闭
-    } finally {
-        deviceLoading.value = false
-    }
-}
+// --- Mock Data ---
+const mockTags = ['智能网关', '测试设备', '杭州机房']
+const mockLogs = [
+    { timestamp: '2023-11-20 10:23:12', content: '设备上线', type: 'success' },
+    { timestamp: '2023-11-20 09:15:00', content: '固件升级成功 v1.0.0 -> v1.0.1', type: 'primary' },
+    { timestamp: '2023-11-19 23:45:11', content: '连接断开 (超时)', type: 'warning' }
+]
 
-// 5. 辅助函数
-const getStatusType = (status) => {
+// --- Logic ---
+const getStatusType = (status: string) => {
     switch (status) {
         case '在线': return 'success'
         case '离线': return 'info'
         case '故障': return 'danger'
-        case '未激活': return 'warning'
-        case '升级中': return 'processing' // [新增]
-        default: return ''
+        default: return 'warning'
     }
 }
 
-// 6. [新增]：升级按钮点击处理
-const onUpgradeClick = () => {
-    // 将完整的设备对象发射出去
-    emit('trigger-upgrade', deviceDetails.value)
-    // (可选) 升级时自动关闭抽屉
-    onClose()
+const handleEdit = () => {
+    ElMessage.info('编辑功能开发中...')
 }
 
-// 7. [新增]：关闭抽屉的统一处理
-const onClose = () => {
-    emit('close')
+const handleUnbind = () => {
+    ElMessageBox.confirm('确定要解绑该设备吗？', '警告', {
+        type: 'warning'
+    }).then(() => {
+        ElMessage.success('解绑成功')
+        emit('update:modelValue', false)
+        emit('refresh')
+    })
 }
 
-// 8. 生命周期钩子
-// [修正]：使用 watch 替代 onMounted，以便在 deviceId 变化时重新加载
-watch(
-    () => props.deviceId,
-    (newId) => {
-        if (newId) {
-            fetchDeviceDetails(newId)
-        }
-    },
-    { immediate: true } // 立即执行一次
-)
+const goToFullLogs = () => {
+    if (props.device) {
+        router.push({
+            name: 'device-log',
+            query: {
+                id: props.device.id,
+                name: props.device.name
+            }
+        })
+    }
+}
 </script>
 
 <style scoped>
-/* [沿用] */
-.card-header {
+.drawer-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
 }
 
-/* [新增] */
-.action-bar {
-    margin-bottom: 16px;
+.drawer-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-right: 12px;
 }
 
-.raw-data {
-    background-color: #fafafa;
-    border: 1px solid #eaeaea;
-    padding: 10px;
-    border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
+/* 顶部 Hero 区域 */
+.hero-section {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.device-icon {
+    width: 64px;
+    height: 64px;
+    background-color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    margin-right: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.hero-info {
+    flex: 1;
+}
+
+.device-name {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #1e293b;
+}
+
+.device-sn {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    font-family: monospace;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* 详情内容区 */
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 16px 0 12px;
+    color: #303133;
+}
+
+.tags-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.ml-2 {
+    margin-left: 8px;
+}
+
+.mr-2 {
+    margin-right: 8px;
+}
+
+.mb-2 {
+    margin-bottom: 8px;
+}
+
+.mt-4 {
+    margin-top: 16px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* 运行状态 Grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 10px 0;
+}
+
+.status-item {
+    background-color: #f8fafc;
+    padding: 16px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.status-item .label {
     font-size: 12px;
-    max-height: 200px;
-    overflow-y: auto;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.status-item .value-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.status-item .highlight {
+    color: var(--color-primary);
+}
+
+/* 信号条样式 */
+.signal-bars {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 24px;
+    margin-bottom: 4px;
+}
+
+.signal-bars .bar {
+    width: 4px;
+    background-color: #cbd5e1;
+    border-radius: 2px;
+}
+
+.signal-bars .bar:nth-child(1) {
+    height: 6px;
+}
+
+.signal-bars .bar:nth-child(2) {
+    height: 12px;
+}
+
+.signal-bars .bar:nth-child(3) {
+    height: 18px;
+}
+
+.signal-bars .bar:nth-child(4) {
+    height: 24px;
+}
+
+.signal-bars .bar.active {
+    background-color: #10b981;
+    /* Green */
 }
 </style>
