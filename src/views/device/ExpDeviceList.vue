@@ -3,9 +3,8 @@
 
         <DeviceStatsOverview :summary="summary" />
 
-        <DeviceListFilter :filters="filters" @update:filters="handleFilterUpdate" :products="products"
-            :loading="loading" @search="handleSearch" @reset="handleReset" @refresh="handleRefresh"
-            @export="handleExport" />
+        <DeviceFilterBar :filters="filters" @update:filters="handleFilterUpdate" :products="products" :loading="loading"
+            @search="handleSearch" @reset="handleReset" @refresh="handleRefresh" @export="handleExport" />
 
         <div class="card-base main-content-card">
             <DeviceListTable ref="tableComponentRef" :device-list="deviceList" :loading="loading"
@@ -26,7 +25,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 // --- 组件引入 ---
 import DeviceStatsOverview from './components/DeviceStatsOverview.vue'
-import DeviceListFilter from './components/DeviceListFilter.vue'
+// 🔥 引用路径改为全局组件
+import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 import DeviceListTable from './components/DeviceListTable.vue'
 import DeviceBatchActionBar from './components/DeviceBatchActionBar.vue'
 import ExpDeviceDetailDrawer from '@/components/ExpDeviceDetailDrawer.vue'
@@ -69,15 +69,12 @@ onMounted(async () => {
     products.value = await fetchProducts()
 })
 
-// --- 🔥🔥 核心修复：安全的更新函数 ---
+// --- 核心修复：安全的更新函数 (保持这个逻辑) ---
 const handleFilterUpdate = (newFilters: any) => {
-    // 使用 Object.assign 将新值合并到现有的 reactive 对象中
-    // 这样不会破坏响应性连接，输入框就能正常输入了
     Object.assign(filters, newFilters)
 }
 
 // --- 核心逻辑 ---
-
 const handleSearch = () => {
     pagination.currentPage = 1
     loadData()
