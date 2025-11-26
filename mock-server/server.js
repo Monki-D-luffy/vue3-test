@@ -1,51 +1,46 @@
-const jsonServer = require('json-server')
-const path = require('path')
-const seeder = require('./seeder')
+import jsonServer from 'json-server';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const dbPath = path.join(__dirname, 'db.json')
+// 手动构建 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-// 1. 核心功能: 自动造数据 (启动时执行)
-seeder(dbPath)
+const server = jsonServer.create();
+const router = jsonServer.router(join(__dirname, 'db.json'));
+const middlewares = jsonServer.defaults();
 
-// 2. 启动 Server
-const server = jsonServer.create()
-const router = jsonServer.router(dbPath)
-const middlewares = jsonServer.defaults()
+// 引入所有路由文件
+import dashboardRoutes from './routes/dashboard.js';
+import authRoutes from './routes/auth.js';
+import firmwareRoutes from './routes/firmware.js';
+import campaignRoutes from './routes/campaign.js';
 
-server.use(middlewares)
-server.use(jsonServer.bodyParser)
+server.use(middlewares);
+server.use(jsonServer.bodyParser);
 
-// 3. 注册模块化路由 (按顺序加载)
-// 注意：router.db 是 LowDB 实例，传给子模块使用
-require('./routes/auth')(server, router.db)
-require('./routes/dashboard')(server, router.db)
-require('./routes/firmware')(server, router.db)
-require('./routes/campaign')(server, router.db)
+// --- 挂载自定义路由 ---
+server.use('/api/dashboard', dashboardRoutes);
+// 传入 server 和 db 实例
+authRoutes(server, router.db);
+firmwareRoutes(server, router.db);
+campaignRoutes(server, router.db);
 
-// 4. 路由重写 (支持 /api 前缀)
-server.use(jsonServer.rewriter({
-  '/api/*': '/$1'
-}))
-
-// 5. 统一响应格式拦截器
+// --- 🔥🔥 核心修复：自定义 json-server 的返回格式 ---
+// 这一步会将 json-server 的默认返回结果（数组或对象）包装进 { code: 200, data: ... }
 router.render = (req, res) => {
-  const pagedRoutes = ['/devices', '/deviceLogs', '/firmwares', '/upgradeTasks', "/campaigns"]
+  // res.locals.data 包含了 json-server 查询到的原始数据
+  res.json({
+    code: 200,
+    message: 'Success',
+    success: true,
+    data: res.locals.data
+  });
+};
 
-  if (req.method === 'GET' && pagedRoutes.includes(req.path)) {
-    res.json({
-      code: 200, message: '操作成功', success: true,
-      data: res.locals.data,
-      total: res.get('X-Total-Count') ? Number(res.get('X-Total-Count')) : res.locals.data.length
-    })
-  } else if (!res.headersSent) {
-    res.json({
-      code: 200, message: '操作成功', success: true,
-      data: res.locals.data
-    })
-  }
-}
+// 默认路由
+server.use('/api', router);
 
-server.use(router)
 server.listen(3000, () => {
-  console.log('✨ Mock Server Modularized Running at http://localhost:3000/api')
-})
+  console.log('JSON Server is running on port 3000');
+});

@@ -96,7 +96,8 @@ export const fetchFirmwares = async (params: PaginationParams): Promise<Paginate
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const response = await api.get<ApiResponse<Product[]>>('/products')
-  return response.data.data
+  // 兼容处理：如果后端返回了标准结构则取 .data，否则（如果返回原始数组）直接用 response.data，如果都失败则返回空数组
+  return response.data.data || (Array.isArray(response.data) ? response.data : [])
 }
 
 export const uploadFirmware = async (data: any): Promise<Firmware> => {
