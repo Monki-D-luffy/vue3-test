@@ -38,7 +38,7 @@ const router = createRouter({
         {
           path: 'devices2',
           name: 'devices2',
-          component: () => import('../views/device/ExpDeviceList.vue'), // 指向新文件
+          component: () => import('../views/device/DeviceList.vue'), // 指向新文件
           meta: { title: '设备页' }
         },
         {
