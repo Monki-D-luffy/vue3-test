@@ -15,17 +15,14 @@
                 </template>
             </el-table-column>
 
-            <el-table-column label="状态" width="120">
+            <el-table-column label="状态" width="140">
                 <template #default="{ row }">
-                    <span class="status-capsule" :class="getStatusClass(row.status)">
-                        <span class="dot"></span>
-                        {{ row.status }}
-                    </span>
+                    <StatusBadge :label="row.status" :type="getStatusType(row.status)" />
                 </template>
             </el-table-column>
 
             <el-table-column prop="productInfo" label="产品信息" min-width="150" />
-            <el-table-column prop="dataCenter" label="数据中心" width="100" />
+            <el-table-column prop="dataCenter" label="数据中心" width="120" />
             <el-table-column prop="gmtLastOnline" label="最后在线" width="180" />
 
             <el-table-column label="操作" width="180" fixed="right">
@@ -37,12 +34,9 @@
             </el-table-column>
         </el-table>
 
-        <div class="pagination-bar">
-            <el-pagination :current-page="pagination.currentPage" :page-size="pagination.pageSize"
-                :total="pagination.total" :page-sizes="[10, 20, 50, 100]"
-                layout="total, sizes, prev, pager, next, jumper" @size-change="(val) => emits('size-change', val)"
-                @current-change="(val) => emits('page-change', val)" />
-        </div>
+        <AppPagination :total="pagination.total" :current-page="pagination.currentPage" :page-size="pagination.pageSize"
+            @update:currentPage="(val) => emits('page-change', val)"
+            @update:pageSize="(val) => emits('size-change', val)" />
     </div>
 </template>
 
@@ -50,6 +44,8 @@
 import { ref } from 'vue'
 import { ElTable } from 'element-plus'
 import type { Device } from '@/types'
+import StatusBadge from '@/components/StatusBadge.vue' // 引入新组件
+import AppPagination from '@/components/AppPagination.vue' // 引入已有组件
 
 defineProps<{
     deviceList: Device[];
@@ -67,7 +63,6 @@ const emits = defineEmits<{
     (e: 'size-change', size: number): void
     (e: 'open-detail', row: Device): void
     (e: 'unbind', row: Device): void
-    // 🔥 新增事件
     (e: 'view-logs', row: Device): void
 }>()
 
@@ -85,24 +80,28 @@ defineExpose({
     clearSelection
 })
 
-const getStatusClass = (status: string) => {
+// 纯逻辑函数：将业务状态映射为 UI 类型
+const getStatusType = (status: string) => {
     switch (status) {
-        case '在线': return 'status-online'
-        case '离线': return 'status-offline'
-        case '故障': return 'status-error'
-        default: return 'status-default'
+        case '在线': return 'success'
+        case '离线': return 'info' // 或 'default'
+        case '故障': return 'danger'
+        case '升级中': return 'primary'
+        default: return 'default'
     }
 }
 </script>
 
 <style scoped>
-/* 保持原有样式 */
+/* 表格基础样式微调 */
 .modern-table :deep(.el-table__inner-wrapper::before) {
     display: none;
+    /* 去除表格底部白线 */
 }
 
 .modern-table :deep(.el-table__row) {
-    height: 64px;
+    height: 72px;
+    /* 稍微增加行高，容纳 StatusBadge，更具现代感 */
 }
 
 .device-name-cell {
@@ -112,66 +111,33 @@ const getStatusClass = (status: string) => {
 
 .name-text {
     font-weight: 600;
-    color: var(--color-primary, #409eff);
+    color: var(--el-color-primary);
     cursor: pointer;
+    transition: color 0.2s;
+}
+
+.name-text:hover {
+    color: var(--el-color-primary-dark-2);
+    text-decoration: underline;
 }
 
 .sn-text {
     font-size: 12px;
-    color: var(--text-secondary, #909399);
-    margin-top: 2px;
+    color: var(--el-text-color-secondary);
+    font-family: monospace;
+    /* SN 码建议用等宽字体 */
+    margin-top: 4px;
 }
 
 .ml-2 {
     margin-left: 8px;
 }
 
-.status-capsule {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 12px;
-    border-radius: 99px;
-    font-size: 12px;
-    font-weight: 500;
-}
+/* ❌ 删除了原本几百行的 .status-capsule 及其颜色定义 
+   现在由 StatusBadge 组件统一管理
+*/
 
-.status-capsule .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    margin-right: 6px;
-}
-
-.status-online {
-    background-color: #ecfdf5;
-    color: #059669;
-}
-
-.status-online .dot {
-    background-color: #059669;
-}
-
-.status-offline {
-    background-color: #f1f5f9;
-    color: #64748b;
-}
-
-.status-offline .dot {
-    background-color: #94a3b8;
-}
-
-.status-error {
-    background-color: #fef2f2;
-    color: #dc2626;
-}
-
-.status-error .dot {
-    background-color: #dc2626;
-}
-
-.pagination-bar {
-    margin-top: 24px;
-    display: flex;
-    justify-content: flex-end;
-}
+/* ❌ 删除了 .pagination-bar 及其深层样式
+   现在由 AppPagination 组件统一管理
+*/
 </style>
