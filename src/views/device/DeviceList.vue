@@ -3,8 +3,9 @@
 
         <DeviceStatsOverview :summary="summary" />
 
-        <DeviceFilterBar :filters="filters" @update:filters="handleFilterUpdate" :products="products" :loading="loading"
-            @search="handleSearch" @reset="handleReset" @refresh="handleRefresh" @export="handleExport" />
+        <DeviceFilterBar :filters="filters" @update:filters="handleFilterUpdate" :products="products"
+            :loading="loading || isExporting" @search="handleSearch" @reset="handleReset" @refresh="handleRefresh"
+            @export="handleExport" />
 
         <div class="card-base main-content-card">
             <DeviceListTable ref="tableComponentRef" :device-list="deviceList" :loading="loading"
@@ -28,14 +29,15 @@ import DeviceStatsOverview from './components/DeviceStatsOverview.vue'
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 import DeviceListTable from './components/DeviceListTable.vue'
 import DeviceBatchActionBar from './components/DeviceBatchActionBar.vue'
-// 🔥 引用路径更新：去掉 Exp 前缀
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 
 // --- Composables ---
-import { useDeviceList } from '@/composables/useDeviceList'
+import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceList'
 import { useDeviceSummary } from '@/composables/useDeviceSummary'
 import { fetchProducts } from '@/api'
 import type { Device, Product } from '@/types'
+import { useDataExport } from '@/composables/useDataExport'
+import { formatDateTime } from '@/utils/formatters'
 
 // --- 状态逻辑 ---
 const {
@@ -61,6 +63,7 @@ const selectedRows = ref<Device[]>([])
 const drawerVisible = ref(false)
 const currentDevice = ref<Device | null>(null)
 const tableComponentRef = ref<InstanceType<typeof DeviceListTable>>()
+const { isExporting, exportData } = useDataExport()
 
 onMounted(async () => {
     pagination.currentPage = 1
@@ -111,8 +114,42 @@ const handleUnbind = (row: Device) => {
     ElMessageBox.confirm(`确认解绑 ${row.name}?`, '警告', { type: 'warning' })
         .then(() => { ElMessage.success('已解绑'); loadData() })
 }
+// 🔥 定义导出列 (Excel 表头)
+const exportColumns = [
+    { label: '设备名称', key: 'name' },
+    { label: '设备SN', key: 'sn' },
+    { label: '产品名称', key: 'productName' },
+    { label: '当前状态', key: 'status' },
+    { label: '固件版本', key: 'firmwareVersion' },
+    { label: '激活时间', key: 'gmtActive' },
+    { label: '最后在线', key: 'gmtLastOnline' }
+]
 
-const handleExport = () => ElMessage.info('正在导出...')
+// 🔥 定义数据处理器 (清洗数据)
+const exportProcessor = (data: Device[]) => {
+    return data.map(device => ({
+        ...device,
+        // 确保导出时产品名称正确显示 (假设后端返回了 productInfo 或 productId)
+        productName: device.productInfo || products.value.find(p => p.id === device.productId)?.name || '未知产品',
+        // 格式化时间
+        gmtActive: formatDateTime(device.gmtActive),
+        gmtLastOnline: formatDateTime(device.gmtLastOnline)
+    }))
+}
+const handleExport = () => {
+    // 1. 构建查询参数 (复用列表的筛选条件)
+    const params = buildDeviceListParams(filters)
+
+    // 2. 调用通用导出方法
+    // exportData(API路径, 参数, 列定义, 文件名前缀, 数据处理器)
+    exportData(
+        '/devices',
+        params,
+        exportColumns,
+        '设备列表',
+        exportProcessor
+    )
+}
 const handleBatchDelete = () => { ElMessage.success('批量删除成功'); clearSelection(); loadData() }
 const handleBatchRestart = () => { ElMessage.success('批量重启指令已发送'); clearSelection() }
 const handleBatchEnable = () => { ElMessage.success('批量启用成功'); clearSelection() }
