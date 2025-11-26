@@ -15,7 +15,7 @@
         <DeviceBatchActionBar :selected-count="selectedRows.length" @batch-delete="handleBatchDelete"
             @batch-restart="handleBatchRestart" @batch-enable="handleBatchEnable" @clear-selection="clearSelection" />
 
-        <ExpDeviceDetailDrawer v-model="drawerVisible" :device="currentDevice" />
+        <DeviceDetailDrawer v-model="drawerVisible" :device="currentDevice" />
     </div>
 </template>
 
@@ -25,11 +25,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 // --- 组件引入 ---
 import DeviceStatsOverview from './components/DeviceStatsOverview.vue'
-// 🔥 引用路径改为全局组件
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 import DeviceListTable from './components/DeviceListTable.vue'
 import DeviceBatchActionBar from './components/DeviceBatchActionBar.vue'
-import ExpDeviceDetailDrawer from '@/components/ExpDeviceDetailDrawer.vue'
+// 🔥 引用路径更新：去掉 Exp 前缀
+import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 
 // --- Composables ---
 import { useDeviceList } from '@/composables/useDeviceList'
@@ -69,7 +69,6 @@ onMounted(async () => {
     products.value = await fetchProducts()
 })
 
-// --- 核心修复：安全的更新函数 (保持这个逻辑) ---
 const handleFilterUpdate = (newFilters: any) => {
     Object.assign(filters, newFilters)
 }
