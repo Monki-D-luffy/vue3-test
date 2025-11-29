@@ -1,5 +1,5 @@
 // src/composables/useDeviceActions.ts
-import api from '@/api'
+import { deleteDevice } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Device } from '@/types' // ✨ 使用类型
 
@@ -20,7 +20,7 @@ export function useDeviceActions() {
                 }
             )
 
-            await api.delete(`/devices/${row.id}`)
+            await deleteDevice(row.id)
             ElMessage.success('设备删除成功！')
 
             if (onSuccess) {

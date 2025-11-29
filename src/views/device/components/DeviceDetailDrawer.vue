@@ -39,7 +39,7 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="激活时间">{{ formatDateTime(deviceDetails.gmtActive) }}</el-descriptions-item>
                 <el-descriptions-item label="最近上线">{{ formatDateTime(deviceDetails.gmtLastOnline)
-                }}</el-descriptions-item>
+                    }}</el-descriptions-item>
             </el-descriptions>
 
             <el-divider v-if="deviceDetails">原始数据</el-divider>
@@ -65,7 +65,7 @@ import {
 } from 'element-plus'
 // [新增]：导入图标
 import { Top, CircleCheck } from '@element-plus/icons-vue'
-import api from '@/api' // [沿用] 你的 api 实例
+import { fetchDeviceDetail } from '@/api'
 import { formatDateTime } from '@/utils/formatters'
 
 // 1. 定义组件的 props (和之前一样)
@@ -90,8 +90,8 @@ const fetchDeviceDetails = async (id) => {
     deviceLoading.value = true
     deviceDetails.value = null
     try {
-        const response = await api.get(`/devices/${id}`)
-        deviceDetails.value = response.data.data
+        const data = await fetchDeviceDetail(id)
+        deviceDetails.value = data
     } catch (error) {
         ElMessage.error('获取设备详情失败')
         console.error(error)

@@ -2,9 +2,10 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
-import api, { register as apiRegister } from '@/api' // 确保引入了 api 中的 register
+// ✅ 替换引用：导入 login 和 register
+import { login as apiLogin, register as apiRegister } from '@/api'
 import type { UserInfo, UserRegisterData } from '@/types'
-import { STORAGE_KEYS } from '@/types'
+import { STORAGE_KEYS } from '@/types' // 确保你的 types/index.ts 里有这个常量，或者直接用字符串 'authToken'
 
 export const useAuthStore = defineStore('auth', () => {
   // --- State ---
@@ -16,9 +17,13 @@ export const useAuthStore = defineStore('auth', () => {
   // 登录动作
   const login = async (account: string, password: string) => {
     try {
-      const response = await api.post(`/auth/login`, { account, password })
-      // 兼容处理：response.data 可能是直接的数据，也可能是 { data: ... } 结构
-      const data = response.data?.data || response.data;
+      // ✅ 使用 API 模块调用
+      // 注意：request.ts 默认返回 response.data (即后端返回的 body)
+      const res: any = await apiLogin({ account, password })
+
+      // 兼容处理：如果后端返回 { code: 200, data: { token: '...' } }
+      // 这里的 res 就是那个对象
+      const data = res.data || res;
 
       token.value = data.token
       userInfo.value = data
@@ -35,11 +40,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // [新增] 注册动作 - 之前可能缺少了这个，或者没有 return 它
+  // 注册动作
   const register = async (registerData: UserRegisterData) => {
     try {
-      // 调用 API 层的新注册接口
-      const data = await apiRegister(registerData);
+      // ✅ 使用 API 模块调用
+      const res: any = await apiRegister(registerData);
+      const data = res.data || res;
 
       // 注册成功后直接帮用户登录
       token.value = data.token || null;
@@ -65,20 +71,11 @@ export const useAuthStore = defineStore('auth', () => {
     ElMessage.info('您已退出登录')
   }
 
-  // 自动登录尝试
-  const tryAutoLogin = async () => {
-    const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
-    if (storedToken) {
-      token.value = storedToken
-    }
-  }
-
   return {
     token,
     userInfo,
     login,
-    register, // <--- 【关键】必须在这里导出，组件才能使用 authStore.register
-    logout,
-    tryAutoLogin
+    register,
+    logout
   }
 })

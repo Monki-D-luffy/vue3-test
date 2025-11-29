@@ -1,9 +1,11 @@
 // src/composables/useDashboard.ts
 import { ref } from 'vue'
-import api from '@/api'
 import { ElMessage } from 'element-plus'
+// ✅ 替换引用
+import { fetchDashboardData } from '@/api'
 
 export interface DashboardData {
+    // ... (保持原有的类型定义不变)
     totalDevices: number;
     totalTrend: number;
     onlineCount: number;
@@ -41,15 +43,18 @@ export function useDashboard() {
         recentActivities: []
     })
 
-    const fetchDashboardData = async () => {
+    const fetchDashboardDataAction = async () => {
         loading.value = true
         try {
-            const res = await api.get('/dashboard/stats')
-            if (res.data.success) {
-                dashboardData.value = res.data.data
+            // ✅ 使用 API 模块调用
+            const data = await fetchDashboardData()
+
+            // 直接赋值，API 层已经处理了解包逻辑
+            if (data) {
+                dashboardData.value = data
             }
-        } catch (e) {
-            console.error(e)
+        } catch (error) {
+            console.error('Failed to fetch dashboard data:', error)
             ElMessage.error('加载仪表盘数据失败')
         } finally {
             loading.value = false
@@ -59,6 +64,6 @@ export function useDashboard() {
     return {
         loading,
         dashboardData,
-        fetchDashboardData
+        fetchDashboardData: fetchDashboardDataAction
     }
 }

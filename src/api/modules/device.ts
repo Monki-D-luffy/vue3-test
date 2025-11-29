@@ -49,3 +49,16 @@ export const getUpgradeTaskStatus = async (taskId: string): Promise<UpgradeTask>
     const res: any = await request.get(`/upgrade-task/${taskId}`)
     return res.data || res
 }
+
+// ✅ [新增] 获取单个设备详情
+export const fetchDeviceDetail = async (id: string): Promise<Device> => {
+    const res: any = await request.get(`/devices/${id}`)
+    // 兼容 mock server 的 { code: 200, data: {...} } 结构
+    return res.data || res
+}
+
+// ✅ [新增] 获取仪表盘聚合数据 (供 useDashboard 使用)
+export const fetchDashboardData = async () => {
+    const res: any = await request.get('/dashboard/stats')
+    return res.data || res
+}
