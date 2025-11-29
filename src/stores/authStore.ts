@@ -2,10 +2,10 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
-// ✅ 替换引用：导入 login 和 register
+// 确保正确导入 API
 import { login as apiLogin, register as apiRegister } from '@/api'
 import type { UserInfo, UserRegisterData } from '@/types'
-import { STORAGE_KEYS } from '@/types' // 确保你的 types/index.ts 里有这个常量，或者直接用字符串 'authToken'
+import { STORAGE_KEYS } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   // --- State ---
@@ -14,15 +14,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   // --- Actions ---
 
-  // 登录动作
+  // 1. 登录动作
   const login = async (account: string, password: string) => {
     try {
-      // ✅ 使用 API 模块调用
-      // 注意：request.ts 默认返回 response.data (即后端返回的 body)
       const res: any = await apiLogin({ account, password })
-
-      // 兼容处理：如果后端返回 { code: 200, data: { token: '...' } }
-      // 这里的 res 就是那个对象
+      // 兼容处理
       const data = res.data || res;
 
       token.value = data.token
@@ -40,14 +36,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 注册动作
+  // 2. 注册动作
   const register = async (registerData: UserRegisterData) => {
     try {
-      // ✅ 使用 API 模块调用
       const res: any = await apiRegister(registerData);
       const data = res.data || res;
 
-      // 注册成功后直接帮用户登录
       token.value = data.token || null;
       userInfo.value = data;
 
@@ -63,12 +57,35 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 登出动作
+  // 3. 登出动作
   const logout = () => {
     token.value = null
     userInfo.value = null
     localStorage.removeItem(STORAGE_KEYS.TOKEN)
-    ElMessage.info('您已退出登录')
+    // ElMessage.info('您已退出登录') // 可选提示
+  }
+
+  // ✅ 4. [修复核心Bug] 自动登录尝试
+  // 这个方法通常在 App.vue 挂载时调用，用于检查本地 Token 是否有效
+  const tryAutoLogin = async () => {
+    const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    if (!storedToken) return false;
+
+    try {
+      // 如果后端有 /auth/me 接口用于验证 token，应该在这里调用
+      // 目前假设只要有 token 就视为已登录，或者你可以尝试请求一次用户信息
+
+      // 示例：如果有 getUserInfo API
+      // const user = await apiGetUserInfo();
+      // userInfo.value = user;
+
+      token.value = storedToken;
+      return true;
+    } catch (error) {
+      // Token 无效
+      logout();
+      return false;
+    }
   }
 
   return {
@@ -76,6 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
     userInfo,
     login,
     register,
-    logout
+    logout,
+    tryAutoLogin // ✅ 必须导出
   }
 })
