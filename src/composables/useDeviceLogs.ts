@@ -1,8 +1,7 @@
 // src/composables/useDeviceLogs.ts
 import { ref, reactive } from 'vue'
-import api from '@/api'
 import { ElMessage } from 'element-plus'
-// 移除了 'Device' 类型的导入，因为它不再需要
+import { fetchDeviceLogs as fetchLogsApi } from '@/api/modules/device'
 
 // 定义过滤器类型
 export interface LogFilters {
@@ -85,11 +84,10 @@ export function useDeviceLogs() {
             })
 
             // 3. 发送API请求
-            const response = await api.get(`/deviceLogs`, { params })
+            const { items, total } = await fetchLogsApi(params)
 
-            // 4. 更新状态
-            logData.value = response.data.data
-            pagination.total = Number(response.headers['x-total-count'] || 0)
+            logData.value = items
+            pagination.total = Number(total || 0)
 
         } catch (error) {
             ElMessage.error('获取设备日志失败')

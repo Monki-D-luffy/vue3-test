@@ -6,6 +6,8 @@ import { formatDate } from '@/utils/formatters'
 // ✅ 引入 PaginationParams
 import type { Device, DeviceListFilters, PaginationParams } from '@/types'
 
+import { fetchDevices as fetchDevicesApi } from '@/api/modules/device'
+
 /**
  * 构建 /devices API 的查询参数
  */
@@ -60,11 +62,10 @@ export function useDeviceList() {
 
             const params = buildDeviceListParams(filters, pageParams)
 
-            const response = await api.get(`/devices`, { params })
+            const { items, total } = await fetchDevicesApi(params)
 
-            pagination.total = Number(response.headers['x-total-count'] || 0)
-            const data = response.data?.data || response.data || []
-            deviceList.value = data
+            deviceList.value = items
+            pagination.total = total
 
         } catch (error) {
             console.error(error)
