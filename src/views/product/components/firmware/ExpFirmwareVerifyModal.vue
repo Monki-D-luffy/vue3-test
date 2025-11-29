@@ -45,7 +45,6 @@
 import { ref, computed } from 'vue'
 import { SuccessFilled } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
-import { updateFirmware } from '@/api'
 import { ElMessage } from 'element-plus'
 import type { Firmware } from '@/types'
 
@@ -77,7 +76,6 @@ const handleVerify = async () => {
     loading.value = true
     try {
         // 调用 API 更新状态
-        // await updateFirmware(props.firmware.id, { verified: true })
         await verifyFirmwarePure(props.firmware.id)
         // 成功反馈
         ElMessage.success(`版本 ${props.firmware.version} 已通过验证`)

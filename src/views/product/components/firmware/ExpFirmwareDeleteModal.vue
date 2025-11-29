@@ -47,7 +47,6 @@
 import { ref, computed } from 'vue'
 import { DeleteFilled } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
-import { deleteFirmware } from '@/api'
 import { ElMessage } from 'element-plus'
 import type { Firmware } from '@/types'
 import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
@@ -77,8 +76,7 @@ const handleDelete = async () => {
 
     loading.value = true
     try {
-        // 直接调用 API 删除，绕过原本 composable 里的 ElMessageBox
-        // await deleteFirmware(props.firmware.id)
+
         await removeFirmwarePure(props.firmware.id)
         ElMessage.success('删除成功')
         emit('success')
