@@ -48,8 +48,7 @@ import { Cpu, CopyDocument } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { Product } from '@/types'
 // 引入 API 和工具
-import { fetchFirmwares } from '@/api'
-import api from '@/api' // 直接用 axios 实例查设备
+import { fetchFirmwares, fetchDevices } from '@/api'
 import { formatTimeAgo } from '@/utils/formatters'
 
 const props = defineProps<{
@@ -99,11 +98,11 @@ const loadStats = async () => {
         // 2. 获取设备活跃度 (在线率)
         // 注意：这里简单拉取该产品下所有设备进行计算
         // 在真实生产环境中，应该有一个专门的 /products/{id}/stats 接口
-        const devRes = await api.get('/devices', {
-            params: { productId: props.product.id }
+        const { items: devices } = await fetchDevices({
+            productId: props.product.id,
+            _limit: 1000 // 获取足够多的样本
         })
         // 兼容 mock server 返回结构
-        const devices = devRes.data.data || []
         const totalDev = devices.length
 
         if (totalDev > 0) {
