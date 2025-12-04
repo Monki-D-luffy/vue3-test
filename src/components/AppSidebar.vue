@@ -76,7 +76,6 @@ const menuItems = ref([
         icon: markRaw(Collection),
         children: [
             { index: '/devices', title: '设备列表' },
-            { index: '/devices2', title: '设备列表exp' },
             { index: '/devices/log', title: '设备日志' }
         ]
     },
