@@ -62,6 +62,13 @@ const router = createRouter({
             requiresAuth: true
           }
         },
+        // 🆕 新增实验性路由组
+        {
+          path: 'serial',
+          name: 'SerialTerminal',
+          component: () => import('../views/experiment/SerialTerminal.vue'),
+          meta: { title: '串口终端 (Lab)' }
+        },
       ]
     },
 

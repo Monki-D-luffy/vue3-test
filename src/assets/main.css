@@ -90,3 +90,43 @@ body {
   opacity: 0;
   transform: translateX(20px);
 }
+
+:root {
+  /* --- 1. 核心色彩体系 (Core Colors) --- */
+  /* 使用 Element Plus 的变量作为基石，但我们可以定义自己的语义变量 */
+  --app-bg-canvas: #f5f7fa;        /* 页面大背景 */
+  --app-bg-card: #ffffff;          /* 卡片背景 */
+  --app-text-main: #1e293b;        /* 主要文字 */
+  --app-text-sub: #64748b;         /* 次要文字 */
+  
+  /* --- 2. 高级渐变色 (Premium Gradients) --- */
+  /* 主色调：靛蓝-紫罗兰 */
+  --app-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  /* 悬浮态：稍微亮一点 */
+  --app-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  /* 危险操作：红玫渐变 */
+  --app-gradient-danger: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+
+  /* --- 3. 玻璃与光效 (Glass & Glow) --- */
+  --app-glass-border: 1px solid rgba(255, 255, 255, 0.6);
+  --app-glass-blur: blur(10px);
+  --app-glow-primary: 0 8px 16px -4px rgba(99, 102, 241, 0.5); /* 靛蓝发光 */
+  
+  /* --- 4. 立体阴影系统 (3D Shadows) --- */
+  /* 层级 1: 贴地 */
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  /* 层级 2: 悬浮 (卡片默认) */
+  --app-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  /* 层级 3: 飞起 (Hover) */
+  --app-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* --- 预留：暗黑模式接口 (未来只需取消注释并调整颜色即可) --- */
+/* html.dark {
+  --app-bg-canvas: #0f172a;
+  --app-bg-card: #1e293b;
+  --app-text-main: #e2e8f0;
+  --app-text-sub: #94a3b8;
+  --app-glass-border: 1px solid rgba(255, 255, 255, 0.1);
+} 
+*/

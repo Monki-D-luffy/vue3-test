@@ -43,7 +43,8 @@ import {
     HomeFilled,
     Collection,
     Box,
-    Setting
+    Setting,
+    MagicStick
 } from '@element-plus/icons-vue'
 
 // 3. 声明接收来自 AppLayout 的 prop
@@ -95,6 +96,14 @@ const menuItems = ref([
         icon: markRaw(Setting),
         children: [
             { index: '/system', title: '系统设置' }
+        ]
+    },
+    {
+        index: '/experiment',
+        title: '实验功能',
+        icon: markRaw(MagicStick),
+        children: [
+            { index: '/serial', title: '串口终端' }
         ]
     }
 ])
