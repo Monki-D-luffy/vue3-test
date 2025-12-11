@@ -5,7 +5,7 @@
    ========================================== */
 /* 灰色沉浸式背景，用于包裹整个页面 */
 .page-container {
-  background-color: #f5f7fa; /* 浅灰底色 */
+  background-color: var(--app-bg-canvas); /* 浅灰底色 */
   min-height: 100vh;
   padding: 24px;
   display: flex;

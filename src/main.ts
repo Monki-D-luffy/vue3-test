@@ -1,29 +1,25 @@
-
-import './assets/main.css'
-// 引入页面布局通用样式
-import './assets/page-layouts.css'
-// 引入 Element Plus 暗黑变量
-import 'element-plus/theme-chalk/dark/css-vars.css'
-
+// src/main.ts
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-
-// EL1. 引入 Element Plus
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
-import 'element-plus/theme-chalk/dark/css-vars.css'
-// EL2. 从 element-plus 导入中文语言包 ▼▼▼
-import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
-
 import App from './App.vue'
 import router from './router'
+
+// 1. 先引入 Element Plus 的所有样式 (基础 + 暗黑)
+import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
+
+// 2. 然后引入 Element Plus 组件
+import ElementPlus from 'element-plus'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+
+// 3. ⚠️ 最后引入你的自定义样式 (确保能覆盖上面的默认值)
+import './assets/page-layouts.css'
+import './assets/main.css'
 
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-
-// EL3. 注册 Element Plus
 app.use(ElementPlus, { locale: zhCn })
 
 app.mount('#app')

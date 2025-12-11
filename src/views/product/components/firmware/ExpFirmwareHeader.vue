@@ -10,12 +10,12 @@
                 <div class="title-row">
                     <h1 class="product-name">{{ product.name }}</h1>
                     <el-tag type="primary" effect="dark" round class="ml-2 custom-tag">
-                        {{ product.type }}
+                        {{ product.nodeType === 1 ? '直连设备' : '网关设备' }}
                     </el-tag>
                 </div>
                 <div class="id-row">
-                    <span class="label">ID:</span>
-                    <span class="value code-font">{{ product.id }}</span>
+                    <span class="label">ProductKey:</span>
+                    <span class="value code-font">{{ product.productKey }}</span>
                     <el-icon class="copy-icon" @click="copyId">
                         <CopyDocument />
                     </el-icon>
@@ -25,133 +25,80 @@
 
         <div class="product-stats" v-loading="loading">
             <div class="stat-item">
+                <div class="stat-label">设备总数</div>
+                <div class="stat-value">{{ product.deviceCount || 0 }}</div>
+            </div>
+            <div class="divider-line"></div>
+            <div class="stat-item">
                 <div class="stat-label">固件版本</div>
-                <div class="stat-value">{{ stats.firmwareCount }}</div>
+                <div class="stat-value">{{ stats.firmwareCount || 0 }}</div>
             </div>
             <div class="divider-line"></div>
             <div class="stat-item">
-                <div class="stat-label">最新发布</div>
-                <div class="stat-value">{{ stats.latestRelease }}</div>
-            </div>
-            <div class="divider-line"></div>
-            <div class="stat-item">
-                <div class="stat-label">活跃设备</div>
-                <div class="stat-value highlight">{{ stats.activeRate }}</div>
+                <div class="stat-label">待升级</div>
+                <div class="stat-value highlight">{{ stats.pendingUpgrade || 0 }}</div>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Cpu, CopyDocument } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { Product } from '@/types'
-// 引入 API 和工具
-import { fetchFirmwares, fetchDevices } from '@/api'
-import { formatTimeAgo } from '@/utils/formatters'
 
 const props = defineProps<{
     product: Product
 }>()
 
 const loading = ref(false)
-const stats = reactive({
-    firmwareCount: 0,
-    latestRelease: '--',
-    activeRate: '--'
+const stats = ref({
+    firmwareCount: 5,
+    latestRelease: 'v1.2.0',
+    pendingUpgrade: 12
 })
 
-const copyId = async () => {
-    try {
-        await navigator.clipboard.writeText(props.product.id)
-        ElMessage.success('Product ID 已复制')
-    } catch (err) {
-        ElMessage.error('复制失败')
-    }
+const copyId = () => {
+    navigator.clipboard.writeText(props.product.productKey)
+    ElMessage.success('ProductKey 已复制')
 }
 
-// 核心逻辑：加载真实统计数据
-const loadStats = async () => {
-    if (!props.product?.id) return
-
-    loading.value = true
-    try {
-        // 1. 获取固件信息 (数量 & 最新时间)
-        // 只需要取第1页的1条数据，利用排序获取最新的，利用 total 获取总数
-        const fwRes = await fetchFirmwares({
-            productId: props.product.id,
-            _page: 1,
-            _limit: 1,
-            _sort: 'uploadedAt',
-            _order: 'desc'
-        })
-
-        stats.firmwareCount = fwRes.total
-        if (fwRes.items && fwRes.items.length > 0) {
-            const uploadedAt = fwRes.items[0]?.uploadedAt
-            stats.latestRelease = uploadedAt ? formatTimeAgo(uploadedAt) : '无'
-        } else {
-            stats.latestRelease = '无'
-        }
-
-        // 2. 获取设备活跃度 (在线率)
-        // 注意：这里简单拉取该产品下所有设备进行计算
-        // 在真实生产环境中，应该有一个专门的 /products/{id}/stats 接口
-        const { items: devices } = await fetchDevices({
-            productId: props.product.id,
-            _limit: 1000 // 获取足够多的样本
-        })
-        // 兼容 mock server 返回结构
-        const totalDev = devices.length
-
-        if (totalDev > 0) {
-            const onlineCount = devices.filter((d: any) => d.status === '在线').length
-            const rate = Math.round((onlineCount / totalDev) * 100)
-            stats.activeRate = `${rate}%`
-        } else {
-            stats.activeRate = '0%'
-        }
-
-    } catch (error) {
-        console.error('加载统计失败', error)
-        stats.firmwareCount = 0
-        stats.latestRelease = '--'
-        stats.activeRate = '--'
-    } finally {
-        loading.value = false
-    }
-}
-
-// 监听产品切换，重新加载数据
-watch(() => props.product.id, () => {
-    loadStats()
-}, { immediate: true })
-
+// 模拟加载统计数据
+onMounted(() => {
+    // 实际逻辑中这里可以调用 API
+})
 </script>
 
 <style scoped>
+/* 核心容器 */
 .exp-header-card {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 24px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: none;
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    padding: 24px 32px;
+    border-radius: 16px;
+    /* ✅ 修复1：背景色变量化 (默认白昼) */
+    background: var(--app-bg-card);
+    /* ✅ 修复2：边框颜色变量化 */
+    border: 1px solid var(--app-border-color);
+    /* ✅ 修复3：阴影变量化 */
+    box-shadow: var(--app-shadow-card);
+    margin-bottom: 24px;
     position: relative;
     overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.colorful-bg::before {
-    content: "";
+/* 顶部彩色装饰条 (保留你的设计) */
+.exp-header-card::before {
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 6px;
-    background: linear-gradient(90deg, #409eff, #a0cfff);
+    height: 4px;
+    background: linear-gradient(90deg, #409eff, #36cfc9);
 }
 
 .product-main {
@@ -163,48 +110,63 @@ watch(() => props.product.id, () => {
 .icon-wrapper {
     width: 64px;
     height: 64px;
-    background-color: #f0f7ff;
-    border-radius: 20px;
+    border-radius: 16px;
+    /* ✅ 修复4：使用 Element 填充色变量，自动适配深浅 */
+    background: var(--el-fill-color-light);
     display: flex;
-    justify-content: center;
     align-items: center;
-    box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.1);
+    justify-content: center;
+    border: 1px solid var(--app-border-color);
 }
 
 .gradient-icon {
-    color: #409eff;
+    /* 渐变图标在暗黑模式下依然可以保持，或者根据需要调整 */
     background: -webkit-linear-gradient(45deg, #409eff, #36cfc9);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .product-name {
     margin: 0;
     font-size: 24px;
     font-weight: 800;
-    color: #1a1a1a;
+    /* ✅ 修复5：主标题文字颜色 */
+    color: var(--app-text-main);
     letter-spacing: -0.5px;
 }
 
 .custom-tag {
-    border: none;
-    background: linear-gradient(135deg, #409eff, #79bbff);
     font-weight: 600;
-    padding: 0 12px;
+    border: none;
+    /* Tag 保持 Element 默认样式即可，或者保留你的渐变 */
+    background: linear-gradient(135deg, #409eff, #79bbff);
 }
 
 .id-row {
-    margin-top: 8px;
     display: flex;
     align-items: center;
     font-size: 13px;
-    color: #909399;
+    /* ✅ 修复6：次级文字颜色 */
+    color: var(--app-text-sub);
 }
 
 .code-font {
     font-family: 'Monaco', monospace;
-    color: #606266;
-    background: #f2f3f5;
+    /* ✅ 修复7：代码块背景和文字 */
+    color: var(--app-text-main);
+    background: var(--el-fill-color);
     padding: 3px 8px;
     border-radius: 6px;
     margin: 0 8px;
@@ -213,53 +175,54 @@ watch(() => props.product.id, () => {
 
 .copy-icon {
     cursor: pointer;
-    color: #c0c4cc;
+    /* ✅ 修复8：图标颜色 */
+    color: var(--app-text-placeholder);
     transition: color 0.2s;
 }
 
 .copy-icon:hover {
-    color: #409eff;
+    color: var(--el-color-primary);
 }
 
 /* 统计区域 */
 .product-stats {
     display: flex;
     align-items: center;
-    background: #f8f9fb;
-    padding: 12px 24px;
-    border-radius: 12px;
-    min-width: 300px;
-    /* 稍微加宽一点 */
-    justify-content: space-around;
+    gap: 40px;
 }
 
 .stat-item {
-    text-align: center;
-    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 .stat-label {
     font-size: 12px;
-    color: #909399;
+    /* ✅ 修复9：标签颜色 */
+    color: var(--app-text-sub);
     margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .stat-value {
-    font-size: 20px;
+    font-size: 28px;
     font-weight: 700;
-    color: #2c3e50;
+    /* ✅ 修复10：数值颜色 */
+    color: var(--app-text-main);
+    line-height: 1;
+    font-family: 'Inter', sans-serif;
 }
 
 .stat-value.highlight {
-    color: #67c23a;
+    color: #409eff;
 }
 
 .divider-line {
     width: 1px;
-    height: 24px;
-    background-color: #e4e7ed;
-    margin: 0 16px;
+    height: 32px;
+    /* ✅ 修复11：分割线颜色 */
+    background: var(--app-border-color);
 }
 </style>

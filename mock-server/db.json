@@ -3,7 +3,7 @@
     {
       "id": "292FC21a-8Ebc-3dAa-8eb8-7C305fc6bf2b",
       "name": "系又周",
-      "status": "未激活",
+      "status": "在线",
       "puuid": "PU-20247796",
       "productInfo": "摄像头 / prod_cam_01",
       "deviceType": "摄像头",
@@ -26820,7 +26820,20 @@
       "verified": true
     }
   ],
-  "upgradeTasks": [],
+  "upgradeTasks": [
+    {
+      "id": "task_7dE05cee-44eB-1Ec1-F739-3afBDE727AbA",
+      "deviceId": "292FC21a-8Ebc-3dAa-8eb8-7C305fc6bf2b",
+      "deviceName": "系又周",
+      "firmwareId": "fw_003",
+      "firmwareVersion": "2.0.0",
+      "status": "success",
+      "progress": 100,
+      "errorMessage": null,
+      "startedAt": "2025-12-11 07:19:45",
+      "finishedAt": "2025-12-11 07:19:45"
+    }
+  ],
   "campaigns": [
     {
       "id": "camp_E952AF81",

@@ -18,8 +18,9 @@
 
         <DeviceStatsOverview :summary="summary" />
 
-        <DeviceFilterBar v-model:filters="filters" :products="products" :loading="loading || isExporting"
-            @search="handleSearch" @reset="handleReset" @refresh="handleRefresh" @export="handleExport" />
+        <DeviceFilterBar :filters="filters" @update:filters="handleFilterUpdate" :products="products"
+            :loading="loading || isExporting" @search="handleSearch" @reset="handleReset" @refresh="handleRefresh"
+            @export="handleExport" />
 
         <div class="card-base main-table-card">
             <DeviceListTable ref="tableComponentRef" :device-list="deviceList" :loading="loading"
@@ -89,7 +90,11 @@ const currentDevice = ref<Device | null>(null)
 const tableComponentRef = ref<InstanceType<typeof DeviceListTable> | null>(null)
 const unbindDialogVisible = ref(false)
 const deviceToUnbind = ref<Device | null>(null)
-
+const handleFilterUpdate = (newFilters: any) => {
+    // 因为 filters 是 reactive (const)，我们不能 filters = newFilters
+    // 必须使用 Object.assign 来更新内部属性，这样输入框就不会卡死
+    Object.assign(filters, newFilters)
+}
 onMounted(async () => {
     loadData()
     fetchSummary('')

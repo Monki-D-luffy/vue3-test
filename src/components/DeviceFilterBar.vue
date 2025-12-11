@@ -75,13 +75,14 @@ const updateFilter = (key: string, value: any) => {
 /* 样式保持简洁，移除 datacenter-select 相关样式 */
 .filter-card {
     padding: 18px 24px;
-    background-color: #fff;
+    background-color: var(--app-bg-card);
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
     margin-bottom: 20px;
+    transition: background-color 0.3s;
 }
 
 .filter-left {
@@ -141,7 +142,7 @@ const updateFilter = (key: string, value: any) => {
     .filter-right {
         justify-content: flex-end;
         width: 100%;
-        border-top: 1px solid #f0f2f5;
+        border-top: 1px solid var(--app-border-color);
         padding-top: 12px;
     }
 }

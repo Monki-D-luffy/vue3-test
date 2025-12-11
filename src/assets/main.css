@@ -3,78 +3,210 @@
 
 :root {
   /* ================= Light Mode (白昼模式) ================= */
-  /* 核心背景 */
-  --app-bg-canvas: #f5f7fa;        /* 页面底色：浅灰 */
-  --app-bg-card: #ffffff;          /* 卡片底色：纯白 */
+  --app-bg-canvas: #f5f7fa;        /* 页面底色 */
+  --app-bg-card: #ffffff;          /* 卡片底色 */
+  --app-text-main: #1e293b;        /* 主标题 */
+  --app-text-sub: #64748b;         /* 副标题 */
+  --app-text-placeholder: #94a3b8; /* 占位符 */
+  --app-border-color: #e2e8f0;     /* 边框 */
   
-  /* 文本颜色 */
-  --app-text-main: #1e293b;        /* 主标题：深蓝灰 */
-  --app-text-sub: #64748b;         /* 副标题/描述：灰 */
-  --app-text-placeholder: #94a3b8; /* 占位符：浅灰 */
-  
-  /* 边框与分割线 */
-  --app-border-color: #e2e8f0;
-  
-  /* 阴影体系 */
   --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --app-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* ================= Dark Mode (暗黑模式) ================= */
-/* 当 html 标签有 .dark 类时，以下变量生效 */
 html.dark {
-  /* 核心背景 - 使用 Slate 色系 */
-  --app-bg-canvas: #0f172a;        /* 页面底色：Slate-900 (深邃) */
-  --app-bg-card: #1e293b;          /* 卡片底色：Slate-800 (稍亮) */
+  /* 1. 我们的自定义变量 - Slate 色系 */
+  --app-bg-canvas: #0f172a;        /* 页面底色：深蓝黑 */
+  --app-bg-card: #1e293b;          /* 卡片底色：深蓝 */
+  --app-text-main: #f1f5f9;        /* 亮白 */
+  --app-text-sub: #94a3b8;         /* 灰蓝 */
+  --app-text-placeholder: #475569; /* 深灰 */
+  --app-border-color: #334155;     /* 边框变暗 */
   
-  /* 文本颜色 - 反转为浅色 */
-  --app-text-main: #f1f5f9;        /* Slate-100 */
-  --app-text-sub: #94a3b8;         /* Slate-400 */
-  --app-text-placeholder: #475569; /* Slate-600 */
-  
-  /* 边框与分割线 - 变暗 */
-  --app-border-color: #334155;     /* Slate-700 */
-  
-  /* 阴影体系 - 这里的阴影其实看不清了，但可以保留或微调 */
   --app-shadow-sm: none;
-  --app-shadow-card: none;         /* 暗黑模式通常去阴影，改用边框或背景色差 */
+  --app-shadow-card: none;         /* 暗黑模式去阴影 */
 
-  /* 🔥 Element Plus 变量覆盖 (可选，让 Element 组件也变暗) */
+  /* 🔥 2. [核心修复] 强制覆盖 Element Plus 全局背景变量 🔥 */
+  /* 这解决了【下拉框】、【弹窗】、【气泡卡片】仍然是白色的问题 */
   --el-bg-color: #1e293b;
-  --el-bg-color-overlay: #1e293b;
+  --el-bg-color-overlay: #1e293b !important;  /* 关键：下拉菜单的背景色 */
+  --el-fill-color-blank: #1e293b;  /* 关键：输入框的背景色 */
+  
+  /* 3. [核心修复] 强制覆盖 Element Plus 文本与边框 */
   --el-text-color-primary: #f1f5f9;
   --el-text-color-regular: #cbd5e1;
+  --el-text-color-secondary: #94a3b8;
   --el-border-color: #334155;
   --el-border-color-light: #334155;
-  --el-fill-color-blank: #1e293b;
+  --el-border-color-lighter: #334155;
+  --el-mask-color: rgba(0, 0, 0, 0.8); /* 遮罩层更黑 */
 }
 
-/* === 通用样式保持不变 === */
+/* === 通用样式 === */
 body {
   margin: 0;
-  background-color: var(--app-bg-canvas); /* ✅ 自动响应变量 */
-  color: var(--app-text-main);            /* ✅ 自动响应变量 */
+  background-color: var(--app-bg-canvas);
+  color: var(--app-text-main);
   font-family: 'Inter', sans-serif;
-  transition: background-color 0.3s, color 0.3s; /* 添加过渡，切换时不生硬 */
+  transition: background-color 0.3s, color 0.3s;
 }
 
 /* 滚动条适配 */
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-}
-html.dark ::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-html.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+html.dark ::-webkit-scrollbar-thumb { background: #475569; }
+html.dark ::-webkit-scrollbar-track { background: #0f172a; }
 
 /* 卡片基类 */
 .card-base {
   background: var(--app-bg-card);
   border-radius: 8px;
-  /* 暗黑模式下加个微弱边框增加层次 */
-  border: 1px solid var(--app-border-color);
+  /* 暗黑模式下加微弱边框增加层次 */
+  border: 1px solid transparent; 
   box-shadow: var(--app-shadow-card);
   transition: background-color 0.3s, border-color 0.3s;
+}
+html.dark .card-base {
+  border-color: var(--app-border-color);
+}
+
+/* === 全局组件暗黑适配补丁 === */
+
+/* 1. 基础规则：让表格整体背景透明，从而透出下方 .card-base 的颜色 */
+.el-table,
+.el-table__expanded-cell {
+    background-color: transparent !important;
+    --el-table-bg-color: transparent !important;
+    --el-table-tr-bg-color: transparent !important;
+    --el-table-header-bg-color: transparent !important;
+    --el-table-row-hover-bg-color: var(--el-fill-color-light) !important;
+}
+
+.el-table th,
+.el-table tr,
+.el-table td {
+    background-color: transparent !important;
+    border-bottom-color: var(--app-border-color) !important;
+}
+
+/* 去除表格底部的白线 */
+.el-table__inner-wrapper::before {
+    display: none !important;
+}
+
+/* 🔥🔥🔥 [核心修复] 固定列重叠问题 (Stacking Context Fix) 🔥🔥🔥 
+   原理：固定列必须有“不透明”的背景色，才能遮挡住滚动到底下的文字。
+*/
+
+/* --- 白昼模式 (Light Mode) --- */
+/* 只要是固定列，就强制使用卡片背景色 (白色) */
+.el-table .el-table-fixed-column--right,
+.el-table .el-table-fixed-column--left {
+    background-color: var(--app-bg-card) !important;
+    /* 可选：加个阴影让层次更明显 */
+    box-shadow: -6px 0 10px -4px rgba(0, 0, 0, 0.05); 
+}
+
+/* --- 暗黑模式 (Dark Mode) --- */
+/* 🔴 关键点：增加 html.dark 前缀，提升权重，防止被上面的 transparent 覆盖 */
+html.dark .el-table .el-table-fixed-column--right,
+html.dark .el-table .el-table-fixed-column--left {
+    /* 强制使用深色背景 (#1e293b)，确保不透明 */
+    background-color: var(--app-bg-card) !important; 
+    box-shadow: -6px 0 10px -4px rgba(0, 0, 0, 0.3); /* 暗黑模式阴影加深 */
+}
+
+/* --- Hover 状态修复 --- */
+/* 当鼠标悬停在行上时，固定列的背景色也需要同步变色，否则会出现“镂空”效果 */
+
+/* 白昼 Hover */
+html:not(.dark) .el-table--enable-row-hover .el-table__body tr:hover > td.el-table-fixed-column--right,
+html:not(.dark) .el-table--enable-row-hover .el-table__body tr:hover > td.el-table-fixed-column--left {
+    background-color: var(--el-fill-color-light) !important;
+}
+
+/* 暗黑 Hover (使用半透明白模拟高亮) */
+html.dark .el-table--enable-row-hover .el-table__body tr:hover > td.el-table-fixed-column--right,
+html.dark .el-table--enable-row-hover .el-table__body tr:hover > td.el-table-fixed-column--left {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* --- 分页器适配 --- */
+html.dark .el-pagination .btn-prev,
+html.dark .el-pagination .btn-next,
+html.dark .el-pagination .el-pager li {
+    background-color: transparent !important;
+    color: var(--app-text-sub);
+    border: 1px solid var(--app-border-color);
+}
+
+html.dark .el-pagination .el-pager li.is-active {
+    background-color: var(--el-color-primary) !important;
+    color: #fff;
+    border-color: var(--el-color-primary);
+}
+
+/* 强制输入框背景 (DeviceFilterBar) */
+html.dark .el-input__wrapper {
+    background-color: var(--app-bg-canvas) !important;
+    box-shadow: 0 0 0 1px var(--app-border-color) inset !important;
+}
+
+/* 强制让弹出的下拉框使用这个背景 */
+html.dark .el-popper,
+html.dark .el-select__popper,
+html.dark .el-dropdown__popper {
+    background: var(--el-bg-color-overlay) !important;
+    border-color: var(--el-border-color-light) !important;
+}
+
+/* 修复下拉选项的高亮背景 */
+html.dark .el-select-dropdown__item.hover, 
+html.dark .el-select-dropdown__item:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ==============================================
+   核心修復 1：徹底解決滾動劫持 (Scroll Hijacking - Enhanced)
+   ============================================== */
+/* 針對 Element Plus 表格的所有內部滾動容器 */
+.el-table .el-table__inner-wrapper,
+.el-table .el-table__body-wrapper,
+.el-table .el-table__header-wrapper,
+.el-table .el-scrollbar__wrap { /* 新增：覆蓋內置滾動條容器 */
+    
+    /* 1. 強制高度自動：讓容器隨內容撐開，消除「內部滾動區域」的概念 */
+    height: auto !important;
+    
+    /* 2. 禁止縱向滾動：物理屏蔽縱向滾動條 */
+    overflow-y: hidden !important;
+    
+    /* 3. 強制滾動冒泡：確保滾輪事件傳遞給外層頁面 */
+    overscroll-behavior-y: auto !important;
+    
+    /* 4. 觸控優化 */
+    touch-action: pan-y;
+}
+
+/* ⚠️ 重要：保留橫向滾動能力 */
+.el-table .el-table__body-wrapper,
+.el-table .el-scrollbar__wrap {
+    overflow-x: auto !important;
+}
+
+/* ==============================================
+   核心修復 2：解決暗黑模式下固定列透明/重疊問題
+   ============================================== */
+/* 強制給固定列加上與卡片一致的背景色 */
+html.dark .el-table .el-table-fixed-column--right,
+html.dark .el-table .el-table-fixed-column--left {
+    background-color: var(--app-bg-card) !important;
+    box-shadow: -6px 0 10px -4px rgba(0, 0, 0, 0.3); /* 加深陰影 */
+}
+
+/* 修復 Hover 狀態 */
+html.dark .el-table--enable-row-hover .el-table__body tr:hover > td.el-table-fixed-column--right,
+html.dark .el-table--enable-row-hover .el-table__body tr:hover > td.el-table-fixed-column--left {
+    background-color: rgba(255, 255, 255, 0.05) !important; /* 模擬高亮 */
 }
