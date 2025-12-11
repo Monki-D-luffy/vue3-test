@@ -35,18 +35,19 @@
         </el-table>
 
         <AppPagination :total="pagination.total" :current-page="pagination.currentPage" :page-size="pagination.pageSize"
-            @update:currentPage="(val) => emits('page-change', val)"
-            @update:pageSize="(val) => emits('size-change', val)" />
+            @update:currentPage="(val: number) => emits('page-change', val)"
+            @update:pageSize="(val: number) => emits('size-change', val)" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElTable } from 'element-plus'
-import type { Device } from '@/types'
-import StatusBadge from '@/components/StatusBadge.vue' // 引入新组件
-import AppPagination from '@/components/AppPagination.vue' // 引入已有组件
+import type { Device, DeviceStatusType } from '@/types'
+import StatusBadge from '@/components/StatusBadge.vue'
+import AppPagination from '@/components/AppPagination.vue'
 
+// ✅ 1. 严格 Props 类型
 defineProps<{
     deviceList: Device[];
     loading: boolean;
@@ -57,6 +58,7 @@ defineProps<{
     };
 }>()
 
+// ✅ 2. 严格 Emits 定义
 const emits = defineEmits<{
     (e: 'selection-change', rows: Device[]): void
     (e: 'page-change', page: number): void
@@ -80,17 +82,16 @@ defineExpose({
     clearSelection
 })
 
-// 纯逻辑函数：将业务状态映射为 UI 类型
-const getStatusType = (status: string) => {
+// ✅ 3. 强类型状态映射：输入参数指定为 DeviceStatusType
+const getStatusType = (status: DeviceStatusType | string) => {
     switch (status) {
         case '在线': return 'success'
-        case '离线': return 'info' // 或 'default'
+        case '离线': return 'info'
         case '故障': return 'danger'
         case '升级中': return 'primary'
-        default: return 'default'
+        default: return 'info' // 修正为合法的 Element Plus type
     }
 }
-
 </script>
 
 <style scoped>
@@ -133,12 +134,4 @@ const getStatusType = (status: string) => {
 .ml-2 {
     margin-left: 8px;
 }
-
-/* ❌ 删除了原本几百行的 .status-capsule 及其颜色定义 
-   现在由 StatusBadge 组件统一管理
-*/
-
-/* ❌ 删除了 .pagination-bar 及其深层样式
-   现在由 AppPagination 组件统一管理
-*/
 </style>

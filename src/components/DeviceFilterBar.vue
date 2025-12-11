@@ -1,22 +1,24 @@
 <template>
     <div class="filter-card card-base">
         <div class="filter-left">
-            <el-input :model-value="filters.keyword" @update:model-value="(val) => updateFilter('keyword', val)"
+            <el-input :model-value="filters.keyword" @update:model-value="(val: string) => updateFilter('keyword', val)"
                 placeholder="搜索设备名称/SN..." :prefix-icon="Search" clearable class="filter-item search-input"
                 @keyup.enter="emits('search')" @clear="emits('search')" />
 
             <el-date-picker :model-value="filters.dateRange"
-                @update:model-value="(val) => updateFilter('dateRange', val)" type="daterange" unlink-panels
+                @update:model-value="(val: any) => updateFilter('dateRange', val)" type="daterange" unlink-panels
                 range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
                 class="filter-item date-picker-item" @change="emits('search')" />
 
-            <el-select :model-value="filters.productId" @update:model-value="(val) => updateFilter('productId', val)"
-                placeholder="所有产品" clearable class="filter-item product-select" @change="emits('search')">
+            <el-select :model-value="filters.productId"
+                @update:model-value="(val: string) => updateFilter('productId', val)" placeholder="所有产品" clearable
+                class="filter-item product-select" @change="emits('search')">
                 <el-option v-for="p in products" :key="p.id" :label="p.name" :value="p.id" />
             </el-select>
 
-            <el-select :model-value="filters.isBound" @update:model-value="(val) => updateFilter('isBound', val)"
-                placeholder="绑定状态" clearable class="filter-item status-select" @change="emits('search')">
+            <el-select :model-value="filters.isBound"
+                @update:model-value="(val: string) => updateFilter('isBound', val)" placeholder="绑定状态" clearable
+                class="filter-item status-select" @change="emits('search')">
                 <el-option label="已绑定" value="true" />
                 <el-option label="未绑定" value="false" />
             </el-select>
@@ -43,30 +45,28 @@
 
 <script setup lang="ts">
 import { Search, Refresh, Download, RefreshLeft } from '@element-plus/icons-vue'
-import type { Product } from '@/types'
-// 移除未使用的字典导入
+import type { Product, DeviceListFilters } from '@/types'
 
+// ✅ 1. 使用引入的严格类型，替换原本的 inline object 定义
 const props = defineProps<{
-    filters: {
-        keyword: string;
-        productId: string;
-        isBound: string;
-        dateRange: any;
-        // dataCenter: string; // 🔥 注意：父组件虽然传了这个，但这里不再用它渲染UI，可以保留类型兼容或删除
-    };
+    filters: DeviceListFilters;
     products: Product[];
     loading: boolean;
 }>()
 
+// ✅ 2. 严格化 Emit 定义
 const emits = defineEmits<{
-    (e: 'update:filters', value: any): void
+    (e: 'update:filters', value: Partial<DeviceListFilters>): void
     (e: 'search'): void
     (e: 'reset'): void
     (e: 'refresh'): void
     (e: 'export'): void
 }>()
 
-const updateFilter = (key: string, value: any) => {
+// ✅ 3. 类型安全的更新函数
+// key 限定为 DeviceListFilters 的键，value 允许是对应键的值
+const updateFilter = <K extends keyof DeviceListFilters>(key: K, value: DeviceListFilters[K]) => {
+    // 浅拷贝 props.filters 并更新特定字段，确保类型安全
     emits('update:filters', { ...props.filters, [key]: value })
 }
 </script>

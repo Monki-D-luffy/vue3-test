@@ -36,7 +36,7 @@ defineProps<{
     value: string | number
     unit?: string
     iconComponent: Component
-    colorTheme?: 'blue' | 'green' | 'orange' | 'purple' | 'red'
+    colorTheme?: string
     trend?: number
 }>()
 </script>

@@ -2,10 +2,10 @@ import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchDevices as fetchDevicesApi } from '@/api/modules/device'
 import { formatDate } from '@/utils/formatters'
-import type { Device, DeviceListFilters, PaginationParams } from '@/types'
+import type { Device, DeviceListFilters, PaginationParams, DeviceQueryParams } from '@/types'
 
 // 定义 Filters 的默认状态，方便重置
-const DEFAULT_FILTERS = {
+const DEFAULT_FILTERS: DeviceListFilters = {
     keyword: '',
     productId: '',
     isBound: '',
@@ -14,32 +14,28 @@ const DEFAULT_FILTERS = {
 }
 
 export const buildDeviceListParams = (
-    filters: any,
+    filters: DeviceListFilters,
     pagination?: PaginationParams
-) => {
-    // 解构并处理日期
+): DeviceQueryParams => {
     const { isBound, productId, dateRange, keyword, dataCenter } = filters
-    const startDate = dateRange?.[0] ? formatDate(dateRange[0]) + ' 00:00:00' : null
-    const endDate = dateRange?.[1] ? formatDate(dateRange[1]) + ' 23:59:59' : null
 
-    const rawParams: any = {
-        isBound,
-        productId,
-        q: keyword,
+    // 安全地处理日期
+    const startDate = dateRange?.[0] ? formatDate(dateRange[0]) + ' 00:00:00' : undefined
+    const endDate = dateRange?.[1] ? formatDate(dateRange[1]) + ' 23:59:59' : undefined
+
+    // 组装参数，使用 undefined 代替 null/空串，某些 axios 配置会自动过滤 undefined key
+    const rawParams: DeviceQueryParams = {
+        isBound: isBound || undefined,
+        productId: productId || undefined,
+        q: keyword || undefined,
         gmtActive_gte: startDate,
         gmtActive_lte: endDate,
-        dataCenter,
-        ...pagination
+        dataCenter: dataCenter || undefined,
+        _page: pagination?._page,
+        _limit: pagination?._limit
     }
 
-    // 清理无效参数 (undefined, null, 空字符串)
-    const cleanedParams: any = {}
-    for (const key in rawParams) {
-        if (rawParams[key] !== null && rawParams[key] !== undefined && rawParams[key] !== '') {
-            cleanedParams[key] = rawParams[key]
-        }
-    }
-    return cleanedParams
+    return rawParams
 }
 
 export function useDeviceList() {
@@ -47,7 +43,7 @@ export function useDeviceList() {
     const deviceList = ref<Device[]>([])
 
     // 1. 状态管理内聚：filters 现在由 hook 内部管理
-    const filters = reactive({ ...DEFAULT_FILTERS })
+    const filters = reactive<DeviceListFilters>({ ...DEFAULT_FILTERS })
 
     const pagination = reactive({
         currentPage: 1,

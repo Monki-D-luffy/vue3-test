@@ -21,11 +21,12 @@ export interface UserRegisterData {
     confirmPassword?: string; // 前端验证用
 }
 
+export type DeviceStatusType = '在线' | '离线' | '故障' | '未激活' | '升级中';
 // 设备对象
 export interface Device {
     id: string;
     name: string;
-    status: '在线' | '离线' | '故障' | '未激活' | '升级中';
+    status: DeviceStatusType;
     firmwareVersion: string;
     puuid: string;
     productId: string;
@@ -51,6 +52,19 @@ export interface DeviceListFilters {
     dataCenter?: string;
 }
 
+// 传递给 API 的实际查询参数（日期已转字符串，包含分页）
+export interface DeviceQueryParams {
+    _page?: number;
+    _limit?: number;
+    isBound?: string;
+    productId?: string;
+    q?: string;           // 对应 keyword
+    gmtActive_gte?: string; // 开始时间
+    gmtActive_lte?: string; // 结束时间
+    dataCenter?: string;
+    [key: string]: any;   // 允许少量扩展，但主要字段已强类型化
+}
+
 // 通用分页请求参数
 export interface PaginationParams {
     _page: number;
@@ -65,7 +79,15 @@ export interface PaginationParams {
 export interface Product {
     id: string;
     name: string;
-    type: string;
+    type: string;           // 产品类型 (e.g. "WiFi", "Zigbee")
+    nodeType: number;
+    productKey: string;
+    category?: string;      // 行业分类 (e.g. "智能家居")
+    description?: string;   // 产品描述
+    deviceCount?: number;   // 关联设备数
+    gmtCreate?: string;     // 创建时间
+    icon?: string;          // 产品图标
+    apiKey?: string;        // 用于显示的 API Key (如果有)
 }
 
 export interface Firmware {
@@ -150,3 +172,17 @@ export const STORAGE_KEYS = {
     TOKEN: 'authToken',
     USER_INFO: 'userInfo'
 } as const;
+
+// ==========================================
+// 8. 统计与概览 (Stats & Summary)
+// ==========================================
+
+export interface DeviceSummary {
+    total: number;
+    online: number;
+    offline: number;
+    fault: number;
+    activated: number; // ✅ 补上缺失的字段
+    inactive?: number; //以此类推，根据实际 API 返回扩展
+    upgrade?: number;
+}

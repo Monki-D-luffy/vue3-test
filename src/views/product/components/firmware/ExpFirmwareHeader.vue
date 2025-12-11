@@ -122,6 +122,7 @@ onMounted(() => {
 .gradient-icon {
     /* 渐变图标在暗黑模式下依然可以保持，或者根据需要调整 */
     background: -webkit-linear-gradient(45deg, #409eff, #36cfc9);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }

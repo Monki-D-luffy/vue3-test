@@ -1,45 +1,55 @@
-// src/composables/useDeviceSummary.ts
 import { ref } from 'vue'
-// ✅ 引入具体的 API 函数，不再引入整个 api 对象
 import { fetchDeviceSummary as fetchSummaryApi } from '@/api/modules/device'
+import type { DeviceSummary } from '@/types'
 
 export function useDeviceSummary() {
-    const loading = ref(false)
-    const summary = ref({
+    // 初始化默认值
+    const summary = ref<DeviceSummary>({
         total: 0,
         online: 0,
-        active: 0,
-        abnormal: 0 // 确保这里有默认值防止 undefined 报错
+        offline: 0,
+        fault: 0,
+        activated: 0
     })
 
-    const fetchSummary = async (dataCenter: string = '') => {
-        loading.value = true
+    const fetchSummary = async (dataCenter?: string) => {
         try {
-            // ✅ 调用 API 模块
-            // request.ts 拦截器返回的是 response.data
-            // 假设后端返回结构为 { total: 100, online: 50, ... }
-            const data: any = await fetchSummaryApi(dataCenter)
+            const res: any = await fetchSummaryApi(dataCenter)
 
-            // ✅ 赋值逻辑：优先使用返回数据，失败则回退到默认值
-            // 这里做了字段兼容，以防后端字段名不一致（例如 totalDevices vs total）
-            if (data) {
-                summary.value = {
-                    total: data.total || data.totalDevices || 0,
-                    online: data.online || data.onlineDevices || 0,
-                    active: data.active || data.activeDevices || data.activated || 0,
-                    abnormal: data.abnormal || 0
-                }
+            // 1. 解包：先尝试取 res.data，如果不存在则用 res 本身
+            // 你的数据结构是 { code: 200, data: { ... } }，所以这里 rawData 会拿到内部那个对象
+            const rawData = res?.data || res || {}
+
+            // console.log('Raw Summary Data:', rawData) // 调试用
+
+            // 2. 字段映射 (Mapping)
+            // 后端字段 -> 前端标准字段
+            const total = Number(rawData.totalDevices || 0)
+            const online = Number(rawData.onlineDevices || 0)
+
+            // 3. 计算衍生数据
+            // 如果后端没给 offline，我们用 总数 - 在线数 估算
+            const offline = rawData.offlineDevices !== undefined
+                ? Number(rawData.offlineDevices)
+                : (total - online)
+
+            summary.value = {
+                total: total,
+                online: online,
+                offline: offline < 0 ? 0 : offline, // 防止负数
+
+                // alertCount 通常对应“故障”或“告警”状态
+                fault: Number(rawData.alertCount || 0),
+
+                // activeDevices 对应我们的 activated
+                activated: Number(rawData.activeDevices || 0)
             }
         } catch (error) {
-            console.error('Fetch summary failed:', error)
-            // 出错时保持默认值或重置
-        } finally {
-            loading.value = false
+            console.error('Failed to fetch summary:', error)
         }
     }
 
     return {
-        loading,
         summary,
         fetchSummary
     }
