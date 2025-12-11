@@ -1,22 +1,24 @@
 <template>
     <div class="toolbar-container card-base">
         <div class="toolbar-left">
-            <el-input :model-value="filters.keyword" @update:model-value="(val) => updateFilter('keyword', val)"
+            <el-input :model-value="filters.keyword" @update:model-value="(val: number) => updateFilter('keyword', val)"
                 placeholder="搜索设备名称/SN..." prefix-icon="Search" clearable class="filter-item search-input"
                 @keyup.enter="emits('search')" @clear="emits('search')" />
 
             <el-date-picker :model-value="filters.dateRange"
-                @update:model-value="(val) => updateFilter('dateRange', val)" type="daterange" range-separator="至"
-                start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
+                @update:model-value="(val: string) => updateFilter('dateRange', val)" type="daterange"
+                range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
                 class="filter-item date-picker-item" @change="emits('search')" />
 
-            <el-select :model-value="filters.productId" @update:model-value="(val) => updateFilter('productId', val)"
-                placeholder="所有产品" clearable class="filter-item product-select" @change="emits('search')">
+            <el-select :model-value="filters.productId"
+                @update:model-value="(val: string) => updateFilter('productId', val)" placeholder="所有产品" clearable
+                class="filter-item product-select" @change="emits('search')">
                 <el-option v-for="p in products" :key="p.id" :label="p.name" :value="p.id" />
             </el-select>
 
-            <el-select :model-value="filters.isBound" @update:model-value="(val) => updateFilter('isBound', val)"
-                placeholder="绑定状态" clearable class="filter-item status-select" @change="emits('search')">
+            <el-select :model-value="filters.isBound"
+                @update:model-value="(val: Boolean) => updateFilter('isBound', val)" placeholder="绑定状态" clearable
+                class="filter-item status-select" @change="emits('search')">
                 <el-option label="已绑定" value="true" />
                 <el-option label="未绑定" value="false" />
             </el-select>

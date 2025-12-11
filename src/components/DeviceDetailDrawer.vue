@@ -1,6 +1,6 @@
 <template>
-    <el-drawer :model-value="modelValue" @update:model-value="(val) => $emit('update:modelValue', val)" title="设备详情"
-        direction="rtl" size="600px" destroy-on-close class="device-detail-drawer">
+    <el-drawer :model-value="modelValue" @update:model-value="(val: boolean) => $emit('update:modelValue', val)"
+        title="设备详情" direction="rtl" size="600px" destroy-on-close class="device-detail-drawer">
         <template #header>
             <div class="drawer-header">
                 <span class="drawer-title">设备详情</span>
@@ -33,11 +33,11 @@
                         <el-descriptions-item label="产品名称">{{ device.productName || '未知产品' }}</el-descriptions-item>
                         <el-descriptions-item label="设备ID">{{ device.id }}</el-descriptions-item>
                         <el-descriptions-item label="固件版本">{{ device.firmwareVersion || 'v1.0.0'
-                            }}</el-descriptions-item>
+                        }}</el-descriptions-item>
                         <el-descriptions-item label="所属区域">{{ device.dataCenter || 'CN' }}</el-descriptions-item>
                         <el-descriptions-item label="激活时间">{{ formatDateTime(device.gmtActive) }}</el-descriptions-item>
                         <el-descriptions-item label="最后在线">{{ formatDateTime(device.gmtLastOnline)
-                            }}</el-descriptions-item>
+                        }}</el-descriptions-item>
                     </el-descriptions>
 
                     <div class="mt-4">

@@ -93,7 +93,6 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 import AppPagination from '@/components/AppPagination.vue'
-// *** 新增导入 ***
 import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
 
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
@@ -142,7 +141,7 @@ const deviceForModal = computed(() => {
     return {
         id: deviceId.value,
         name: deviceName.value
-    }
+    } as any
 })
 
 

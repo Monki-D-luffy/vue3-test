@@ -1,6 +1,6 @@
 <template>
-    <el-dialog :model-value="modelValue" @update:model-value="val => $emit('update:modelValue', val)" width="420px"
-        destroy-on-close class="modern-unbind-dialog" :show-close="false" align-center>
+    <el-dialog :model-value="modelValue" @update:model-value="(val: boolean) => $emit('update:modelValue', val)"
+        width="420px" destroy-on-close class="modern-unbind-dialog" :show-close="false" align-center>
         <div class="unbind-content-wrapper">
             <div class="danger-icon-box">
                 <el-icon>

@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue'
-import type { Firmware } from '@/api/index'
+import type { Firmware } from '@/types'
 import AppPagination from '@/components/AppPagination.vue'
 
 // 定义 Props

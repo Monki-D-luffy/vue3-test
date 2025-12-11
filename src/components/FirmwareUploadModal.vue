@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { ref, computed, type PropType } from 'vue'
-import type { FirmwareUploadData, Product } from '@/api/index'
+import type { FirmwareUploadData, Product } from '@/types'
 import type { FormInstance } from 'element-plus'
 
 // 定义 Props
