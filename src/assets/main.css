@@ -1,132 +1,80 @@
 /* src/assets/main.css */
-
-/* 引入基础变量 */
 @import './base.css';
 
+:root {
+  /* ================= Light Mode (白昼模式) ================= */
+  /* 核心背景 */
+  --app-bg-canvas: #f5f7fa;        /* 页面底色：浅灰 */
+  --app-bg-card: #ffffff;          /* 卡片底色：纯白 */
+  
+  /* 文本颜色 */
+  --app-text-main: #1e293b;        /* 主标题：深蓝灰 */
+  --app-text-sub: #64748b;         /* 副标题/描述：灰 */
+  --app-text-placeholder: #94a3b8; /* 占位符：浅灰 */
+  
+  /* 边框与分割线 */
+  --app-border-color: #e2e8f0;
+  
+  /* 阴影体系 */
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --app-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ================= Dark Mode (暗黑模式) ================= */
+/* 当 html 标签有 .dark 类时，以下变量生效 */
+html.dark {
+  /* 核心背景 - 使用 Slate 色系 */
+  --app-bg-canvas: #0f172a;        /* 页面底色：Slate-900 (深邃) */
+  --app-bg-card: #1e293b;          /* 卡片底色：Slate-800 (稍亮) */
+  
+  /* 文本颜色 - 反转为浅色 */
+  --app-text-main: #f1f5f9;        /* Slate-100 */
+  --app-text-sub: #94a3b8;         /* Slate-400 */
+  --app-text-placeholder: #475569; /* Slate-600 */
+  
+  /* 边框与分割线 - 变暗 */
+  --app-border-color: #334155;     /* Slate-700 */
+  
+  /* 阴影体系 - 这里的阴影其实看不清了，但可以保留或微调 */
+  --app-shadow-sm: none;
+  --app-shadow-card: none;         /* 暗黑模式通常去阴影，改用边框或背景色差 */
+
+  /* 🔥 Element Plus 变量覆盖 (可选，让 Element 组件也变暗) */
+  --el-bg-color: #1e293b;
+  --el-bg-color-overlay: #1e293b;
+  --el-text-color-primary: #f1f5f9;
+  --el-text-color-regular: #cbd5e1;
+  --el-border-color: #334155;
+  --el-border-color-light: #334155;
+  --el-fill-color-blank: #1e293b;
+}
+
+/* === 通用样式保持不变 === */
 body {
   margin: 0;
-  padding: 0;
-  background-color: var(--bg-canvas);
-  font-family: 'Inter', 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-  overflow-x: hidden; /* 防止横向溢出 */
+  background-color: var(--app-bg-canvas); /* ✅ 自动响应变量 */
+  color: var(--app-text-main);            /* ✅ 自动响应变量 */
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s, color 0.3s; /* 添加过渡，切换时不生硬 */
 }
 
-/* === 全局滚动条美化 (Scrollbar) === */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* 滚动条适配 */
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* 浅灰 */
-  border-radius: 3px;
-  transition: background var(--transition-fast);
+  background: #cbd5e1;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* 深一点的灰 */
+html.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+html.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
 }
 
-/* === 通用工具类 (Utilities) === */
-
-/* 卡片基础样式 */
+/* 卡片基类 */
 .card-base {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--border-color-light);
+  background: var(--app-bg-card);
+  border-radius: 8px;
+  /* 暗黑模式下加个微弱边框增加层次 */
+  border: 1px solid var(--app-border-color);
+  box-shadow: var(--app-shadow-card);
+  transition: background-color 0.3s, border-color 0.3s;
 }
-
-/* 鼠标悬停上浮效果 */
-.hover-lift {
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
-}
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
-}
-
-/* 磨砂玻璃效果 (Glassmorphism) - 用于顶部栏或悬浮层 */
-.glass-effect {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-/* 文本截断 */
-.text-ellipsis {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* === 全局过渡动画 (Global Transitions) === */
-
-/* 页面切换：淡入 + 轻微上滑 */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-/* 列表渲染动画 */
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.4s ease;
-}
-.list-enter-from,
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-:root {
-  /* --- 1. 核心色彩体系 (Core Colors) --- */
-  /* 使用 Element Plus 的变量作为基石，但我们可以定义自己的语义变量 */
-  --app-bg-canvas: #f5f7fa;        /* 页面大背景 */
-  --app-bg-card: #ffffff;          /* 卡片背景 */
-  --app-text-main: #1e293b;        /* 主要文字 */
-  --app-text-sub: #64748b;         /* 次要文字 */
-  
-  /* --- 2. 高级渐变色 (Premium Gradients) --- */
-  /* 主色调：靛蓝-紫罗兰 */
-  --app-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  /* 悬浮态：稍微亮一点 */
-  --app-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  /* 危险操作：红玫渐变 */
-  --app-gradient-danger: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-
-  /* --- 3. 玻璃与光效 (Glass & Glow) --- */
-  --app-glass-border: 1px solid rgba(255, 255, 255, 0.6);
-  --app-glass-blur: blur(10px);
-  --app-glow-primary: 0 8px 16px -4px rgba(99, 102, 241, 0.5); /* 靛蓝发光 */
-  
-  /* --- 4. 立体阴影系统 (3D Shadows) --- */
-  /* 层级 1: 贴地 */
-  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  /* 层级 2: 悬浮 (卡片默认) */
-  --app-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  /* 层级 3: 飞起 (Hover) */
-  --app-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
-}
-
-/* --- 预留：暗黑模式接口 (未来只需取消注释并调整颜色即可) --- */
-/* html.dark {
-  --app-bg-canvas: #0f172a;
-  --app-bg-card: #1e293b;
-  --app-text-main: #e2e8f0;
-  --app-text-sub: #94a3b8;
-  --app-glass-border: 1px solid rgba(255, 255, 255, 0.1);
-} 
-*/
