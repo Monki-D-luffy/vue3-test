@@ -134,7 +134,7 @@ const handleUnbindSuccess = () => {
 // 3. 查看日志跳转
 const handleViewLogs = (row: Device) => {
     router.push({
-        name: 'device-log',
+        name: 'DeviceLog',
         query: {
             id: row.id,
             name: row.name

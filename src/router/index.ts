@@ -1,7 +1,7 @@
-// 路由文件
+// src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 
-// 2. 导入所有布局和页面
+// 1. 统一使用 @ 别名导入布局，保持风格一致
 import AppLayout from '@/layouts/AppLayout.vue'
 
 const router = createRouter({
@@ -9,69 +9,62 @@ const router = createRouter({
   routes: [
     {
       path: '/login',
-      name: 'login',
-      // 懒加载 LoginView (路径不变)
-      component: () => import('../views/Login.vue')
+      name: 'Login', // 规范：PascalCase
+      // 规范：统一使用 @/views 别名，取代相对路径 ../
+      component: () => import('@/views/Login.vue')
     },
 
-    // 3. AppLayout 作为根路由 '/' 的组件 
     {
       path: '/',
       component: AppLayout,
       meta: { requiresAuth: true },
-      // 访问根目录时，重定向到 /overview (我们的新首页)
-      redirect: '/overview',
+      // 访问根目录重定向到 Overview
+      redirect: { name: 'Overview' },
 
-      // 所有的页面现在都是 AppLayout 的子路由
       children: [
         {
-          path: 'overview', // 匹配 /overview
-          name: 'overview',
-          // 懒加载 Overview (路径不变)
+          path: 'overview',
+          name: 'Overview', // 规范：PascalCase
           component: () => import('@/views/Overview.vue')
         },
         {
           path: 'devices',
-          name: 'devices-list',
-          component: () => import('../views/device/DeviceList.vue'), // 指向新文件
+          name: 'DeviceList', // 规范：PascalCase (原 devices-list)
+          component: () => import('@/views/device/DeviceList.vue'),
           meta: { title: '设备页' }
         },
         {
-          path: 'devices/log', // 匹配 /devices/log
-          name: 'device-log',
+          path: 'devices/log',
+          name: 'DeviceLog', // 规范：PascalCase (原 device-log)
           component: () => import('@/views/device/DeviceLog.vue')
         },
         {
-          path: 'products', // 匹配 /products
-          name: 'product-list',
+          path: 'products',
+          name: 'ProductManagement', // 规范：与组件文件名保持一致 (原 product-list)
           component: () => import('@/views/product/ProductManagement.vue')
         },
         {
-          path: 'system', // 匹配 /system
-          name: 'system-management',
-          //  路径已更新
+          path: 'system',
+          name: 'SystemManagement', // 规范：PascalCase
           component: () => import('@/views/system/SystemManagement.vue')
         },
         {
-          // 🆕 固件管理 2.0
           path: 'firmware',
           name: 'FirmwareManagement',
-          component: () => import('../views/product/FirmwareManagement.vue'),
+          component: () => import('@/views/product/FirmwareManagement.vue'),
           meta: {
             title: '固件管理',
             requiresAuth: true
           }
         },
-        // 🆕 新增实验性路由组
         {
           path: 'serial',
           name: 'SerialTerminal',
-          component: () => import('../views/experiment/SerialTerminal.vue'),
+          component: () => import('@/views/experiment/SerialTerminal.vue'),
           meta: { title: '串口终端 (Lab)' }
         },
       ]
     },
-
   ],
 })
 
@@ -82,11 +75,11 @@ router.beforeEach((to, from, next) => {
 
   if (isAuthRoute && !token) {
     console.log('导航守卫：未登录，跳转到 /login');
-    next('/login');
-  } else if (token && to.path === '/login') {
-    // 5. 登录后跳转到新的 '首页'
+    // 最佳实践：使用 name 跳转，比硬编码 path 更稳健
+    next({ name: 'Login' });
+  } else if (token && to.name === 'Login') {
     console.log('导航守卫：已登录，跳转到 /overview');
-    next('/overview'); // <-- 从 /dashboard 改为 /overview
+    next({ name: 'Overview' });
   } else {
     next();
   }

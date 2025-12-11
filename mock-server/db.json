@@ -1,22 +1,6 @@
 {
   "devices": [
     {
-      "id": "afC4Eab9-3FB3-f75d-E7C8-FeD2FbFEBe4F",
-      "name": "适它共史之性",
-      "status": "离线",
-      "puuid": "PU-20259192",
-      "productInfo": "摄像头 / prod_cam_01",
-      "deviceType": "摄像头",
-      "productId": "prod_cam_01",
-      "firmwareVersion": "2.0.0",
-      "hasNewFirmware": false,
-      "sn": "SN_A544W27FB93D",
-      "isBound": false,
-      "dataCenter": "US-EAST",
-      "gmtActive": "2022-11-01 02:19:43",
-      "gmtLastOnline": "2025-06-14 17:44:27"
-    },
-    {
       "id": "292FC21a-8Ebc-3dAa-8eb8-7C305fc6bf2b",
       "name": "系又周",
       "status": "未激活",
@@ -5094,16 +5078,6 @@
       "type": "OTA升级",
       "details": "TkkAilQ6/+p++++2/6//66t+m4of+=C/t=/++5V+o=B=17+++/w=+/5=/+1H/+qs+=fm8p+/b++//5++6+gW==/++oh/6+wcHQ",
       "source": "设备本身",
-      "switch": false
-    },
-    {
-      "id": 123,
-      "deviceId": "afC4Eab9-3FB3-f75d-E7C8-FeD2FbFEBe4F",
-      "time": "2025-09-08 15:29:59.017",
-      "event": "平台下发",
-      "type": "状态通知",
-      "details": "TkkAilQ+97W/++0iuvv73eV+c+1+nD6++g6/8==/+55Y27=//53/Bux//+7=/7w6/63==+/fs/Lk4O/49//vU22+6gp+5+=/t=",
-      "source": "云端规则",
       "switch": false
     },
     {
@@ -10957,16 +10931,6 @@
       "switch": false
     },
     {
-      "id": 124,
-      "deviceId": "afC4Eab9-3FB3-f75d-E7C8-FeD2FbFEBe4F",
-      "time": "2024-09-25 11:14:27.088",
-      "event": "平台下发",
-      "type": "云端处理",
-      "details": "TkkAilQH=V++0/v/+/dwj+d2r3loch/4f/Bow/+s3z+5ljt4/Sc/C+05/+=+0+SO06+",
-      "source": "平台下发",
-      "switch": false
-    },
-    {
       "id": 208,
       "deviceId": "CAdf32Ed-9FC3-05f6-8Fc8-b4bB5c7463fF",
       "time": "2024-09-25 08:30:57.606",
@@ -14124,16 +14088,6 @@
       "type": "数据转换",
       "details": "TkkAilQ=I0x/++5=+=5=c+//0/++=a+++/5+r8++++3/md/8m=k61/7+/=uo=4s2==+P+2+4+nj1/+//5/j/+F372/++k/+/52f",
       "source": "平台下发",
-      "switch": false
-    },
-    {
-      "id": 121,
-      "deviceId": "afC4Eab9-3FB3-f75d-E7C8-FeD2FbFEBe4F",
-      "time": "2024-03-01 12:18:51.128",
-      "event": "设备在线",
-      "type": "OTA升级",
-      "details": "TkkAilQ147Ea3/k4/bV=/u++/x+=/+Vk07++=9j/i/B/0=x6+3p77/++K46=aRUW/+//++=+flNuP1hW/d285=+Jgc/j/=",
-      "source": "设备本身",
       "switch": false
     },
     {
@@ -20767,16 +20721,6 @@
       "switch": false
     },
     {
-      "id": 120,
-      "deviceId": "afC4Eab9-3FB3-f75d-E7C8-FeD2FbFEBe4F",
-      "time": "2023-01-08 12:47:50.523",
-      "event": "设备在线",
-      "type": "数据转换",
-      "details": "TkkAilQ+b/=8++/+/=++=2q2=+J+Jq6/=/5=///6w==X5+b/+C/0M/+o2/h/Ou/+c5++/=+/8/++/ewu8Y9N=++W=/7t=45++2+/1lJp/",
-      "source": "平台下发",
-      "switch": true
-    },
-    {
       "id": 1164,
       "deviceId": "A759CEfE-cCCA-16Af-4236-f926c5029C4B",
       "time": "2023-01-07 19:33:22.838",
@@ -20985,16 +20929,6 @@
       "details": "TkkAilQ+2+Y/l=2v+/==5//0/=8o++T//w/hI==//8j/=+12DM5=F12+3+++J/yReu5+=1L2n/=/u3kr/y+jG+3+//8K",
       "source": "设备本身",
       "switch": false
-    },
-    {
-      "id": 122,
-      "deviceId": "afC4Eab9-3FB3-f75d-E7C8-FeD2FbFEBe4F",
-      "time": "2022-12-12 14:30:01.985",
-      "event": "平台下发",
-      "type": "OTA升级",
-      "details": "TkkAilQ=+7/R+d/=/ZuY+6o/m/=/=9+1+++u++Y++l6O/=/+6N+=/==/p/+=3+1/+2+f/2e3w//e//+h=/=K+2666c/r1/q/+V4+/+0=",
-      "source": "平台下发",
-      "switch": true
     },
     {
       "id": 1613,
@@ -24954,16 +24888,6 @@
       "type": "OTA升级",
       "details": "TkkAilQW+/+0=R+//H6++Y3/x2//b/64=/N++++/BrNf+pee=++=180/i1in7+o/y++/4jT++8i/+/+13q1+I/+=l89+1/++==3O5hb+=+",
       "source": "平台下发",
-      "switch": false
-    },
-    {
-      "id": 119,
-      "deviceId": "afC4Eab9-3FB3-f75d-E7C8-FeD2FbFEBe4F",
-      "time": "2022-04-18 02:12:47.943",
-      "event": "设备在线",
-      "type": "OTA升级",
-      "details": "TkkAilQ8=//1=xH2/5/++/nu+H4/=x==0/4++/+/+/3=+///7q=/7/pg/3v===+82=2l//t+0///+/2s//7y+o+Vz/=",
-      "source": "云端规则",
       "switch": false
     },
     {
