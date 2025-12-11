@@ -90,6 +90,7 @@ const getStatusType = (status: string) => {
         default: return 'default'
     }
 }
+
 </script>
 
 <style scoped>

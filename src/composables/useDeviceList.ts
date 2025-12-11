@@ -1,22 +1,24 @@
-// src/composables/useDeviceList.ts
 import { ref, reactive } from 'vue'
-import api from '@/api'
-// import { ElMessage } from 'element-plus' // 如果没用到可以暂时注释掉，保持整洁
+import { ElMessage } from 'element-plus'
+import { fetchDevices as fetchDevicesApi } from '@/api/modules/device'
 import { formatDate } from '@/utils/formatters'
-// ✅ 引入 PaginationParams
 import type { Device, DeviceListFilters, PaginationParams } from '@/types'
 
-import { fetchDevices as fetchDevicesApi } from '@/api/modules/device'
+// 定义 Filters 的默认状态，方便重置
+const DEFAULT_FILTERS = {
+    keyword: '',
+    productId: '',
+    isBound: '',
+    dateRange: null, // 允许 null 以适配 Element Plus DatePicker
+    dataCenter: ''
+}
 
-/**
- * 构建 /devices API 的查询参数
- */
 export const buildDeviceListParams = (
-    filters: DeviceListFilters = {},
+    filters: any,
     pagination?: PaginationParams
 ) => {
+    // 解构并处理日期
     const { isBound, productId, dateRange, keyword, dataCenter } = filters
-
     const startDate = dateRange?.[0] ? formatDate(dateRange[0]) + ' 00:00:00' : null
     const endDate = dateRange?.[1] ? formatDate(dateRange[1]) + ' 23:59:59' : null
 
@@ -27,74 +29,91 @@ export const buildDeviceListParams = (
         gmtActive_gte: startDate,
         gmtActive_lte: endDate,
         dataCenter,
-        // 展开分页参数
         ...pagination
     }
 
-    // 清理无效参数
+    // 清理无效参数 (undefined, null, 空字符串)
     const cleanedParams: any = {}
     for (const key in rawParams) {
         if (rawParams[key] !== null && rawParams[key] !== undefined && rawParams[key] !== '') {
             cleanedParams[key] = rawParams[key]
         }
     }
-
     return cleanedParams
 }
 
 export function useDeviceList() {
     const loading = ref(false)
     const deviceList = ref<Device[]>([])
+
+    // 1. 状态管理内聚：filters 现在由 hook 内部管理
+    const filters = reactive({ ...DEFAULT_FILTERS })
+
     const pagination = reactive({
         currentPage: 1,
         pageSize: 10,
         total: 0
     })
 
-    const fetchDevices = async (filters: DeviceListFilters = {}) => {
+    // 核心获取数据逻辑
+    const fetchDevices = async () => {
         loading.value = true
         try {
-            // ✅ 类型安全：这里的对象符合 PaginationParams 接口
             const pageParams: PaginationParams = {
                 _page: pagination.currentPage,
                 _limit: pagination.pageSize
             }
-
+            // 直接使用内部管理的 filters
             const params = buildDeviceListParams(filters, pageParams)
-
             const { items, total } = await fetchDevicesApi(params)
 
             deviceList.value = items
             pagination.total = total
-
         } catch (error) {
             console.error(error)
+            deviceList.value = []
         } finally {
             loading.value = false
         }
     }
 
-    const handleSizeChange = (newSize: number) => {
-        pagination.pageSize = newSize
+    // 2. 暴露标准操作方法
+    const handleSearch = () => {
         pagination.currentPage = 1
+        fetchDevices()
     }
 
-    const handleCurrentChange = (newPage: number) => {
-        pagination.currentPage = newPage
+    const handleReset = () => {
+        // 恢复默认 filters
+        Object.assign(filters, DEFAULT_FILTERS)
+        pagination.currentPage = 1
+        fetchDevices()
+        ElMessage.success('筛选条件已重置')
     }
 
-    const resetPagination = () => {
-        pagination.currentPage = 1
-        pagination.pageSize = 10
+    const handlePageChange = (val: number) => {
+        pagination.currentPage = val
+        fetchDevices()
+    }
+
+    const handleSizeChange = (val: number) => {
+        pagination.pageSize = val
+        pagination.currentPage = 1 // 改变页码大小时通常重置回第一页
+        fetchDevices()
     }
 
     return {
+        // State
         loading,
         deviceList,
         pagination,
+        filters, // 👈 暴露出去给 UI 绑定 v-model
+
+        // Actions
         fetchDevices,
-        handleSizeChange,
-        handleCurrentChange,
-        resetPagination
+        handleSearch,
+        handleReset,
+        handlePageChange,
+        handleSizeChange
     }
 }

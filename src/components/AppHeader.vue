@@ -115,12 +115,7 @@ const handleCommand = (command) => {
 
 <style scoped>
 /* --- 顶栏 (Header) --- */
-/*
-  我们把 AppLayout.vue 中所有
-  和 .el-header, .header-right, .user-profile 相关的样式
-  以及 :global(.user-dropdown-popper) 的样式
-  全部 "剪切" 到这里
-*/
+
 .el-header {
     height: 60px;
     /* ✨ 背景色改为变量，适配黑夜模式 */
@@ -143,6 +138,7 @@ const handleCommand = (command) => {
 .header-right {
     display: flex;
     align-items: center;
+
     gap: 18px;
     /* 使用 gap 制造间距 */
 }
