@@ -109,7 +109,7 @@ const initChart = () => {
         },
         yAxis: {
             type: 'value',
-            splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }
+            splitLine: { lineStyle: { type: 'dashed', color: '#334155' } }
         },
         series: [
             {
@@ -160,7 +160,6 @@ watch(() => dashboardData.value.chartData, () => {
 <style scoped>
 .dashboard-container {
     padding: 0;
-    /* 外部已有 layout padding，这里可选 */
 }
 
 /* Header */
@@ -174,19 +173,21 @@ watch(() => dashboardData.value.chartData, () => {
 .welcome-text {
     font-size: 24px;
     font-weight: 700;
-    color: var(--text-primary);
+    /* ✅ 修复变量 */
+    color: var(--app-text-main);
     margin-bottom: 4px;
 }
 
 .sub-text {
-    color: var(--text-secondary);
+    /* ✅ 修复变量 */
+    color: var(--app-text-sub);
     font-size: 14px;
 }
 
 .action-btn {
     margin-left: 12px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
+    /* ✅ 修复变量 */
+    border: 1px solid var(--app-border-color);
 }
 
 .mb-6 {
@@ -199,6 +200,7 @@ watch(() => dashboardData.value.chartData, () => {
     height: 420px;
     display: flex;
     flex-direction: column;
+    /* .card-base 已经处理了背景色，这里不需要写 */
 }
 
 .card-header-row {
@@ -211,7 +213,8 @@ watch(() => dashboardData.value.chartData, () => {
 .card-title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--text-primary);
+    /* ✅ 修复变量 */
+    color: var(--app-text-main);
     margin: 0;
 }
 
@@ -236,14 +239,15 @@ watch(() => dashboardData.value.chartData, () => {
     display: flex;
     align-items: flex-start;
     padding: 16px 0;
-    border-bottom: 1px solid var(--border-color-light);
+    /* ✅ 修复变量 */
+    border-bottom: 1px solid var(--app-border-color);
 }
 
 .activity-item:last-child {
     border-bottom: none;
 }
 
-/* Timeline Dots */
+/* Dots 样式不变 */
 .act-icon {
     width: 12px;
     height: 12px;
@@ -256,24 +260,21 @@ watch(() => dashboardData.value.chartData, () => {
     justify-content: center;
 }
 
+/* ... bg-info 等颜色保持 ... */
 .bg-info {
-    background-color: var(--color-info);
-    box-shadow: 0 0 0 4px var(--color-primary-light);
+    background-color: var(--el-color-info);
 }
 
 .bg-success {
-    background-color: var(--color-success);
-    box-shadow: 0 0 0 4px #d1fae5;
+    background-color: var(--el-color-success);
 }
 
 .bg-warning {
-    background-color: var(--color-warning);
-    box-shadow: 0 0 0 4px #fef3c7;
+    background-color: var(--el-color-warning);
 }
 
 .bg-danger {
-    background-color: var(--color-danger);
-    box-shadow: 0 0 0 4px #fee2e2;
+    background-color: var(--el-color-danger);
 }
 
 .act-content {
@@ -282,18 +283,20 @@ watch(() => dashboardData.value.chartData, () => {
 
 .act-msg {
     font-size: 14px;
-    color: var(--text-primary);
+    /* ✅ 修复变量 */
+    color: var(--app-text-main);
     margin-bottom: 4px;
     line-height: 1.4;
 }
 
 .act-device {
-    color: var(--color-primary);
+    color: var(--el-color-primary);
     font-weight: 500;
 }
 
 .act-time {
     font-size: 12px;
-    color: var(--text-placeholder);
+    /* ✅ 修复变量 */
+    color: var(--app-text-sub);
 }
 </style>

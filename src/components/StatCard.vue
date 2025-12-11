@@ -48,8 +48,7 @@ defineProps<{
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: var(--bg-card);
-    /* 使用 Phase 0 定义的变量 */
+    background: var(--app-bg-card);
 }
 
 .stat-content {
@@ -66,7 +65,7 @@ defineProps<{
 
 .label {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--app-text-sub);
     margin-bottom: 8px;
 }
 
@@ -78,13 +77,13 @@ defineProps<{
 .value {
     font-size: 32px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--app-text-main);
     line-height: 1.2;
 }
 
 .unit {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--app-text-sub);
     margin-left: 4px;
 }
 
@@ -134,7 +133,7 @@ defineProps<{
     display: flex;
     align-items: center;
     font-size: 13px;
-    border-top: 1px solid var(--border-color-light);
+    border-top: 1px solid var(--app-border-color);
     padding-top: 12px;
 }
 
@@ -158,6 +157,6 @@ defineProps<{
 }
 
 .trend-desc {
-    color: var(--text-placeholder);
+    color: var(--app-text-sub);
 }
 </style>

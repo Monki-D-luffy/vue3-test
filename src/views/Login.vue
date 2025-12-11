@@ -203,7 +203,7 @@ const handleRegister = async () => {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    background-color: var(--bg-canvas);
+    background-color: var(--app-bg-canvas);
 }
 
 /* 动态背景 */
@@ -247,6 +247,13 @@ const handleRegister = async () => {
         0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
 
+:global(.dark) .auth-card {
+    background: rgba(30, 41, 59, 0.7);
+    /* Slate-800 semi-transparent */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
 .card-header {
     text-align: center;
     margin-bottom: 32px;
@@ -272,19 +279,19 @@ const handleRegister = async () => {
 .app-title {
     font-size: 24px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--app-text-main);
     margin-bottom: 8px;
     letter-spacing: -0.5px;
 }
 
 .app-subtitle {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--app-text-sub);
 }
 
 .modern-input :deep(.el-input__wrapper) {
     box-shadow: none;
-    background-color: var(--bg-hover);
+    background-color: var(--el-fill-color);
     border-radius: var(--radius-md);
     transition: all 0.3s ease;
     border: 1px solid transparent;
@@ -292,7 +299,7 @@ const handleRegister = async () => {
 
 .modern-input :deep(.el-input__wrapper:hover),
 .modern-input :deep(.el-input__wrapper.is-focus) {
-    background-color: #fff;
+    background-color: --app-bg-card;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px var(--color-primary-light);
 }
@@ -318,7 +325,7 @@ const handleRegister = async () => {
     height: 48px;
     font-size: 16px;
     border-radius: var(--radius-md);
-    background: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%);
+    background: linear-gradient(135deg, var(--el-color-primary) 0%, #6366f1 100%);
     border: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -336,14 +343,14 @@ const handleRegister = async () => {
     margin-top: 24px;
     text-align: center;
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--app-text-sub);
 }
 
 .footer-copyright {
     position: absolute;
     bottom: 24px;
     font-size: 12px;
-    color: var(--text-placeholder);
+    color: var(--app-text-placeholder);
     z-index: 1;
 }
 

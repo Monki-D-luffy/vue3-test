@@ -113,7 +113,7 @@ const menuItems = ref([
 /* 所有的侧边栏样式全部剪切到这里 */
 /* --- 侧边栏 --- */
 .sidebar-container {
-    background-color: #f7f8fa;
+    background-color: var(--app-bg-card);
     color: #303133;
     transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     border-right: none;
@@ -129,8 +129,8 @@ const menuItems = ref([
     font-size: 20px;
     font-weight: 700;
     letter-spacing: 1px;
-    color: #303133;
-    border-bottom: 1px solid #f0f0f0;
+    color: var(--app-text-main);
+    border-bottom: 1px solid var(--app-border-color);
 }
 
 /* --- el-menu 核心样式 --- */
@@ -138,10 +138,12 @@ const menuItems = ref([
     border-right: none;
     background-color: transparent;
     padding-top: 8px;
+    /* 让 Element 菜单透明，透出 sidebar 背景 */
+    --el-menu-bg-color: transparent;
 }
 
 .sidebar-container :deep(.el-sub-menu__title) {
-    color: #606266 !important;
+    color: var(--app-text-sub) !important;
     background-color: transparent !important;
     height: 60px;
     display: flex;
@@ -246,7 +248,7 @@ const menuItems = ref([
 }
 
 :global(.sidebar-popper .el-menu--popup .el-menu-item.is-active) {
-    background-color: #fff7f0 !important;
+    background-color: var(--el-color-primary-light-9) !important;
     color: #ff6a00 !important;
     font-weight: 600;
 }
@@ -264,9 +266,9 @@ const menuItems = ref([
 }
 
 .sidebar-container::-webkit-scrollbar-thumb {
-    background: #dcdcdc;
+    background: var(--app-border-color);
     border-radius: 10px;
-    border: 1px solid #f7f8fa;
+    border: 1px solid var(--app-bg-card);
 }
 
 .sidebar-container::-webkit-scrollbar-thumb:hover {
