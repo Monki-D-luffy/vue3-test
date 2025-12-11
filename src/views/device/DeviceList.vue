@@ -1,13 +1,10 @@
 <template>
     <div class="page-container">
-        <div class="page-header mb-6">
-            <div class="header-left">
-                <h1 class="page-title">设备明细</h1>
-                <span class="page-subtitle">实时监控设备运行状态与配置详情</span>
-            </div>
-            <div class="header-right">
-                <el-select v-model="filters.dataCenter" placeholder="切换区域 / 数据中心" size="large" class="datacenter-select"
-                    effect="light" @change="handleDataCenterChange">
+
+        <PageMainHeader title="设备明细" subtitle="实时监控设备运行状态与配置详情">
+            <template #actions>
+                <el-select v-model="filters.dataCenter" placeholder="切换区域 / 数据中心" size="default"
+                    class="datacenter-select" effect="light" @change="handleDataCenterChange">
                     <template #prefix>
                         <el-icon>
                             <Location />
@@ -16,8 +13,8 @@
                     <el-option label="全部区域" value="" />
                     <el-option v-for="(label, value) in dataCenterMap" :key="value" :label="label" :value="value" />
                 </el-select>
-            </div>
-        </div>
+            </template>
+        </PageMainHeader>
 
         <DeviceStatsOverview :summary="summary" />
 
@@ -45,17 +42,19 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Location } from '@element-plus/icons-vue'
 
-// 组件与常量
+// ✅ 引入新组件
+import PageMainHeader from '@/components/PageMainHeader.vue'
+
+// 其他引入保持不变...
 import DeviceStatsOverview from './components/DeviceStatsOverview.vue'
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
 import DeviceListTable from './components/DeviceListTable.vue'
 import DeviceBatchActionBar from './components/DeviceBatchActionBar.vue'
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 import DeviceUnbindDialog from '@/components/DeviceUnbindDialog.vue'
-import { DEVICE_EXPORT_COLUMNS } from '@/constants/device' // ✅ 引入常量
+import { DEVICE_EXPORT_COLUMNS } from '@/constants/device'
 import { DATA_CENTER_MAP } from '@/constants/dictionaries'
 
-// Logic
 import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceList'
 import { useDeviceSummary } from '@/composables/useDeviceSummary'
 import { useDataExport } from '@/composables/useDataExport'
@@ -63,23 +62,21 @@ import { fetchProducts } from '@/api'
 import { formatDateTime } from '@/utils/formatters'
 import type { Device, Product } from '@/types'
 
+// ... 逻辑部分保持完全一致，不需要改动 ...
 const router = useRouter()
 const dataCenterMap = DATA_CENTER_MAP
 
-// ✅ 核心改变：从 hook 中获取 filters 和操作方法，组件内不再手写 handleReset 等
 const {
     loading,
     deviceList,
     pagination,
-    filters,        // ✨ 响应式状态
-    fetchDevices,   // ✨ 别名 loadData
-    handleSearch,   // ✨ 封装好的搜索
-    handleReset,    // ✨ 封装好的重置
+    filters,
+    fetchDevices,
+    handleSearch,
+    handleReset,
     handlePageChange,
     handleSizeChange
 } = useDeviceList()
-
-// 为了保持习惯，给 fetchDevices 起个别名 loadData (可选)
 const loadData = fetchDevices
 
 const { summary, fetchSummary } = useDeviceSummary()
@@ -93,20 +90,15 @@ const tableComponentRef = ref<InstanceType<typeof DeviceListTable> | null>(null)
 const unbindDialogVisible = ref(false)
 const deviceToUnbind = ref<Device | null>(null)
 
-// 初始化
 onMounted(async () => {
-    // page 1 的设置已经在 hook 内部处理，这里直接调用
     loadData()
     fetchSummary('')
     products.value = await fetchProducts()
 })
 
-// --- 业务逻辑 ---
-
 const handleDataCenterChange = (val: string) => {
-    // filters.dataCenter 已经由 v-model 更新
     fetchSummary(val)
-    handleSearch() // 调用 hook 里的搜索
+    handleSearch()
     const centerName = val ? (dataCenterMap as any)[val] : '全部区域'
     ElMessage.success(`已切换至 ${centerName}`)
 }
@@ -117,24 +109,20 @@ const handleRefresh = () => {
     ElMessage.success('数据已刷新')
 }
 
-// 导出逻辑：数据处理函数
 const exportProcessor = (data: Device[]) => {
     return data.map(device => ({
         ...device,
-        productName: products.value.find(p => p.id === device.productId)?.name || '未知产品',
+        productName: device.productInfo || products.value.find(p => p.id === device.productId)?.name || '未知产品',
         gmtActive: formatDateTime(device.gmtActive),
         gmtLastOnline: formatDateTime(device.gmtLastOnline)
     }))
 }
 
 const handleExport = () => {
-    // 依然使用 helper 构建参数，保持灵活性
     const params = buildDeviceListParams(filters)
-    // ✅ 使用引入的常量
     exportData('/devices', params, DEVICE_EXPORT_COLUMNS, '设备列表', exportProcessor)
 }
 
-// --- 表格交互 ---
 const handleSelectionChange = (rows: Device[]) => { selectedRows.value = rows }
 const clearSelection = () => { tableComponentRef.value?.clearSelection(); selectedRows.value = [] }
 const openDetail = (row: Device) => { currentDevice.value = row; drawerVisible.value = true }
@@ -153,43 +141,20 @@ const handleUnbindSuccess = () => {
     fetchSummary(filters.dataCenter)
 }
 
-// 批量操作
 const handleBatchDelete = () => { ElMessage.success('批量删除成功'); clearSelection(); loadData() }
 const handleBatchRestart = () => { ElMessage.success('批量重启指令已发送'); clearSelection() }
 const handleBatchEnable = () => { ElMessage.success('批量启用成功'); clearSelection() }
 </script>
 
 <style scoped>
+/* 样式大幅精简，因为 .page-header 及其子元素的样式都移入组件了 */
 .page-container {
     width: 100%;
     padding-bottom: 40px;
 }
 
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-}
-
-.page-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--app-text-main);
-    margin: 0 0 4px 0;
-    letter-spacing: -0.5px;
-}
-
-.page-subtitle {
-    font-size: 14px;
-    color: var(--app-text-sub);
-}
-
 .datacenter-select {
     width: 200px;
-}
-
-.mb-6 {
-    margin-bottom: 24px;
 }
 
 .main-table-card {

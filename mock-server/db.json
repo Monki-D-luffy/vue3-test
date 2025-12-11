@@ -26821,5 +26821,42 @@
     }
   ],
   "upgradeTasks": [],
-  "campaigns": []
+  "campaigns": [
+    {
+      "id": "camp_E952AF81",
+      "name": "升级 1.1.0",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_001",
+      "firmwareVersion": "1.1.0",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 25,
+      "successCount": 25,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-12-11 03:15:54"
+    },
+    {
+      "id": "camp_3C85744c",
+      "name": "升级 v3",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_7FC5FFC1-47e7-8999-5c27-AB6BCEFcD7ee",
+      "firmwareVersion": "v3",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 25,
+      "successCount": 25,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-12-11 03:16:25"
+    }
+  ]
 }
