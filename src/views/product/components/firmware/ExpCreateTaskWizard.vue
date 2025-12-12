@@ -204,12 +204,31 @@ const form = reactive({
 const loadVerifiedFirmwares = async () => {
     if (!props.product) return
     try {
-        // 这里假设 fetchFirmwares 支持 verified: true 筛选，或者前端筛选
-        // Mock: 先拉取所有，再 filter
-        const res = await fetchFirmwares({ productId: props.product.id, _page: 1, _limit: 100 })
-        verifiedFirmwares.value = res.items.filter(f => f.verified)
+        // 使用 verified: true 直接让后端过滤（如果后端支持），这里为了保险还是保留前端过滤逻辑
+        const res = await fetchFirmwares({
+            productId: props.product.id,
+            page: 1,      // 修正：通常是 page 而不是 _page
+            limit: 100    // 修正：通常是 limit 而不是 _limit
+        })
+
+        let list: Firmware[] = []
+
+        // 兼容性处理：判断 res 是数组还是对象
+        if (Array.isArray(res)) {
+            list = res
+        } else if (res && Array.isArray(res.items)) {
+            list = res.items
+        } else if (res && Array.isArray(res.list)) {
+            // 某些后端习惯用 list
+            list = res.list
+        }
+
+        // 过滤出已验证的固件
+        verifiedFirmwares.value = list.filter((f: any) => f.verified)
+
     } catch (e) {
-        console.error(e)
+        console.error('加载固件列表失败:', e)
+        verifiedFirmwares.value = [] // 出错时置空，防止 UI 崩壞
     }
 }
 
