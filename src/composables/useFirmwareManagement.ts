@@ -1,9 +1,11 @@
+// src/composables/useFirmwareManagement.ts
 import { ref, reactive } from 'vue'
+// ✅ 核心修复：指向正确的模块路径，而不是 '@/api'
 import {
     fetchFirmwares,
     updateFirmware,
     deleteFirmware,
-} from '@/api'
+} from '@/api/modules/firmware'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Firmware } from '@/types'
 
@@ -11,84 +13,95 @@ export function useFirmwareManagement(productId?: string) {
     const loading = ref(false)
     const firmwareList = ref<Firmware[]>([])
 
-    // ✨ 新增：分页状态
     const pagination = reactive({
         currentPage: 1,
         pageSize: 10,
         total: 0
     })
 
-    // 获取列表 (支持分页)
+    // 获取列表 (保留之前的修复，它是工作的)
     const getFirmwares = async (pid: string) => {
         if (!pid) return
         loading.value = true
         try {
-            // ✨ 传入分页参数
-            const res = await fetchFirmwares({
+            const params = {
                 _page: pagination.currentPage,
                 _limit: pagination.pageSize,
                 productId: pid,
                 _sort: 'uploadedAt',
                 _order: 'desc'
-            })
-            firmwareList.value = res.items
-            pagination.total = res.total // ✨ 更新总数
+            }
+
+            const res: any = await fetchFirmwares(params)
+
+            if (Array.isArray(res)) {
+                firmwareList.value = res
+                pagination.total = res.length
+            } else if (res && Array.isArray(res.items)) {
+                firmwareList.value = res.items
+                pagination.total = Number(res.total || 0)
+            } else {
+                firmwareList.value = []
+                pagination.total = 0
+            }
+
         } catch (error) {
-            console.error(error)
+            console.error('Failed to fetch firmwares:', error)
             ElMessage.error('获取固件列表失败')
+            firmwareList.value = []
         } finally {
             loading.value = false
         }
     }
 
-    // ✨ 新增：分页变化回调
     const handlePaginationChange = (pid: string) => {
         if (pid) getFirmwares(pid)
     }
 
-    // 纯净 API 动作
-    const verifyFirmwarePure = async (id: string) => {
-        await updateFirmware(id, { verified: true })
-    }
-
-    const removeFirmwarePure = async (id: string) => {
-        await deleteFirmware(id)
-    }
-
-    // 传统交互封装
+    // 动作：验证固件
     const verifyFirmware = async (row: Firmware, onSuccess?: () => void) => {
         try {
             await ElMessageBox.confirm(
-                `确认将版本 ${row.version} 标记为"验证通过"吗？`, '验证确认',
+                `确认将版本 ${row.version} 标记为"验证通过"吗？`,
+                '验证确认',
                 { confirmButtonText: '通过验证', type: 'success' }
             )
-            await verifyFirmwarePure(row.id)
+            // 调用 API
+            await updateFirmware(row.id, { verified: true })
+
             ElMessage.success(`版本 ${row.version} 已就绪`)
             if (onSuccess) onSuccess()
-        } catch (e) { /* cancel */ }
+        } catch (e) {
+            // 如果不是用户取消操作，打印错误
+            if (e !== 'cancel') console.error('Verify failed:', e)
+        }
     }
 
+    // 动作：删除固件
     const removeFirmware = async (row: Firmware, onSuccess?: () => void) => {
         try {
             await ElMessageBox.confirm(
-                `确定删除版本 ${row.version} 吗？`, '删除警告',
+                `确定删除版本 ${row.version} 吗？`,
+                '删除警告',
                 { confirmButtonText: '删除', type: 'warning' }
             )
-            await removeFirmwarePure(row.id)
+            // 调用 API
+            await deleteFirmware(row.id)
+
             ElMessage.success('删除成功')
             if (onSuccess) onSuccess()
-        } catch (e) { /* cancel */ }
+        } catch (e) {
+            if (e !== 'cancel') console.error('Delete failed:', e)
+        }
     }
 
     return {
         loading,
         firmwareList,
-        pagination, // 导出分页对象
+        pagination,
         getFirmwares,
-        handlePaginationChange, // 导出分页回调
+        handlePaginationChange,
         verifyFirmware,
-        removeFirmware,
-        verifyFirmwarePure,
-        removeFirmwarePure
+        removeFirmware
     }
 }

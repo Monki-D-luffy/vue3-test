@@ -87,43 +87,38 @@
 </template>
 
 <script setup lang="ts">
-// *** 修改点: 导入 computed ***
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 import AppPagination from '@/components/AppPagination.vue'
 import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
 
+// 引入修复后的 Composable
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
 import { useDataExport } from '@/composables/useDataExport'
 
 import { formatDateTime } from '@/utils/formatters'
 import { parseLogDetails } from '@/utils/logParser'
+
 const route = useRoute()
 
-// --- 1. 基础状态 (你原有的代码) ---
+// --- 1. 基础参数 ---
 const deviceId = ref(route.query.id as string || 'N/A')
 const deviceName = ref(route.query.name as string || '未知设备')
 const pageTitle = computed(() => `设备日志`)
 
-const filters = reactive({
-    taskId: '',
-    eventId: '',
-    type: 'all',
-    dateRange: null as [Date, Date] | null
-})
-
-// --- 2. 使用 Composable (*** 修改点: 更新解构 ***) ---
+// --- 2. 使用 Composable ---
+// 注意：filters 现在是从 useDeviceLogs 中解构出来的，直接绑定到模板
 const {
     loading,
     logData,
     pagination,
+    filters, // ✨ 直接使用内部状态，保持响应式连接
     fetchLogs,
     handleSizeChange,
     handleCurrentChange,
     resetPagination,
-    // *** 新增解构 ***
     isUpgradeModalVisible,
     openUpgradeModal,
     handleUpgradeDone
@@ -131,32 +126,19 @@ const {
 
 const { isExporting, exportData } = useDataExport()
 
-// *** 新增: 构造弹窗所需的 device 对象 ***
-// 弹窗只需要 id 和 name 字段
+// --- 3. 辅助计算属性 ---
 const deviceForModal = computed(() => {
     if (deviceId.value === 'N/A') {
         return null
     }
-    // 构造一个临时的对象，满足 FirmwareUpgradeModal 的 props 需求
     return {
         id: deviceId.value,
         name: deviceName.value
     } as any
 })
 
+// --- 4. 业务逻辑方法 ---
 
-// 定义导出的列 (你原有的代码)
-const logTableColumns = [
-    { label: '时间(GMT+8)', key: 'time' },
-    { label: '设备事件', key: 'event' },
-    { label: '事件类型', key: 'type' },
-    { label: '事件详情', key: 'details' },
-    { label: '来源', key: 'source' }
-]
-
-// --- 3. 逻辑函数 (你原有的代码) ---
-
-// 添加截断函数, 用于在表格中显示原始详情
 const truncateRawDetails = (rawDetails: any): string => {
     const str = String(rawDetails);
     if (str.length > 50) {
@@ -165,69 +147,69 @@ const truncateRawDetails = (rawDetails: any): string => {
     return str;
 }
 
-// 定义日志页面的数据处理器
 const logDataProcessor = (data: any[]) => {
     return data.map(row => ({
         ...row,
-        // 格式化 'time' 字段 (它可能是 ISO 字符串)
         time: formatDateTime(row.time),
-
-        // 格式化 'details' 字段, 复用同一个解析器
         details: parseLogDetails(row.details)
     }))
 }
+
+// 导出列定义
+const logTableColumns = [
+    { label: '时间(GMT+8)', key: 'time' },
+    { label: '设备事件', key: 'event' },
+    { label: '事件类型', key: 'type' },
+    { label: '事件详情', key: 'details' },
+    { label: '来源', key: 'source' }
+]
+
 const handleExport = () => {
     const exportParams = buildDeviceLogParams(deviceId.value, filters)
-
     exportData(
-        '/deviceLogs',       // API 端点
-        exportParams,        // 传递处理过的、API友好的参数
-        logTableColumns,     // 列定义
-        `设备日志_${deviceName.value}`, // 文件名
-        logDataProcessor // 注入处理器
+        '/deviceLogs',
+        exportParams,
+        logTableColumns,
+        `设备日志_${deviceName.value}`,
+        logDataProcessor
     )
 }
 
-// 统一的数据加载函数
 const loadData = () => {
     if (deviceId.value === 'N/A') {
         ElMessage.error('未指定设备ID，无法查询日志')
         return
     }
-    fetchLogs(deviceId.value, filters)
+    // ✨ 这里的 filters 已经是 Composable 内部的 reactive 对象，fetchLogs 会自动使用它
+    fetchLogs(deviceId.value)
 }
 
-// *** 新增: 升级完成的回调 ***
 const onUpgradeDone = () => {
     handleUpgradeDone();
 }
 
-// 搜索
 const handleSearch = () => {
     ElMessage.success('正在查询日志...')
     resetPagination()
     loadData()
 }
 
-// 分页变更
+// 分页事件适配
 const onSizeChange = (newSize: number) => {
-    pagination.pageSize = newSize
-    loadData()
-}
-const onCurrentChange = (newPage: number) => {
-    pagination.currentPage = newPage
-    loadData()
+    handleSizeChange(newSize, deviceId.value)
 }
 
-// --- 4. 生命周期 (*** 修改点: 移除了 loadDevice() ***) ---
+const onCurrentChange = (newPage: number) => {
+    handleCurrentChange(newPage, deviceId.value)
+}
+
+// --- 5. 生命周期 ---
 onMounted(() => {
     loadData()
 })
-
 </script>
 
 <style scoped>
-/* 你原有的所有样式 */
 .device-log-container {
     padding: 0;
 }
@@ -266,7 +248,7 @@ onMounted(() => {
 }
 
 
-/* 设备信息栏样式 (*** 已修改 ***) */
+/* 设备信息栏样式 */
 .info-card :deep(.el-card__body) {
     padding: 15px 20px;
     display: flex;
@@ -279,14 +261,11 @@ onMounted(() => {
     margin: 0 16px;
 }
 
-/* *** 新增: 按钮容器样式 *** */
 .info-card-buttons {
     margin-left: auto;
-    /* 将按钮组推到最右侧 */
     display: flex;
     align-items: center;
     gap: 10px;
-    /* 控制按钮之间的间距 */
 }
 
 /* 表格日志详情样式 */

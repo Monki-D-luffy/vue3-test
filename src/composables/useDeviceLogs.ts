@@ -22,13 +22,8 @@ const formatISODate = (date: Date | null | undefined) => {
     return date ? date.toISOString() : null
 }
 
-// ✨ 1. (关键重构) 提取参数构建器
 /**
- * 构建 /deviceLogs API 的查询参数
- * @param deviceId 设备ID
- * @param filters 视图层的原始筛选器
- * @param pagination (可选) 分页参数
- * @returns 清理过的、API 友好的参数对象
+ * 参数构建器：提取出来供导出功能复用
  */
 export const buildDeviceLogParams = (
     deviceId: string,
@@ -46,7 +41,7 @@ export const buildDeviceLogParams = (
         time_lte: filters.dateRange ? formatISODate(filters.dateRange[1]) : null,
         _sort: 'time', // 按时间排序
         _order: 'desc', // 默认倒序
-        ...pagination // 合并分页参数 (如果传入了)
+        ...pagination // 合并分页参数
     }
 
     // 2. 清理无效参数
@@ -60,95 +55,102 @@ export const buildDeviceLogParams = (
     return cleanedParams
 }
 
-
 export function useDeviceLogs() {
     const loading = ref(false)
-    const logData = ref([])
+    // ✅ 修复1: 初始化为空数组，防止 undefined 报错
+    const logData = ref<any[]>([])
+
+    // ✅ 修复2: 状态内聚，由 Composable 管理
+    const filters = reactive<LogFilters>({
+        taskId: '',
+        eventId: '',
+        type: 'all',
+        dateRange: null
+    })
+
     const pagination = reactive({
         currentPage: 1,
         pageSize: 10,
         total: 0
     })
 
-    // --- 新增状态: 仅需控制弹窗可见性 ---
     const isUpgradeModalVisible = ref(false)
-    // --- (移除了 device 状态) ---
 
-    const fetchLogs = async (deviceId: string, filters: LogFilters) => {
+    // 获取日志主逻辑
+    const fetchLogs = async (deviceId: string) => {
+        if (!deviceId || deviceId === 'N/A') return
+
         loading.value = true
         try {
-            // ✨ 2. (关键重构) 复用参数构建器
             const params = buildDeviceLogParams(deviceId, filters, {
                 _page: pagination.currentPage,
                 _limit: pagination.pageSize
             })
 
-            // 3. 发送API请求
-            const { items, total } = await fetchLogsApi(params)
+            // 获取原始响应
+            const res: any = await fetchLogsApi(params)
 
-            logData.value = items
-            pagination.total = Number(total || 0)
+            // ✅ 修复3: 数据适配器 (Data Adapter)
+            // 自动兼容 "纯数组" 和 "标准分页对象" 两种格式
+            if (Array.isArray(res)) {
+                logData.value = res
+                pagination.total = res.length
+            } else if (res && Array.isArray(res.items)) {
+                logData.value = res.items
+                pagination.total = Number(res.total || 0)
+            } else {
+                logData.value = []
+                pagination.total = 0
+            }
 
         } catch (error) {
             ElMessage.error('获取设备日志失败')
             console.error(error)
+            logData.value = [] // 出错兜底
         } finally {
             loading.value = false
         }
     }
 
-    // --- 新增方法: 用于固件升级 ---
-
-    // --- (移除了 fetchDeviceDetails) ---
-
-    /**
-     * 打开升级模态框
-     */
+    // --- 辅助方法 ---
     const openUpgradeModal = () => {
         isUpgradeModalVisible.value = true;
     }
 
-    /**
-     * 升级完成后的回调
-     */
     const handleUpgradeDone = () => {
-        // 升级完成，目前日志页无需特殊操作
-        // 未来如果需要，可在此处添加逻辑
-        console.log('Upgrade done event received in composable.')
+        console.log('Upgrade done event received.')
     }
-    // ---------------------------------
 
-
-    // 分页事件处理
-    const handleSizeChange = (newSize: number) => {
+    const handleSizeChange = (newSize: number, deviceId: string) => {
         pagination.pageSize = newSize
-        pagination.currentPage = 1 // 切换size时重置到第一页
+        pagination.currentPage = 1
+        fetchLogs(deviceId)
     }
 
-    const handleCurrentChange = (newPage: number) => {
+    const handleCurrentChange = (newPage: number, deviceId: string) => {
         pagination.currentPage = newPage
+        fetchLogs(deviceId)
     }
 
     const resetPagination = () => {
         pagination.currentPage = 1
-        pagination.pageSize = 10
     }
 
     return {
+        // State
         loading,
         logData,
         pagination,
+        filters, // 导出 filters 供视图绑定
+        isUpgradeModalVisible,
+
+        // Actions
         fetchLogs,
         handleSizeChange,
         handleCurrentChange,
         resetPagination,
-        // ✨ 3. (关键重构) 导出构建器
-        buildDeviceLogParams,
-
-        // --- 导出更新后的状态和方法 ---
-        isUpgradeModalVisible,
         openUpgradeModal,
-        handleUpgradeDone
-        // --- (移除了 device 和 fetchDeviceDetails) ---
+        handleUpgradeDone,
+        buildDeviceLogParams
     }
 }
