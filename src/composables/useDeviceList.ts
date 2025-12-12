@@ -1,15 +1,15 @@
+// src/composables/useDeviceList.ts
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchDevices as fetchDevicesApi } from '@/api/modules/device'
 import { formatDate } from '@/utils/formatters'
 import type { Device, DeviceListFilters, PaginationParams, DeviceQueryParams } from '@/types'
 
-// 定义 Filters 的默认状态，方便重置
 const DEFAULT_FILTERS: DeviceListFilters = {
     keyword: '',
     productId: '',
     isBound: '',
-    dateRange: null, // 允许 null 以适配 Element Plus DatePicker
+    dateRange: null,
     dataCenter: ''
 }
 
@@ -18,13 +18,10 @@ export const buildDeviceListParams = (
     pagination?: PaginationParams
 ): DeviceQueryParams => {
     const { isBound, productId, dateRange, keyword, dataCenter } = filters
-
-    // 安全地处理日期
     const startDate = dateRange?.[0] ? formatDate(dateRange[0]) + ' 00:00:00' : undefined
     const endDate = dateRange?.[1] ? formatDate(dateRange[1]) + ' 23:59:59' : undefined
 
-    // 组装参数，使用 undefined 代替 null/空串，某些 axios 配置会自动过滤 undefined key
-    const rawParams: DeviceQueryParams = {
+    return {
         isBound: isBound || undefined,
         productId: productId || undefined,
         q: keyword || undefined,
@@ -34,24 +31,20 @@ export const buildDeviceListParams = (
         _page: pagination?._page,
         _limit: pagination?._limit
     }
-
-    return rawParams
 }
 
 export function useDeviceList() {
     const loading = ref(false)
+    // ✅ 修复点1: 确保初始化为空数组，永远不为 undefined
     const deviceList = ref<Device[]>([])
 
-    // 1. 状态管理内聚：filters 现在由 hook 内部管理
     const filters = reactive<DeviceListFilters>({ ...DEFAULT_FILTERS })
-
     const pagination = reactive({
         currentPage: 1,
         pageSize: 10,
         total: 0
     })
 
-    // 核心获取数据逻辑
     const fetchDevices = async () => {
         loading.value = true
         try {
@@ -59,29 +52,43 @@ export function useDeviceList() {
                 _page: pagination.currentPage,
                 _limit: pagination.pageSize
             }
-            // 直接使用内部管理的 filters
             const params = buildDeviceListParams(filters, pageParams)
-            const { items, total } = await fetchDevicesApi(params)
 
-            deviceList.value = items
-            pagination.total = total
+            // ✅ 修复点2: 移除直接解构，先获取原始响应 res
+            const res: any = await fetchDevicesApi(params)
+
+            // ✅ 修复点3: 兼容多种响应结构 (Array vs Object)
+            if (Array.isArray(res)) {
+                // 情况 A: 直接返回数组 (Mock Server 常见情况)
+                deviceList.value = res
+                // 如果没有 total，就用数组长度兜底
+                pagination.total = res.length
+            } else if (res && Array.isArray(res.items)) {
+                // 情况 B: 标准分页结构 { items: [], total: 100 }
+                deviceList.value = res.items
+                pagination.total = Number(res.total) || 0
+            } else {
+                // 情况 C: 异常或空数据
+                deviceList.value = []
+                pagination.total = 0
+            }
+
         } catch (error) {
-            console.error(error)
+            console.error('Failed to fetch devices:', error)
             deviceList.value = []
+            pagination.total = 0
         } finally {
             loading.value = false
         }
     }
 
-    // 2. 暴露标准操作方法
     const handleSearch = () => {
         pagination.currentPage = 1
         fetchDevices()
     }
 
     const handleReset = () => {
-        // 恢复默认 filters
-        Object.assign(filters, DEFAULT_FILTERS)
+        Object.assign(filters, JSON.parse(JSON.stringify(DEFAULT_FILTERS)))
         pagination.currentPage = 1
         fetchDevices()
         ElMessage.success('筛选条件已重置')
@@ -94,18 +101,15 @@ export function useDeviceList() {
 
     const handleSizeChange = (val: number) => {
         pagination.pageSize = val
-        pagination.currentPage = 1 // 改变页码大小时通常重置回第一页
+        pagination.currentPage = 1
         fetchDevices()
     }
 
     return {
-        // State
         loading,
         deviceList,
         pagination,
-        filters, // 👈 暴露出去给 UI 绑定 v-model
-
-        // Actions
+        filters,
         fetchDevices,
         handleSearch,
         handleReset,

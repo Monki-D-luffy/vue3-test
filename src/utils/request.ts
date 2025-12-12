@@ -1,7 +1,7 @@
 // src/utils/request.ts
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
-import router from '@/router'
+import type { ApiResponse } from '@/types'
 
 // 扩展 AxiosRequestConfig 以支持自定义属性
 declare module 'axios' {
@@ -38,70 +38,75 @@ service.interceptors.request.use(
     }
 )
 
-// 3. 响应拦截器
+// 响应拦截器
 service.interceptors.response.use(
     (response: AxiosResponse) => {
-        const res = response.data
+        const { data, headers } = response
 
-        // 二进制数据直接返回
-        if (response.config.responseType === 'blob' || response.config.responseType === 'arraybuffer') {
-            return res
+        // ============================================================
+        // 适配场景 A: JSON Server (Mock) 列表响应
+        // 特征: data 是数组，total 在 x-total-count header 中
+        // ============================================================
+        if (Array.isArray(data) && headers['x-total-count']) {
+            return {
+                items: data,
+                total: parseInt(headers['x-total-count'], 10) || 0
+            } as any
         }
-        // 如果是列表数据，尝试把 header 里的 x-total-count 注入到 res 对象里（如果是对象的话）
-        if (res && typeof res === 'object' && response.headers['x-total-count']) {
-            res.total = Number(response.headers['x-total-count'])
+
+        // ============================================================
+        // 适配场景 B: JSON Server (Mock) 单个对象响应 (无 code 包装)
+        // 特征: data 是对象但没有 code 字段 (通常是直接返回资源)
+        // ============================================================
+        if (data && typeof data === 'object' && !('code' in data) && !Array.isArray(data)) {
+            // 假设这是直接返回的数据实体
+            return data
         }
-        // 兼容处理：有些后端直接返回数组或不带 code 的对象
-        // 如果存在 code 且不为 200，视为业务错误
-        if (res && res.code !== undefined && res.code !== 200) {
-            if (!response.config._silent) {
-                ElMessage.error(res.message || '系统错误')
+
+        // ============================================================
+        // 适配场景 C: 标准后端响应 (Standard API)
+        // 结构: { code: 200, data: ..., message: ... }
+        // ============================================================
+        // 某些接口可能直接返回 ApiResponse 结构，我们需要解包
+        if (data && typeof data === 'object' && 'code' in data) {
+            const apiRes = data as ApiResponse<any>
+            if (apiRes.code === 200 || apiRes.success) {
+                // 如果 data 字段里已经是分页结构 { items, total }，直接返回
+                // 否则返回 data 本身
+                return apiRes.data
+            } else {
+                ElMessage.error(apiRes.message || '请求失败')
+                return Promise.reject(new Error(apiRes.message || 'Error'))
             }
-            return Promise.reject(new Error(res.message || 'Error'))
         }
 
-        // 默认返回 response.data (即 res)，保持与原有逻辑一致
-        return res
+        // 其他情况，直接返回 data (兜底)
+        return data
     },
     (error) => {
-        const requestUrl = error.config?.url || '';
-        const isAuthRequest = requestUrl.endsWith('/auth/login') || requestUrl.endsWith('/auth/register');
-        const isSilent = error.config?._silent;
-
-        if (error.response) {
-            switch (error.response.status) {
-                case 401:
-                    // ✨ 关键逻辑保留：如果是登录/注册接口的 401，说明是账号密码错误，不处理为“会话过期”
-                    if (!isAuthRequest) {
-                        if (!isSilent) ElMessage.error('会话已过期，请重新登录')
-                        localStorage.removeItem('authToken')
-                        const currentPath = router.currentRoute.value.fullPath;
-
-                        // 避免重复跳转
-                        if (window.location.pathname !== '/login') {
-                            // 使用 router.push 比 window.location.href 体验更好
-                            router.push(`/login?redirect=${encodeURIComponent(currentPath || '/')}`)
-                        }
-                    }
-                    break
-                case 403:
-                    if (!isSilent) ElMessage.error('拒绝访问')
-                    break
-                case 404:
-                    if (!isSilent) ElMessage.error('请求资源不存在')
-                    break
-                case 500:
-                    if (!isSilent) ElMessage.error('服务器内部错误')
-                    break
-                default:
-                    if (!isSilent) ElMessage.error(error.message || '网络连接异常')
-            }
-        } else {
-            if (!isSilent) ElMessage.error('网络连接异常，请检查网络')
-        }
-
+        const msg = error.response?.data?.message || error.message || '网络请求错误'
+        ElMessage.error(msg)
         return Promise.reject(error)
     }
 )
 
-export default service
+/**
+ * 封装后的请求方法，自动推断返回类型
+ * 这里的 T 通常是 data 的类型 (如 User, Device[], PaginatedResponse<Device>)
+ */
+const request = {
+    get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+        return service.get(url, config) as Promise<T>
+    },
+    post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+        return service.post(url, data, config) as Promise<T>
+    },
+    put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+        return service.put(url, data, config) as Promise<T>
+    },
+    delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+        return service.delete(url, config) as Promise<T>
+    }
+}
+
+export default request

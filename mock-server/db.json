@@ -83,13 +83,13 @@
     {
       "id": "80D56b6d-a9F8-FDcb-437C-19555f6BDbC2",
       "name": "装定资土",
-      "status": "未激活",
+      "status": "在线",
       "puuid": "PU-20253766",
       "productInfo": "智能灯泡 / prod_light_01",
       "deviceType": "智能灯泡",
       "productId": "prod_light_01",
-      "firmwareVersion": "1.0.0",
-      "hasNewFirmware": true,
+      "firmwareVersion": "v3",
+      "hasNewFirmware": false,
       "sn": "SN_DDDPZK188M51",
       "isBound": false,
       "dataCenter": "IN",
@@ -26832,6 +26832,18 @@
       "errorMessage": null,
       "startedAt": "2025-12-11 07:19:45",
       "finishedAt": "2025-12-11 07:19:45"
+    },
+    {
+      "id": "task_bffeF4fD-DB30-C5Ed-7FD3-e556357b80c8",
+      "deviceId": "80D56b6d-a9F8-FDcb-437C-19555f6BDbC2",
+      "deviceName": "装定资土",
+      "firmwareId": "fw_7FC5FFC1-47e7-8999-5c27-AB6BCEFcD7ee",
+      "firmwareVersion": "v3",
+      "status": "success",
+      "progress": 100,
+      "errorMessage": null,
+      "startedAt": "2025-12-12 03:33:59",
+      "finishedAt": "2025-12-12 03:33:59"
     }
   ],
   "campaigns": [

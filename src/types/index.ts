@@ -65,6 +65,16 @@ export interface DeviceQueryParams {
     [key: string]: any;   // 允许少量扩展，但主要字段已强类型化
 }
 
+// 日志查询参数
+export interface DeviceLogQueryParams {
+    deviceId: string;
+    _page?: number;
+    _limit?: number;
+    startTime?: string;
+    endTime?: string;
+    type?: string;
+}
+
 // 通用分页请求参数
 export interface PaginationParams {
     _page: number;
