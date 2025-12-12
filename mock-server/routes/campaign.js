@@ -29,10 +29,17 @@ export default function (server, db) {
     server.get('/api/campaigns', (req, res) => {
         let campaigns = db.get('campaigns').value();
         const targetProductId = req.query.productId;
+
+        // 1. 获取前端传来的分页参数 (默认为第一页，每页10条)
+        const page = parseInt(req.query._page) || 1;
+        const limit = parseInt(req.query._limit) || 10;
+
+        // 2. 筛选产品
         if (targetProductId) {
             campaigns = campaigns.filter(c => c.productId === targetProductId);
         }
 
+        // 3. 模拟进度更新逻辑 (保持原样)
         campaigns.forEach(camp => {
             if (camp.status === 'running') {
                 camp.progress += Math.floor(Math.random() * 10) + 5;
@@ -46,8 +53,26 @@ export default function (server, db) {
                 }).write();
             }
         });
+
+        // 4. 排序 (按开始时间倒序)
         campaigns.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
-        res.json({ code: 200, message: '获取成功', success: true, data: campaigns });
+
+        // 5. 🔥 计算总数 & 执行分页切片 🔥
+        const totalCount = campaigns.length;
+        const start = (page - 1) * limit;
+        const end = start + limit;
+        const pagedItems = campaigns.slice(start, end);
+
+        // 6. 🔥 构造前端需要的结构 { items, total } 🔥
+        res.json({
+            code: 200,
+            message: '获取成功',
+            success: true,
+            data: {
+                items: pagedItems, // 这里放切片后的数组
+                total: totalCount  // 这里放总数
+            }
+        });
     });
 
     // 删除 Campaign

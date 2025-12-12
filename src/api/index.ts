@@ -6,16 +6,19 @@ export * from './modules/auth'
 export * from './modules/device'
 export * from './modules/firmware'
 export * from './modules/campaign'
+export * from './modules/dashboard'
 
 // 也可以导出一个默认对象，包含所有 API（如果有的地方是 import api from '@/api' 这样用的）
 import * as auth from './modules/auth'
 import * as device from './modules/device'
 import * as firmware from './modules/firmware'
 import * as campaign from './modules/campaign'
+import * as dashboard from './modules/dashboard'
 
 export default {
   ...auth,
   ...device,
   ...firmware,
-  ...campaign
+  ...campaign,
+  ...dashboard
 }

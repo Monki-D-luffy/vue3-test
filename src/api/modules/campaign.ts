@@ -17,11 +17,12 @@ export const createUpgradeCampaign = (payload: any) => {
 }
 
 export const fetchCampaigns = async (params: any = {}): Promise<{ items: UpgradeTask[], total: number }> => {
-    const res = await request.get<any, ApiResponse<UpgradeTask[]>>('/campaigns', { params })
-    const items = res.data || []
+    // 泛型定义：Get请求，返回类型是 { items: [], total: number }
+    const res = await request.get<{ items: UpgradeTask[], total: number }>('/campaigns', { params })
+    //直接使用 res.items (因为拦截器已经去掉了最外层的 code:200 data 壳)
     return {
-        items,
-        total: Number(res.total || items.length)
+        items: res.items || [],
+        total: res.total || 0
     }
 }
 

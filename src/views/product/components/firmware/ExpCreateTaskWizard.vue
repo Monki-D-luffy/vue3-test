@@ -207,8 +207,8 @@ const loadVerifiedFirmwares = async () => {
         // 使用 verified: true 直接让后端过滤（如果后端支持），这里为了保险还是保留前端过滤逻辑
         const res = await fetchFirmwares({
             productId: props.product.id,
-            page: 1,      // 修正：通常是 page 而不是 _page
-            limit: 100    // 修正：通常是 limit 而不是 _limit
+            _page: 1,      // 修正：通常是 page 而不是 _page
+            _limit: 100    // 修正：通常是 limit 而不是 _limit
         })
 
         let list: Firmware[] = []
