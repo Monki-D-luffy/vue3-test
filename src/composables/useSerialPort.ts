@@ -9,10 +9,20 @@ import { hexToBytes } from '@/utils/serial'
 
 // --- 全局单例状态 ---
 const isConnected = ref(false)
-// 🆕 新增：连接中状态锁，防止重复点击
+// 连接中状态锁，防止重复点击
 const isOpening = ref(false)
 const port = ref<any>(null)
 const logs = ref<SerialLog[]>([])
+
+// 发送相关的全局状态：映射到主输入框
+const inputContent = ref('')
+const isHexSend = ref(false)
+
+// 循环发送状态
+const isCycling = ref(false)
+const cycleInterval = ref(1000)
+let cycleTimer: ReturnType<typeof setInterval> | null = null
+
 
 const stats = reactive({
     rxBytes: 0,
@@ -223,7 +233,53 @@ export function useSerialPort() {
             if (writer) { try { writer.releaseLock() } catch (e) { } writer = null }
         }
     }
+    // 启动循环发送
+    const startCycle = (content: string, interval: number, isHex: boolean) => {
+        if (isCycling.value) stopCycle()
+        if (!isConnected.value) { ElMessage.warning('请先连接串口'); return }
 
+        isCycling.value = true
+        cycleTimer = setInterval(() => {
+            if (isConnected.value && isCycling.value) {
+                send(content, isHex, 'Auto-Cycle')
+            } else {
+                stopCycle()
+            }
+        }, interval)
+    }
+    // 停止循环发送
+    const stopCycle = () => {
+        isCycling.value = false
+        if (cycleTimer) {
+            clearInterval(cycleTimer)
+            cycleTimer = null
+        }
+    }
+    /**
+     * 🆕 循环发送控制
+     */
+    const toggleCycle = (active: boolean) => {
+        if (!active) {
+            isCycling.value = false
+            if (cycleTimer) clearInterval(cycleTimer)
+            return
+        }
+
+        if (!inputContent.value) {
+            ElMessage.warning('请输入发送内容')
+            isCycling.value = false
+            return
+        }
+
+        isCycling.value = true
+        cycleTimer = setInterval(() => {
+            if (isConnected.value && isCycling.value) {
+                send(inputContent.value, isHexSend.value, 'Auto-Cycle')
+            } else {
+                toggleCycle(false)
+            }
+        }, cycleInterval.value)
+    }
     const close = async () => {
         // 1. 清理定时器
         if (bufferState.timer) clearTimeout(bufferState.timer)
@@ -257,13 +313,20 @@ export function useSerialPort() {
 
     return {
         isConnected,
-        isOpening, // 🆕 导出状态供 UI 使用
+        isOpening, // 导出状态供 UI 使用
+        isCycling,
+        inputContent,
+        isHexSend,
+        cycleInterval,
         port,
         config,
         logs,
         stats,
         requestPort,
         open,
+        startCycle,
+        stopCycle,
+        toggleCycle,
         close,
         send,
         clearLogs: () => (logs.value = []),

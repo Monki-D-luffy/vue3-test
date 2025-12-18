@@ -8,9 +8,7 @@ import SerialToolsSidebar from './components/SerialToolsSidebar.vue'
 import ExpCard from '@/components/ExpCard.vue'
 
 // 使用全局单例状态
-const { send, isConnected } = useSerialPort()
-const inputContent = ref('')
-const isHexSend = ref(false)
+const { send, isConnected, inputContent, isHexSend } = useSerialPort()
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 // --- 1. 按钮三态逻辑 ---

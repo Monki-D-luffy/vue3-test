@@ -2,8 +2,8 @@
 import { ref } from 'vue'
 import { Fold, Expand } from '@element-plus/icons-vue'
 import SerialQuickActions from './SerialQuickActions.vue'
-// 未来可以在这里引入更多挂件，如：
-// import SerialStatsWidget from './SerialStatsWidget.vue'
+import SerialExtraWidgets from './SerialExtraWidgets.vue'
+
 
 const isExpanded = ref(true)
 
@@ -25,7 +25,7 @@ const toggle = () => {
 
         <div class="rack-body" v-show="isExpanded">
             <SerialQuickActions />
-
+            <SerialExtraWidgets />
         </div>
 
         <div class="collapsed-icons" v-show="!isExpanded">
