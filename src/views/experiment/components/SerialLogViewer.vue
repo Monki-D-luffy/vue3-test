@@ -43,7 +43,7 @@ const txTooltip = computed(() => `Total Sent: ${stats.txBytes.toLocaleString()} 
     <div class="log-viewer-card">
         <div class="viewer-header">
             <div class="header-left">
-                <span class="title">Data Terminal</span>
+                <span class="title">数据</span>
                 <div class="stats-group">
                     <el-tooltip :content="rxTooltip" placement="bottom" :show-after="500">
                         <div class="stat-pill rx">
@@ -62,8 +62,8 @@ const txTooltip = computed(() => `Total Sent: ${stats.txBytes.toLocaleString()} 
 
             <div class="header-tools">
                 <el-radio-group v-model="viewMode" size="small" class="mode-switch">
-                    <el-radio-button value="ASCII" />
-                    <el-radio-button value="HEX" />
+                    <el-radio-button value="ASCII">ASCII</el-radio-button>
+                    <el-radio-button value="HEX">HEX</el-radio-button>
                 </el-radio-group>
                 <div class="divider-v"></div>
                 <el-checkbox v-model="autoScroll" label="自动滚动" size="small" />

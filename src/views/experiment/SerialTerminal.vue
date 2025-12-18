@@ -262,7 +262,7 @@ const handleSend = (e?: KeyboardEvent) => {
 /* 状态 3: 就绪 (Ready) */
 .send-btn.ready {
     background: var(--app-gradient-primary);
-    color: white;
+    color: rgb(30, 195, 224);
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     transform: scale(1);
