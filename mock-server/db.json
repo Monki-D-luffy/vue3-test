@@ -33,22 +33,6 @@
       "gmtLastOnline": "2025-10-01 17:04:42"
     },
     {
-      "id": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "name": "济样般边",
-      "status": "未激活",
-      "puuid": "PU-20248664",
-      "productInfo": "摄像头 / prod_cam_01",
-      "deviceType": "摄像头",
-      "productId": "prod_cam_01",
-      "firmwareVersion": "2.0.0",
-      "hasNewFirmware": false,
-      "sn": "SN_Q38V58HMA2GL",
-      "isBound": false,
-      "dataCenter": "US-EAST",
-      "gmtActive": "2022-03-29 06:36:06",
-      "gmtLastOnline": "2023-08-04 10:25:43"
-    },
-    {
       "id": "D5D9fbbE-d64B-bA99-d1bB-11deA9Aa3A25",
       "name": "开法明小",
       "status": "在线",
@@ -4251,16 +4235,6 @@
       "switch": true
     },
     {
-      "id": 149,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2025-10-27 01:19:39.537",
-      "event": "设备告警",
-      "type": "OTA升级",
-      "details": "TkkAilQq0Es+k2+/o21/=1nj=//0l/a/+S=+/e+e4/=+1/+/=9//0=8/+6=P+2++c=9+GR=+",
-      "source": "云端规则",
-      "switch": true
-    },
-    {
       "id": 702,
       "deviceId": "d91Df5f2-c556-cCBd-EfC1-AaB920C907bc",
       "time": "2025-10-26 16:35:25.886",
@@ -6391,16 +6365,6 @@
       "switch": true
     },
     {
-      "id": 145,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2025-06-27 13:18:53.843",
-      "event": "平台下发",
-      "type": "状态通知",
-      "details": "TkkAilQ/=//+F+D+O/AV5+Vl+=r=5yf=z=/w/8///57=48=51hq+=H71n61/=2++=+5/9/=/",
-      "source": "平台下发",
-      "switch": false
-    },
-    {
       "id": 628,
       "deviceId": "8EEF5Be4-5cEF-Fa2B-281D-5e25b948fBBC",
       "time": "2025-06-26 15:03:41.283",
@@ -6539,16 +6503,6 @@
       "details": "TkkAilQ/+/f2quhp+=o/++8/=+=qcdr7WRl+/6+/T/+/=4iK+u//++u7//=+++s/clXL4=+d/yD+=+9/Y=H6/W",
       "source": "平台下发",
       "switch": false
-    },
-    {
-      "id": 147,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2025-06-18 09:19:16.147",
-      "event": "设备离线",
-      "type": "告警事件",
-      "details": "TkkAilQlbg/+=+/+/=+/t=Gr+jD+/z/8u/+w/C+b1/ov=+==/g+/+/+xmE60l/d+4+//N/ijo/9=u=r=+/+/=l//L=//+17g=54/+",
-      "source": "设备本身",
-      "switch": true
     },
     {
       "id": 1672,
@@ -6757,16 +6711,6 @@
       "event": "平台下发",
       "type": "状态通知",
       "details": "TkkAilQFy2/r=++71/I4/9+=/+0Jmy+C9+7e3+i+1+1+qbR/H/iA80+l=422/zukP+g//8=/V/w===V=+/ty4=++/=/2+/3x++6=t",
-      "source": "平台下发",
-      "switch": true
-    },
-    {
-      "id": 143,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2025-05-29 08:38:37.099",
-      "event": "设备离线",
-      "type": "OTA升级",
-      "details": "TkkAilQ/+/vv+3+/K8+/iw+1v++//0=HhtC/7=+/5+i/+j1=H+/+2129m//6/q//y6++7o45L/1/2=+8=+6a7/",
       "source": "平台下发",
       "switch": true
     },
@@ -9741,16 +9685,6 @@
       "switch": true
     },
     {
-      "id": 142,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2024-12-04 12:14:52.301",
-      "event": "设备在线",
-      "type": "数据转换",
-      "details": "TkkAilQd8H4H/=8V++d6g/=c/+xn+7/+nd7/r/==/g=++0++=/I+h+1lQd2Uf/xv22+h4kBld+/lw/f+//+/=h2=+/5/=+F+l/+h26V+/=/",
-      "source": "设备本身",
-      "switch": false
-    },
-    {
       "id": 518,
       "deviceId": "9a8eC0eD-ECAb-8Dc4-b49f-e675df498567",
       "time": "2024-12-04 07:38:58.915",
@@ -10739,16 +10673,6 @@
       "details": "TkkAilQ=9/kX/d+Yjh3//6Q=3P+l=/2/+/+43===e+3=/b+x7++/2/2++c+/41/+/+V+/p=iL+p+/+l7/=7//==jv/Z",
       "source": "平台下发",
       "switch": true
-    },
-    {
-      "id": 148,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2024-10-05 04:55:10.801",
-      "event": "平台下发",
-      "type": "数据转换",
-      "details": "TkkAilQ+871p+/o9/==23=+so/x/=/xsK=+++14+=7/=+2+++r/65=Q8+=/pBdoh+/2q8zOE/6T=1RE",
-      "source": "云端规则",
-      "switch": false
     },
     {
       "id": 2159,
@@ -17561,16 +17485,6 @@
       "switch": true
     },
     {
-      "id": 144,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2023-07-27 22:00:19.464",
-      "event": "平台下发",
-      "type": "云端处理",
-      "details": "TkkAilQ898KeUx+s==/+1=++a==r+fW=+44+/+44++/+6+/6lo84+2+0+VPj+==Pg++M=17+U7+TP+49/+/=/6P1pobdf5+",
-      "source": "云端规则",
-      "switch": false
-    },
-    {
       "id": 1838,
       "deviceId": "CB9CD6E5-Ce4b-6C19-cAcD-9AE24a5d6eEc",
       "time": "2023-07-27 11:11:05.432",
@@ -22531,16 +22445,6 @@
       "switch": true
     },
     {
-      "id": 141,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2022-08-31 01:53:10.274",
-      "event": "设备告警",
-      "type": "云端处理",
-      "details": "TkkAilQ////+++bJ5=m/Ywu+=4=l6p=/k4m+JDaF4=5o+++///4b/P//v=d+/++2=+V///9p",
-      "source": "平台下发",
-      "switch": false
-    },
-    {
       "id": 1587,
       "deviceId": "fE1948B1-f291-5051-27Db-A1DcFabb8cDF",
       "time": "2022-08-30 16:39:56.427",
@@ -23848,16 +23752,6 @@
       "type": "OTA升级",
       "details": "TkkAilQ/it+/r=D//0//c3//U0//46C37+688c+5962++FI5X/+7+/c/L1T+jFj///05/B3/2v5+1+D/+/eh",
       "source": "平台下发",
-      "switch": true
-    },
-    {
-      "id": 146,
-      "deviceId": "79dece9b-a91A-E45E-4eE9-bF64bFc555B7",
-      "time": "2022-06-09 07:00:17.846",
-      "event": "设备在线",
-      "type": "告警事件",
-      "details": "TkkAilQM/w/8W//77+cb+yo4o=+8s/8+72/0Ww=++j6/ix/=m3/=C++////////LK/++6+/+/cCC+1b/55w//=+S=++/=x6/S+/r6y4x",
-      "source": "设备本身",
       "switch": true
     },
     {
@@ -26852,14 +26746,14 @@
       "verified": true
     },
     {
-      "id": "fw_5dc1a0b1-26c9-FAbE-cbAC-dFfed6F340f5",
-      "version": "v1",
+      "id": "fw_aDBE87C4-d079-122f-D4fc-CFfE7bcFEdE6",
+      "version": "v6",
       "productId": "prod_light_01",
-      "releaseNotes": "",
+      "releaseNotes": "阿文测试用例",
       "productName": "智能灯泡",
-      "fileUrl": "/files/firmware_v1.bin",
-      "uploadedAt": "2025-12-12 10:01:07",
-      "verified": false
+      "fileUrl": "/files/firmware_v6.bin",
+      "uploadedAt": "2025-12-18 07:02:39",
+      "verified": true
     }
   ],
   "upgradeTasks": [
@@ -26910,6 +26804,30 @@
       "errorMessage": null,
       "startedAt": "2025-12-12 06:16:33",
       "finishedAt": "2025-12-12 06:16:33"
+    },
+    {
+      "id": "task_e6c79e41-28B6-Fdd0-5DC1-EEdFb7cc29BA",
+      "deviceId": "292FC21a-8Ebc-3dAa-8eb8-7C305fc6bf2b",
+      "deviceName": "系又周",
+      "firmwareId": "fw_003",
+      "firmwareVersion": "2.0.0",
+      "status": "success",
+      "progress": 100,
+      "errorMessage": null,
+      "startedAt": "2025-12-18 06:22:41",
+      "finishedAt": "2025-12-18 06:22:41"
+    },
+    {
+      "id": "task_25dd1648-55eC-7CdA-ed8d-Ce5a43eB685C",
+      "deviceId": "292FC21a-8Ebc-3dAa-8eb8-7C305fc6bf2b",
+      "deviceName": "系又周",
+      "firmwareId": "fw_003",
+      "firmwareVersion": "2.0.0",
+      "status": "success",
+      "progress": 100,
+      "errorMessage": null,
+      "startedAt": "2025-12-18 06:59:08",
+      "finishedAt": "2025-12-18 06:59:08"
     }
   ],
   "campaigns": [
@@ -27100,7 +27018,7 @@
       "firmwareId": "fw_F8F1Ed2A-42Cf-6727-0A50-0256c52ed4bB",
       "firmwareVersion": "v21",
       "status": "running",
-      "progress": 30,
+      "progress": 39,
       "totalDevices": 27,
       "successCount": 0,
       "failureCount": 0,
@@ -27128,6 +27046,42 @@
         "status": ""
       },
       "startedAt": "2025-12-12 10:05:12"
+    },
+    {
+      "id": "camp_A9138cb1",
+      "name": "升级 v5",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_daEDbD1b-dA03-1beF-dDc9-f1715f9ffee0",
+      "firmwareVersion": "v5",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 25,
+      "successCount": 25,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-12-18 06:23:13"
+    },
+    {
+      "id": "camp_bAf5D432",
+      "name": "10.2.2",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_aDBE87C4-d079-122f-D4fc-CFfE7bcFEdE6",
+      "firmwareVersion": "v6",
+      "status": "success",
+      "progress": 100,
+      "totalDevices": 25,
+      "successCount": 25,
+      "failureCount": 0,
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "startedAt": "2025-12-18 07:03:30"
     }
   ]
 }

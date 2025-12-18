@@ -101,47 +101,52 @@ export function useSerialPort() {
     }
 
     const readLoop = async () => {
+        // 防线1: 确保端口已连接且可读
         if (!port.value || !port.value.readable) return
 
+        // 强制类型断言，或者使用局部变量捕获，避免 TS 认为 port.value 在在此期间变成了 null
+        const currentPort = port.value
+
+        // 创建 reader
+        // 注意：getReader() 可能会报错，所以放在 try 块外层或单独处理
+        let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
+
         try {
-            reader = port.value.readable.getReader()
-        } catch (e: any) {
-            console.error('获取 reader 失败:', e)
+            reader = currentPort.readable.getReader()
+        } catch (e) {
+            console.error('无法获取 Reader:', e)
             return
         }
 
         try {
-            while (keepReading) {
+            // 循环读取
+            while (true) {
+                // 防线2: 在调用 read() 前再次检查 reader 是否存在
+                if (!reader) break
+
                 const { value, done } = await reader.read()
-                if (done) break
+
+                if (done) {
+                    // 流已关闭（通常是用户手动断开）
+                    break
+                }
 
                 if (value) {
-                    if (config.chunkTimeout <= 0 || bufferState.buffer.length > 2048) {
-                        if (bufferState.buffer.length > 0) {
-                            appendBuffer(value)
-                            flushBuffer()
-                        } else {
-                            addLog(value, 'RX', 'Device')
-                        }
-                    } else {
-                        appendBuffer(value)
-                        if (bufferState.timer) clearTimeout(bufferState.timer)
-                        bufferState.timer = setTimeout(() => {
-                            flushBuffer()
-                        }, config.chunkTimeout)
-                    }
+                    // 处理数据
+                    // 这里调用你的数据解析逻辑，例如：
+                    // parser.parse(value)
+                    // 或者直接追加到 logs
+                    const text = new TextDecoder().decode(value)
+                    // emit('data', text) // 如果你有 emit
+                    console.log('收到数据:', text) // 示例
                 }
             }
         } catch (error) {
-            // 忽略因 close 导致的流中断错误
-            if (keepReading) {
-                console.error('流错误:', error)
-                addLog('读取流异常中断', 'SYS', 'System')
-            }
+            console.error('读取错误:', error)
         } finally {
+            // 防线3: 极其重要！必须释放锁，否则无法再次 open
             if (reader) {
-                try { reader.releaseLock() } catch (e) { }
-                reader = null
+                reader.releaseLock()
             }
         }
     }
@@ -209,8 +214,10 @@ export function useSerialPort() {
         }
         try {
             writer = port.value.writable.getWriter()
-            await writer.write(dataToWrite)
-            addLog(dataToWrite, 'TX', source)
+            if (writer) {
+                await writer.write(dataToWrite)
+                addLog(dataToWrite, 'TX', source)
+            }
         } catch (error: any) {
             addLog(`发送失败: ${error.message}`, 'SYS', 'System')
         } finally {

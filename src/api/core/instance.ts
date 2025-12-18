@@ -15,8 +15,18 @@ declare module 'axios' {
     }
 }
 
+// 架构建议：根据环境变量动态切换 Base URL
+// 开发环境指向 mock-server (localhost:3000)
+// 生产环境指向你的真实服务器地址或相对路径
+const instance = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+    timeout: 10000,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
 // 请求拦截器
-api.interceptors.request.use(
+instance.interceptors.request.use(
     (config) => {
         // 登录和注册接口不需要 Token
         if (config.url && (config.url.endsWith('/auth/login') || config.url.endsWith('/auth/register'))) {
@@ -30,7 +40,7 @@ api.interceptors.request.use(
 )
 
 // 响应拦截器
-api.interceptors.response.use(
+instance.interceptors.response.use(
     (response) => {
         if (response.data && response.data.code && response.data.code !== 200) {
             if (response.data.code !== 401) ElMessage.error(response.data.message || '请求失败')
@@ -57,4 +67,4 @@ api.interceptors.response.use(
     }
 )
 
-export default api
+export default instance

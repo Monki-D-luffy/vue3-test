@@ -6,6 +6,6 @@ export const login = (data: any) => {
 }
 
 export const register = async (data: UserRegisterData): Promise<UserInfo> => {
-    const res = await request.post<any, ApiResponse<UserInfo>>('/auth/register', data)
+    const res = await request.post<any>('/auth/register', data)
     return res.data // 根据 request.ts 的拦截器，这里其实返回的就是 response.data
 }
