@@ -80,7 +80,7 @@ const handleChangeDevice = async () => {
                 <div class="value-row">
                     <span class="value">
                         {{ isOpening ? '正在连接...' : (isReconnecting ? '更新配置...' : (isConnected ? '已连接设备' : (port ? '设备就绪'
-                        : '未连接'))) }}
+                            : '未连接'))) }}
                     </span>
                 </div>
             </div>
@@ -158,7 +158,7 @@ const handleChangeDevice = async () => {
                 </el-icon>
                 <span>
                     {{ isOpening ? '连接中...' : (isReconnecting ? '重连中...' : (isConnected ? '断开' : (port ? '立即连接' :
-                    '选择设备'))) }}
+                        '选择设备'))) }}
                 </span>
             </button>
         </div>
@@ -296,7 +296,7 @@ const handleChangeDevice = async () => {
     padding: 0 16px;
     border-radius: 10px;
     background: var(--app-gradient-primary);
-    color: white;
+    color: var(--el-text-color-regular);
     font-size: 13px;
     font-weight: 600;
     display: flex;
@@ -334,7 +334,7 @@ const handleChangeDevice = async () => {
 .param-input-wrapper {
     display: flex;
     align-items: center;
-    background: #f8fafc;
+    background: var(--el-fill-color-blank);
     border-radius: 8px;
     padding: 0 8px;
     height: 32px;
@@ -343,7 +343,7 @@ const handleChangeDevice = async () => {
 }
 
 .param-input-wrapper:hover {
-    background: white;
+    background: var(--el-border-color);
     border-color: #e2e8f0;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }

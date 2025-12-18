@@ -62,8 +62,8 @@ const txTooltip = computed(() => `Total Sent: ${stats.txBytes.toLocaleString()} 
 
             <div class="header-tools">
                 <el-radio-group v-model="viewMode" size="small" class="mode-switch">
-                    <el-radio-button label="ASCII" />
-                    <el-radio-button label="HEX" />
+                    <el-radio-button value="ASCII" />
+                    <el-radio-button value="HEX" />
                 </el-radio-group>
                 <div class="divider-v"></div>
                 <el-checkbox v-model="autoScroll" label="自动滚动" size="small" />
@@ -122,7 +122,7 @@ const txTooltip = computed(() => `Total Sent: ${stats.txBytes.toLocaleString()} 
     height: 40px;
     /* 稍微压低高度 */
     padding: 0 12px;
-    background: #f8fafc;
+    background: var(--el-bg-color-overlay);
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
