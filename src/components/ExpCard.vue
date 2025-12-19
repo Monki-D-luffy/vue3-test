@@ -25,12 +25,13 @@ withDefaults(defineProps<Props>(), {
                 <span v-if="title" class="header-title">{{ title }}</span>
             </div>
             <div class="header-right">
-                <slot name="header-action" />
+                <slot name="header-action"></slot>
+                <slot name="extra"></slot>
             </div>
         </div>
 
         <div class="exp-card-body" :style="{ padding: padding }">
-            <slot />
+            <slot></slot>
         </div>
     </div>
 </template>
@@ -86,7 +87,7 @@ withDefaults(defineProps<Props>(), {
 }
 
 .exp-card-header {
-    height: 48px;
+    height: 36px;
     padding: 0 16px;
     display: flex;
     align-items: center;

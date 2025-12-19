@@ -1,133 +1,235 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Memo, Plus, MoreFilled } from '@element-plus/icons-vue'
+import { ref, onMounted, watch } from 'vue'
+import { Memo, Plus, Close, Check } from '@element-plus/icons-vue'
 import ExpCard from '@/components/ExpCard.vue'
 import { useSerialPort } from '@/composables/useSerialPort'
 
+// 1. 使用單例中的發送方法
 const { send } = useSerialPort()
 
-// TODO: 未来接入 Pinia 或 LocalStorage 持久化
-const actions = ref([
-    { id: 1, label: 'RST', cmd: 'AT+RST', desc: 'System Reset' },
-    { id: 2, label: 'VERSION', cmd: 'AT+VER?', desc: 'Check Firmware' },
-    { id: 3, label: 'LOG:ON', cmd: 'AT+LOG=ON', desc: 'Enable Logs' },
-    { id: 4, label: 'LOG:OFF', cmd: 'AT+LOG=OFF', desc: 'Disable Logs' },
-    { id: 5, label: 'BOOT', cmd: 'AT+BOOT', desc: 'Enter Bootloader' },
-])
+// --- 【位置 A：持久化數據定義】 ---
+interface QuickAction {
+    id: string | number
+    label: string
+    cmd: string
+    isHex: boolean
+}
 
-const handleAction = (cmd: string) => {
-    send(cmd, false, 'Quick Action')
+const STORAGE_KEY = 'serial_quick_actions_v1'
+const actions = ref<QuickAction[]>([])
+
+// 預設指令 (僅在本地無任何數據時加載)
+const DEFAULT_ACTIONS: QuickAction[] = [
+    { id: 1, label: 'RST', cmd: 'AT+RST', isHex: false },
+    { id: 2, label: 'VER', cmd: 'AT+VER?', isHex: false },
+    { id: 3, label: 'TEST', cmd: 'AA 55 01', isHex: true },
+]
+
+// 組件掛載時讀取本地存儲
+onMounted(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+        try {
+            actions.value = JSON.parse(saved)
+        } catch (e) {
+            actions.value = [...DEFAULT_ACTIONS]
+        }
+    } else {
+        actions.value = [...DEFAULT_ACTIONS]
+    }
+})
+
+// 監聽變動並寫入本地存儲，防止刷新消失
+watch(actions, (newVal) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
+}, { deep: true })
+
+// --- 【位置 B：新增指令的邏輯控制】 ---
+const isAdding = ref(false) // 控制表單顯示/隱藏
+const newAction = ref<QuickAction>({ id: '', label: '', cmd: '', isHex: false })
+
+const addAction = () => {
+    if (!newAction.value.label || !newAction.value.cmd) return
+
+    actions.value.push({
+        ...newAction.value,
+        id: Date.now() // 生成唯一標識
+    })
+
+    // 重置表單並收起界面
+    newAction.value = { id: '', label: '', cmd: '', isHex: false }
+    isAdding.value = false
+}
+
+const removeAction = (id: string | number) => {
+    actions.value = actions.value.filter(a => a.id !== id)
+}
+
+const handleAction = (act: QuickAction) => {
+    send(act.cmd, !!act.isHex, '快速指令') //
 }
 </script>
 
 <template>
-    <ExpCard title="Quick Actions" :icon="Memo">
-        <template>
-            <el-button link size="small"><el-icon>
-                    <MoreFilled />
-                </el-icon></el-button>
-        </template>
-
-        <div class="action-grid">
-            <div v-for="item in actions" :key="item.id" class="action-tag" @click="handleAction(item.cmd)"
-                :title="item.desc">
-                {{ item.label }}
-            </div>
-
-            <div class="action-tag add-btn">
-                <el-icon>
+    <ExpCard title="快速指令" :icon="Memo">
+        <template #extra>
+            <el-button link size="small" :type="isAdding ? 'info' : 'primary'" @click="isAdding = !isAdding">
+                <el-icon v-if="!isAdding">
                     <Plus />
                 </el-icon>
+                <el-icon v-else>
+                    <Close />
+                </el-icon>
+            </el-button>
+        </template>
+
+        <div class="quick-actions-container">
+            <transition name="el-zoom-in-top">
+                <div v-if="isAdding" class="compact-add-form">
+                    <div class="input-row">
+                        <el-input v-model="newAction.label" placeholder="標籤" size="small" class="tag-input" />
+                        <el-input v-model="newAction.cmd" placeholder="指令" size="small" class="cmd-input" />
+                    </div>
+                    <div class="op-row">
+                        <el-checkbox v-model="newAction.isHex" label="HEX" size="small" />
+                        <el-button type="primary" size="small" :icon="Check" circle @click="addAction" />
+                    </div>
+                </div>
+            </transition>
+
+            <div class="action-grid">
+                <div v-for="act in actions" :key="act.id" class="action-item" @click="handleAction(act)">
+                    <div class="action-tag">
+                        <span class="tag-label">{{ act.label }}</span>
+                        <span v-if="act.isHex" class="hex-marker">H</span>
+
+                        <div class="tag-delete" @click.stop="removeAction(act.id)">
+                            <el-icon>
+                                <Close />
+                            </el-icon>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="actions.length === 0" class="empty-hint">
+                    點擊上方 + 號新增指令
+                </div>
             </div>
         </div>
     </ExpCard>
 </template>
 
 <style scoped>
-.more-btn {
-    /* 变量：次要文字 */
-    color: var(--app-text-sub);
+.quick-actions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.more-btn:hover {
-    color: #6366f1;
-    /* 这里的交互色可以保留特定颜色，或者定义 var(--app-color-primary) */
+/* 緊湊表單樣式 */
+.compact-add-form {
+    padding: 8px;
+    background: var(--el-fill-color-light);
+    border: 1px dashed var(--el-border-color);
+    border-radius: 8px;
+    margin-bottom: 4px;
 }
 
+.input-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.tag-input {
+    width: 70px;
+}
+
+.cmd-input {
+    flex: 1;
+}
+
+.op-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 網格與標籤樣式 */
 .action-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 8px;
 }
 
 .action-tag {
-    /* 变量：次要背景色 (如果没有定义 app-bg-sub，这里可以用 canvas 背景) */
     background: var(--app-bg-canvas);
-    border: 1px solid transparent;
+    border: 1px solid var(--el-border-color-lighter);
     border-radius: 10px;
-    height: 40px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    font-size: 12px;
-    font-weight: 600;
-    /* 变量：次要文字 */
-    color: var(--app-text-sub);
-
+    padding: 0 6px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
 
-/* 悬浮态：高级微光 */
+.tag-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--app-text-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hex-marker {
+    font-size: 9px;
+    background: var(--el-color-warning-light-8);
+    color: var(--el-color-warning);
+    padding: 0 2px;
+    border-radius: 3px;
+    margin-left: 3px;
+    transform: scale(0.8);
+}
+
 .action-tag:hover {
     background: var(--app-bg-card);
-    /* 变白 */
-    /* 这一块涉及具体的品牌色交互，建议保留颜色值或提取为 --app-color-primary */
     color: #6366f1;
     border-color: rgba(99, 102, 241, 0.3);
     transform: translateY(-2px);
-    /* 变量：发光阴影 */
     box-shadow: var(--app-glow-primary);
 }
 
-.action-tag:active {
-    transform: scale(0.96);
-    background: var(--app-bg-canvas);
-}
-
-/* 装饰性光斑 */
-.action-tag::before {
-    content: "";
+.tag-delete {
     position: absolute;
-    right: -10px;
-    bottom: -10px;
-    width: 30px;
-    height: 30px;
-    /* 这里的光斑颜色也可以提取，但作为装饰细节，硬编码也可以 */
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
-    border-radius: 50%;
+    top: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background: var(--el-color-danger);
+    color: white;
+    border-radius: 0 8px 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.2s;
 }
 
-.action-tag:hover::before {
-    opacity: 1;
+.action-tag:hover .tag-delete {
+    opacity: 0.8;
 }
 
-.add-btn {
-    border: 1px dashed var(--app-text-sub);
-    background: transparent;
-    opacity: 0.5;
-}
-
-.add-btn:hover {
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.05);
-    color: #6366f1;
-    box-shadow: none;
-    opacity: 1;
+.empty-hint {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 11px;
+    color: var(--el-text-color-placeholder);
+    padding: 10px 0;
 }
 </style>
