@@ -58,7 +58,7 @@
                                 </div>
                                 <div class="act-content">
                                     <p class="act-msg">{{ act.content }} <span class="act-device">{{ act.device
-                                            }}</span></p>
+                                    }}</span></p>
                                     <span class="act-time">{{ act.time }}</span>
                                 </div>
                             </li>

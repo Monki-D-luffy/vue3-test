@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Command Center + Gemini AI</title>
+    
+    <!-- 1. 引入核心库 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/zh-cn.js"></script>
+    <!-- Markdown 解析 (用于 AI 回复渲染) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            --hover-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08), 0 8px 8px -6px rgba(0, 0, 0, 0.01);
+            --gemini-gradient: linear-gradient(135deg, #1c7ed6 0%, #22b8cf 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--hover-shadow);
+            border-color: #e2e8f0;
+        }
+
+        .pulse-dot { position: relative; }
+        .pulse-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            opacity: 0.2;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        .el-button--primary { --el-button-bg-color: #3b82f6; --el-button-border-color: #3b82f6; }
+        .el-button--primary:hover { --el-button-bg-color: #2563eb; --el-button-border-color: #2563eb; }
+
+        /* AI 特效样式 */
+        .ai-gradient-text {
+            background: var(--gemini-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+        .ai-card-border {
+            position: relative;
+            background: linear-gradient(#fff, #fff) padding-box,
+                        var(--gemini-gradient) border-box;
+            border: 2px solid transparent;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 4px; height: 4px; background: #3b82f6; border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out both;
+            margin: 0 1px;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        
+        .markdown-body p { margin-bottom: 0.5em; line-height: 1.6; }
+        .markdown-body ul { list-style-type: disc; padding-left: 1.2em; margin-bottom: 0.5em; }
+        .markdown-body li { margin-bottom: 0.2em; }
+        .markdown-body strong { color: #0f172a; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- 侧边栏与主体布局 -->
+    <div class="flex min-h-screen">
+        
+        <!-- 侧边栏 (Sidebar) -->
+        <aside class="w-64 bg-white border-r border-slate-200 hidden lg:flex flex-col fixed h-full z-10">
+            <div class="p-6 flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">I</div>
+                <span class="font-bold text-xl text-slate-800">IoT Admin</span>
+            </div>
+            <nav class="flex-1 px-4 space-y-2 mt-4">
+                <div class="nav-item active bg-blue-50 text-blue-600 rounded-lg px-4 py-3 flex items-center gap-3 cursor-pointer">
+                    <el-icon><Odometer /></el-icon> <span class="font-medium">概览仪表盘</span>
+                </div>
+                <div class="nav-item text-slate-500 hover:bg-slate-50 rounded-lg px-4 py-3 flex items-center gap-3 cursor-pointer">
+                    <el-icon><Monitor /></el-icon> <span>设备管理</span>
+                </div>
+                <div class="nav-item text-slate-500 hover:bg-slate-50 rounded-lg px-4 py-3 flex items-center gap-3 cursor-pointer">
+                    <el-icon><Files /></el-icon> <span>固件升级</span>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-slate-100">
+                <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <el-icon class="text-blue-600"><Magic-Stick /></el-icon>
+                        <span class="text-xs font-bold text-blue-700">Gemini Inside</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">系统已接入 Google Gemini 模型，支持智能诊断与指令解析。</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="flex-1 lg:ml-64 p-8 max-w-[1920px] mx-auto">
+            
+            <!-- 1. 顶部 Header -->
+            <header class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                        {{ greeting }}，<span class="text-blue-600">Admin</span>
+                    </h1>
+                    <p class="text-slate-500 text-sm mt-1 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500 pulse-dot"></span>
+                        系统运行平稳，全域节点数据同步中
+                    </p>
+                </div>
+                <div class="hidden md:flex items-center gap-4">
+                    <div class="bg-white border border-slate-200 px-4 py-2 rounded-full text-sm text-slate-600 shadow-sm flex items-center gap-2">
+                        <el-icon><Calendar /></el-icon> {{ currentDate }}
+                    </div>
+                    <el-avatar :size="40" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar>
+                </div>
+            </header>
+
+            <!-- 2. AI 指令中心 (新增) -->
+            <section class="mb-8">
+                 <div class="bg-white rounded-2xl p-1 ai-card-border shadow-sm">
+                    <div class="bg-white rounded-xl p-5 flex flex-col md:flex-row items-center gap-6">
+                        <div class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 text-blue-600">
+                            <el-icon :size="24"><Microphone /></el-icon>
+                        </div>
+                        <div class="flex-1 w-full">
+                            <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center gap-2">
+                                <span class="ai-gradient-text">Gemini 智能指令中心</span>
+                            </h3>
+                            <div class="flex gap-2">
+                                <el-input 
+                                    v-model="aiCommandInput" 
+                                    placeholder="试着输入: '帮我检查所有传感器的状态' 或 '重启所有离线的网关'"
+                                    class="w-full"
+                                    @keyup.enter="executeAiCommand"
+                                    :disabled="aiCommandLoading"
+                                >
+                                    <template #prefix>
+                                        <el-icon class="text-slate-400"><Search /></el-icon>
+                                    </template>
+                                </el-input>
+                                <el-button type="primary" :loading="aiCommandLoading" @click="executeAiCommand">
+                                    执行指令 ✨
+                                </el-button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- AI 指令反馈区 -->
+                    <div v-if="aiCommandResult" class="bg-slate-50 border-t border-slate-100 p-4 rounded-b-xl flex items-start gap-3 animate-fade-in">
+                        <el-icon class="text-blue-500 mt-1"><Chat-Dot-Round /></el-icon>
+                        <div class="text-sm text-slate-700">
+                            <div v-html="renderMarkdown(aiCommandResult)"></div>
+                        </div>
+                    </div>
+                 </div>
+            </section>
+
+            <!-- 3. 核心指标卡片 -->
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                <stat-card title="设备总数" :value="stats.totalDevices" icon="Monitor" icon-bg="#eff6ff" icon-color="#3b82f6" trend="+12%" trend-type="up"></stat-card>
+                <stat-card title="整体在线率" :value="stats.onlineRate" suffix="%" icon="Connection" icon-bg="#ecfdf5" icon-color="#10b981" status="live"></stat-card>
+                <stat-card title="今日告警" :value="stats.warningCount" icon="WarningFilled" icon-bg="#fff7ed" icon-color="#f97316" sub-text="需立即处理" :is-danger="true"></stat-card>
+                <stat-card title="活跃任务" :value="stats.activeTasks" icon="Cpu" icon-bg="#f5f3ff" icon-color="#8b5cf6" sub-text="固件升级中"></stat-card>
+            </section>
+
+            <!-- 4. 产品监控矩阵 -->
+            <section class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <el-icon class="text-blue-600"><Grid /></el-icon> 产品监控矩阵
+                    </h2>
+                    <el-button link type="primary">管理所有产品 <el-icon class="el-icon--right"><Arrow-Right /></el-icon></el-button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <product-card v-for="prod in products" :key="prod.id" :data="prod" @click="handleProductClick"></product-card>
+                    <div class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors min-h-[200px]" @click="showMessage('打开添加产品向导')">
+                        <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-500">
+                            <el-icon :size="24"><Plus /></el-icon>
+                        </div>
+                        <span class="text-slate-500 font-medium text-sm">接入新产品</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. 底部：图表与动态 (集成 AI 诊断) -->
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- 左侧图表 -->
+                <div class="xl:col-span-2 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-bold text-slate-700">实时流量趋势</h3>
+                        <el-radio-group v-model="chartRange" size="small">
+                            <el-radio-button label="24H">24H</el-radio-button>
+                            <el-radio-button label="7天">7天</el-radio-button>
+                        </el-radio-group>
+                    </div>
+                    <div ref="chartRef" style="width: 100%; height: 320px;"></div>
+                </div>
+
+                <!-- 右侧动态 -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-bold text-slate-700">最新动态</h3>
+                        <el-tag size="small" type="info">Live</el-tag>
+                    </div>
+                    <div class="flex-1 overflow-y-auto pr-2 space-y-6">
+                        <div v-for="item in activities" :key="item.id" class="relative flex gap-4 group">
+                            <!-- 时间轴线 -->
+                            <div class="absolute left-[5px] top-6 bottom-[-24px] w-[2px] bg-slate-100 last:hidden"></div>
+                            
+                            <div class="relative z-10 w-3 h-3 rounded-full mt-1.5 flex-shrink-0" 
+                                :class="{
+                                    'bg-blue-500 ring-4 ring-blue-50': item.type === 'info',
+                                    'bg-orange-500 ring-4 ring-orange-50': item.type === 'warning',
+                                    'bg-green-500 ring-4 ring-green-50': item.type === 'success'
+                                }">
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm text-slate-700 leading-snug">{{ item.content }}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs text-slate-400">{{ item.time }}</span>
+                                    <!-- AI 诊断按钮 (仅 Warning 显示) -->
+                                    <el-button 
+                                        v-if="item.type === 'warning'" 
+                                        size="small" 
+                                        type="primary" 
+                                        link
+                                        class="!p-0 !h-auto !text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                        @click="diagnoseLog(item)"
+                                    >
+                                        ✨ AI 诊断
+                                    </el-button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- AI 诊断弹窗 -->
+    <el-dialog v-model="diagnosisVisible" title="Gemini 智能诊断报告" width="500px" destroy-on-close>
+        <div v-if="diagnosisLoading" class="flex flex-col items-center justify-center py-8">
+            <div class="typing-indicator mb-4"><span></span><span></span><span></span></div>
+            <p class="text-slate-500 text-sm">Gemini 正在分析设备日志...</p>
+        </div>
+        <div v-else class="markdown-body text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100">
+            <div v-html="renderMarkdown(diagnosisResult)"></div>
+        </div>
+        <template #footer>
+            <span class="dialog-footer">
+                <el-button @click="diagnosisVisible = false">关闭</el-button>
+                <el-button type="primary" @click="diagnosisVisible = false">采纳建议</el-button>
+            </span>
+        </template>
+    </el-dialog>
+
+</div>
+
+<script>
+    const { createApp, ref, onMounted, computed, nextTick } = Vue;
+
+    // --- Gemini API Service ---
+    const apiKey = ""; // API Key 自动注入
+    
+    // 简单的重试逻辑
+    async function callGemini(prompt) {
+        let retries = 0;
+        const maxRetries = 3;
+        
+        while (retries < maxRetries) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI 暂时无法回答。";
+            } catch (error) {
+                retries++;
+                if (retries >= maxRetries) return `请求失败，请稍后重试。(Error: ${error.message})`;
+                await new Promise(r => setTimeout(r, 1000 * retries)); // 简单的退避
+            }
+        }
+    }
+
+    // --- 组件：指标卡片 ---
+    const StatCard = {
+        props: ['title', 'value', 'icon', 'iconBg', 'iconColor', 'suffix', 'trend', 'trendType', 'status', 'subText', 'isDanger'],
+        template: `
+            <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover-lift flex flex-col justify-between h-full relative overflow-hidden" :class="{'border-l-4 border-l-red-500': isDanger}">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="text-slate-500 text-sm font-medium">{{ title }}</span>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg" :style="{ background: iconBg, color: iconColor }">
+                        <el-icon><component :is="icon" /></el-icon>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1 mb-2">
+                    <span class="text-3xl font-bold text-slate-800 tracking-tight">{{ value }}</span>
+                    <span v-if="suffix" class="text-sm text-slate-400 font-medium">{{ suffix }}</span>
+                </div>
+                <div class="flex items-center text-xs font-medium">
+                    <div v-if="status === 'live'" class="flex items-center gap-2 text-green-600">
+                        <span class="w-2 h-2 rounded-full bg-green-500 pulse-dot"></span><span>网络健康</span>
+                    </div>
+                    <div v-else-if="trend" class="flex items-center gap-1 px-2 py-0.5 rounded" :class="trendType === 'up' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'">
+                        <el-icon v-if="trendType === 'up'"><Top /></el-icon><el-icon v-else><Bottom /></el-icon>{{ trend }}
+                    </div>
+                    <span v-else class="text-slate-400">{{ subText }}</span>
+                </div>
+            </div>
+        `
+    };
+
+    // --- 组件：产品概览卡片 ---
+    const ProductCard = {
+        props: ['data'],
+        emits: ['click'],
+        setup(props) {
+            const percentage = computed(() => props.data.totalBound === 0 ? 0 : Math.round((props.data.onlineCount / props.data.totalBound) * 100));
+            const statusColor = computed(() => {
+                if (props.data.status === 'warning') return 'bg-orange-500';
+                if (props.data.status === 'offline') return 'bg-slate-300';
+                return 'bg-blue-600';
+            });
+            return { percentage, statusColor };
+        },
+        template: `
+            <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover-lift cursor-pointer flex flex-col justify-between h-[200px]" @click="$emit('click', data)">
+                <div class="flex items-start justify-between">
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-colors"
+                             :class="{'bg-blue-50 text-blue-600': data.status === 'healthy', 'bg-orange-50 text-orange-500': data.status === 'warning', 'bg-slate-100 text-slate-500': data.status === 'offline'}">
+                            <el-icon><component :is="data.icon" /></el-icon>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base mb-1">{{ data.name }}</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-slate-100 text-slate-500 text-xs px-2 py-0.5 rounded font-mono">{{ data.version }}</span>
+                                <span class="text-slate-400 text-xs">{{ data.type }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <el-icon class="text-slate-300 transform group-hover:translate-x-1 transition-transform"><Arrow-Right /></el-icon>
+                </div>
+                <div class="flex items-center mt-4 mb-2">
+                    <div class="flex-1 border-r border-slate-100">
+                        <div class="text-xs text-slate-400 mb-1">当前在线</div>
+                        <div class="text-lg font-bold text-slate-900">{{ data.onlineCount }}</div>
+                    </div>
+                    <div class="flex-1 pl-6">
+                        <div class="text-xs text-slate-400 mb-1">绑定总数</div>
+                        <div class="text-lg font-bold text-slate-500">{{ data.totalBound }}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1.5">
+                        <span class="text-slate-500">在线率</span>
+                        <span class="font-bold" :class="{'text-orange-500': data.status === 'warning'}">{{ percentage }}%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500" :class="statusColor" :style="{ width: percentage + '%' }"></div>
+                    </div>
+                </div>
+            </div>
+        `
+    };
+
+    // --- 主应用逻辑 ---
+    const app = createApp({
+        components: { StatCard, ProductCard },
+        setup() {
+            const chartRef = ref(null);
+            const chartRange = ref('24H');
+            const currentDate = ref(dayjs().format('YYYY-MM-DD'));
+            
+            // AI 状态
+            const aiCommandInput = ref('');
+            const aiCommandLoading = ref(false);
+            const aiCommandResult = ref('');
+            
+            const diagnosisVisible = ref(false);
+            const diagnosisLoading = ref(false);
+            const diagnosisResult = ref('');
+
+            // 模拟数据
+            const stats = ref({ totalDevices: 2542, onlineRate: 92.4, warningCount: 3, activeTasks: 2 });
+            const products = ref([
+                { id: 1, name: '智能边缘网关 X1', type: '网关设备', icon: 'Cpu', version: 'v2.4.0', onlineCount: 842, totalBound: 850, status: 'healthy' },
+                { id: 2, name: '温湿度传感器 Pro', type: '传感器', icon: 'Odometer', version: 'v1.2.5', onlineCount: 1205, totalBound: 1400, status: 'warning' },
+                { id: 3, name: '工业控制器 PLC-5', type: '控制器', icon: 'Connection', version: 'v3.0.1', onlineCount: 290, totalBound: 292, status: 'healthy' }
+            ]);
+            const activities = ref([
+                { id: 1, content: '产品 [智能网关] 发布了新固件 v2.4.1', time: '10分钟前', type: 'info' },
+                { id: 2, content: '设备 [Sensor-A01] 触发高温告警 (85°C)', time: '32分钟前', type: 'warning' },
+                { id: 3, content: '任务 [Task-2023] 批量升级完成 (50/50)', time: '2小时前', type: 'success' }
+            ]);
+
+            const greeting = computed(() => {
+                const hour = new Date().getHours();
+                return hour < 9 ? '早上好' : hour < 12 ? '上午好' : hour < 18 ? '下午好' : '晚上好';
+            });
+
+            const showMessage = (msg) => ElementPlus.ElMessage.info(msg);
+            const handleProductClick = (prod) => ElementPlus.ElNotification({ title: '跳转中', message: `前往 ${prod.name}`, type: 'success' });
+
+            const renderMarkdown = (text) => marked.parse(text);
+
+            // --- AI 功能实现 ---
+            
+            // 1. 执行 AI 指令
+            const executeAiCommand = async () => {
+                if (!aiCommandInput.value.trim()) return;
+                aiCommandLoading.value = true;
+                aiCommandResult.value = '';
+
+                // 构建 Prompt
+                const systemPrompt = `你是一个IoT系统的智能助手。用户会输入自然语言指令，请解析意图并模拟执行。
+                当前系统状态：设备总数2542，警告3个。
+                请用简短、专业的中文回复。
+                如果用户要求操作（如重启、升级），请假装已经执行，并反馈结果。
+                如果是查询，请基于假数据编造一个合理的回答。
+                回复格式推荐使用Markdown列表或加粗重点。`;
+                
+                const userPrompt = `用户指令: ${aiCommandInput.value}`;
+
+                try {
+                    const result = await callGemini(systemPrompt + "\n" + userPrompt);
+                    aiCommandResult.value = result;
+                } finally {
+                    aiCommandLoading.value = false;
+                }
+            };
+
+            // 2. 日志诊断
+            const diagnoseLog = async (logItem) => {
+                diagnosisVisible.value = true;
+                diagnosisLoading.value = true;
+                diagnosisResult.value = '';
+
+                const prompt = `你是一个资深的物联网设备维护专家。请分析以下报警日志，并给出：
+                1. 可能的技术原因（列出3点）。
+                2. 建议的排查步骤。
+                日志内容: "${logItem.content}" (时间: ${logItem.time})
+                请使用Markdown格式，保持专业且简洁。`;
+
+                try {
+                    const result = await callGemini(prompt);
+                    diagnosisResult.value = result;
+                } finally {
+                    diagnosisLoading.value = false;
+                }
+            };
+
+            const initChart = () => {
+                if (!chartRef.value) return;
+                const myChart = echarts.init(chartRef.value);
+                myChart.setOption({
+                    tooltip: { trigger: 'axis' },
+                    grid: { top: '10%', left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { type: 'category', boundaryGap: false, data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'], axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#94a3b8' } },
+                    yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8' } },
+                    series: [{ type: 'line', smooth: true, showSymbol: false, data: [2100, 2050, 2300, 2450, 2400, 2500, 2542], itemStyle: { color: '#3b82f6' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(59, 130, 246, 0.2)' }, { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }]) } }]
+                });
+                window.addEventListener('resize', () => myChart.resize());
+            };
+
+            onMounted(() => {
+                dayjs.locale('zh-cn');
+                nextTick(initChart);
+            });
+
+            return {
+                stats, products, activities, greeting, currentDate, chartRef, chartRange,
+                handleProductClick, showMessage,
+                aiCommandInput, aiCommandLoading, aiCommandResult, executeAiCommand,
+                diagnosisVisible, diagnosisLoading, diagnosisResult, diagnoseLog,
+                renderMarkdown
+            };
+        }
+    });
+
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        app.component(key, component);
+    }
+    app.use(ElementPlus);
+    app.mount('#app');
+</script>
+</body>
+</html>
