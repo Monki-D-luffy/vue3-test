@@ -25,7 +25,7 @@ const router = createRouter({
         {
           path: 'overview',
           name: 'Overview', // 规范：PascalCase
-          component: () => import('@/views/Overview.vue')
+          component: () => import('@/views/dashboard/ExpOverview.vue')
         },
         {
           path: 'devices',
