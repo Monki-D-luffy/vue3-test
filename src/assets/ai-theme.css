@@ -88,3 +88,37 @@
   --el-text-color-regular: var(--text-secondary);
   --el-border-radius-base: var(--radius-md);
 }
+
+/* --- 我们自定义的暗黑模式令牌重映射 --- */
+html.dark {
+  /* 背景层级 - 采用更深的灰蓝调而非纯黑，更有高级感 */
+  --bg-app: #0f172a;        /* Slate 900 */
+  --bg-card: #1e293b;       /* Slate 800 */
+  --bg-hover: #334155;      /* Slate 700 */
+  --bg-input: #0f172a;
+
+  /* 边框与分割线 - 降低明度 */
+  --border-color: #334155;
+  --border-color-hover: #475569;
+
+  /* 文字层级 - 翻转亮度 */
+  --text-primary: #f1f5f9;  /* Slate 100 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --text-placeholder: #475569;
+
+  /* 阴影调整 - 暗黑模式下阴影应更深更重，或者改为发光边框 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  --shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  
+  /* 品牌色微调 - 在深色背景下可以适当提高明度以保持醒目 */
+  --primary-color: #60a5fa; /* Blue 400 */
+  --primary-light: rgba(59, 130, 246, 0.15);
+}
+
+/* 针对暗黑模式下 Element Plus 组件的特殊微调 */
+html.dark .el-card,
+html.dark .el-dialog,
+html.dark .el-avatar {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}

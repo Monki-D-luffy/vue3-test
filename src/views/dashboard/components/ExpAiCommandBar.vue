@@ -1,32 +1,46 @@
 <template>
-    <div class="ai-command-container">
-        <div class="ai-input-wrapper hover-lift" :class="{ 'is-loading': loading }">
-            <div class="ai-icon-box">
-                <el-icon v-if="loading" class="is-loading">
-                    <Loading />
-                </el-icon>
-                <el-icon v-else>
-                    <Microphone />
-                </el-icon>
+    <div class="ai-module-wrapper">
+        <div class="ai-card-border" :class="{ 'is-loading': loading }">
+            <div class="ai-card-inner">
+                <div class="ai-input-container">
+                    <div class="ai-icon-section">
+                        <el-icon v-if="loading" class="is-loading ai-pulse">
+                            <Loading />
+                        </el-icon>
+                        <el-icon v-else class="ai-static-icon">
+                            <Microphone />
+                        </el-icon>
+                    </div>
+
+                    <input v-model="inputVal" class="ai-input-field" type="text"
+                        placeholder="输入指令，如：'检查 Zone-A 设备健康度' 或 '生成昨日运行报告'..." @keyup.enter="handleSend"
+                        :disabled="loading" />
+
+                    <div class="ai-action-section">
+                        <button class="ai-submit-btn" @click="handleSend" :disabled="!inputVal.trim() || loading">
+                            <span>执行智能指令</span>
+                            <el-icon>
+                                <MagicStick />
+                            </el-icon>
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            <input v-model="inputVal" class="ai-real-input" type="text"
-                placeholder="Ask Gemini: '检查所有在线设备的健康状态' 或 '重启异常网关'..." @keyup.enter="handleSend" :disabled="loading" />
-
-            <button class="ai-send-btn" @click="handleSend" :disabled="!inputVal || loading">
-                执行指令 ✨
-            </button>
         </div>
 
         <transition name="el-zoom-in-top">
-            <div v-if="result" class="ai-result-panel dashboard-card">
-                <div class="ai-result-header">
-                    <el-icon class="text-blue-500">
-                        <ChatDotRound />
-                    </el-icon>
-                    <span class="text-gradient-ai">Gemini OS</span>
+            <div v-if="result" class="ai-response-panel dashboard-card">
+                <div class="ai-response-header">
+                    <div class="ai-avatar">🤖</div>
+                    <span class="ai-name">Gemini Intelligence</span>
+                    <div class="ai-status-tag">Auto-Diagnosing</div>
                 </div>
-                <div class="ai-markdown-body" v-html="parsedResult"></div>
+
+                <div class="ai-markdown-content" v-html="parsedResult"></div>
+
+                <div class="ai-response-footer">
+                    <span class="ai-hint">按 ESC 退出 · 指令已记录至系统日志</span>
+                </div>
             </div>
         </transition>
     </div>
@@ -35,136 +49,215 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useGemini } from '@/composables/useGemini';
-import { parseMarkdown } from '@/utils/markdown'; // 确保你创建了这个工具
-import { Microphone, Loading, ChatDotRound } from '@element-plus/icons-vue';
+import { parseMarkdown } from '@/utils/markdown';
+import { Microphone, Loading, MagicStick } from '@element-plus/icons-vue';
 
 const inputVal = ref('');
 const { loading, result, askAI } = useGemini();
 
-// 将 AI 返回的 Markdown 文本转换为 HTML
 const parsedResult = computed(() => parseMarkdown(result.value));
 
 const handleSend = async () => {
     if (!inputVal.value.trim()) return;
     await askAI(inputVal.value, 'chat');
-    // 指令发送后保留文本，方便用户修改，或者你也可以选择清空 inputVal.value = ''
 };
 </script>
 
 <style scoped>
-.ai-command-container {
-    margin-bottom: 24px;
+/* =========================================
+   核心视觉封装 (无需依赖外部 CSS)
+   ========================================= */
+
+.ai-module-wrapper {
+    width: 100%;
+    margin-bottom: 2rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* --- 自定义输入框样式 (为了极致美感，不使用 el-input) --- */
-.ai-input-wrapper {
-    position: relative;
+/* 渐变边框容器 */
+.ai-card-border {
+    padding: 2px;
+    /* 边框厚度 */
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 50%, #818cf8 100%);
+    background-size: 200% 200%;
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+    transition: all 0.5s ease;
+}
+
+.ai-card-border.is-loading {
+    animation: border-flow 2s linear infinite;
+}
+
+@keyframes border-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* 内层白色容器 */
+.ai-card-inner {
+    background: #ffffff;
+    border-radius: calc(1rem - 2px);
+    padding: 0.75rem 1rem;
+}
+
+.ai-input-container {
     display: flex;
     align-items: center;
-    height: 64px;
-    background: var(--bg-card);
-    border-radius: 16px;
-    /* 更大的圆角 */
-    border: 1px solid transparent;
-    /* 预留边框位置 */
-    background-image: linear-gradient(#fff, #fff), var(--gemini-gradient);
-    /* 渐变边框黑科技 */
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-    box-shadow: var(--shadow-sm);
-    padding: 0 8px;
-    transition: all 0.3s ease;
+    gap: 1rem;
 }
 
-.ai-input-wrapper:focus-within {
-    box-shadow: var(--shadow-modal);
-    transform: translateY(-2px);
-}
-
-.ai-icon-box {
-    width: 48px;
-    height: 48px;
+/* 图标区 */
+.ai-icon-section {
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
-    color: var(--primary-color);
-    background: var(--primary-light);
-    border-radius: 12px;
-    margin-right: 12px;
+    background: #eff6ff;
+    border-radius: 0.75rem;
+    color: #3b82f6;
+    font-size: 1.25rem;
 }
 
-.ai-real-input {
+.ai-pulse {
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+}
+
+/* 输入框主体 */
+.ai-input-field {
     flex: 1;
     border: none;
     outline: none;
-    font-size: 16px;
-    color: var(--text-primary);
+    font-size: 1rem;
+    color: #1e293b;
     background: transparent;
-    height: 100%;
+    padding: 0.5rem 0;
 }
 
-.ai-real-input::placeholder {
-    color: var(--text-placeholder);
+.ai-input-field::placeholder {
+    color: #94a3b8;
 }
 
-.ai-send-btn {
-    padding: 10px 24px;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.ai-send-btn:hover:not(:disabled) {
-    background: var(--primary-color-hover);
-}
-
-.ai-send-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* --- 结果面板 --- */
-.ai-result-panel {
-    margin-top: 16px;
-    border-left: 4px solid var(--primary-color);
-    /* 左侧强调线 */
-}
-
-.ai-result-header {
+/* 按钮 */
+.ai-submit-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    font-size: 14px;
-    font-weight: 700;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 简单的 Markdown 样式适配 */
-.ai-markdown-body {
-    font-size: 14px;
+.ai-submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.ai-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+/* 响应面板 */
+.ai-response-panel {
+    margin-top: 1rem;
+    background: white;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.ai-response-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.ai-avatar {
+    font-size: 1.5rem;
+}
+
+.ai-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.ai-status-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    background: #f0fdf4;
+    color: #16a34a;
+    border-radius: 99px;
+    border: 1px solid #dcfce7;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Markdown 渲染微调 */
+.ai-markdown-content {
+    color: #475569;
+    font-size: 0.9375rem;
     line-height: 1.6;
-    color: var(--text-primary);
 }
 
 :deep(p) {
-    margin-bottom: 8px;
+    margin-bottom: 0.75rem;
 }
 
 :deep(strong) {
-    color: var(--color-blue-600);
+    color: #2563eb;
 }
 
 :deep(ul) {
-    padding-left: 20px;
-    margin-bottom: 8px;
+    padding-left: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 
-:deep(li) {
-    margin-bottom: 4px;
+.ai-response-footer {
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ai-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
 }
 </style>

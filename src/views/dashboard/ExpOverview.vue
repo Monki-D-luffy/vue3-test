@@ -1,33 +1,31 @@
 <template>
-    <div class="exp-overview-root">
+    <div class="dashboard-page-root">
+        <div class="page-inner-container">
 
-        <div class="dashboard-container">
-            <header class="flex-between mb-8">
-                <div>
-                    <h1 class="text-2xl font-bold text-primary mb-1">
-                        Dashboard <span class="text-gradient-ai">Pro</span>
+            <header class="page-header">
+                <div class="header-left">
+                    <h1 class="main-title">
+                        Dashboard <span class="title-accent">Pro</span>
                     </h1>
-                    <p class="text-sm text-secondary flex items-center gap-2">
-                        <span class="pulse-dot text-success"></span>
+                    <div class="system-status">
+                        <span class="status-pulse"></span>
                         系统全域运行平稳 · {{ currentDate }}
-                    </p>
+                    </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <el-button circle plain icon="Bell" />
+                <div class="header-right">
+                    <button class="icon-btn"><el-icon>
+                            <Bell />
+                        </el-icon></button>
                     <el-avatar :size="40" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
                 </div>
             </header>
 
-            <section class="mb-8">
+            <section class="ai-section">
                 <ExpAiCommandBar />
             </section>
 
-            <div v-if="loading && !dashboardData" class="py-20 flex-center">
-                <el-skeleton animated :rows="5" class="w-full" />
-            </div>
-
-            <div v-else-if="dashboardData">
-                <section class="grid-stats mb-8">
+            <div v-if="dashboardData" class="content-body">
+                <div class="stats-grid">
                     <ExpStatCard title="设备总数" :value="dashboardData.overview.totalDevices" icon="Monitor" :trend="12" />
                     <ExpStatCard title="在线率" :value="dashboardData.overview.onlineRate" unit="%" icon="Connection"
                         status="normal" sub-text="网络健康" />
@@ -35,13 +33,15 @@
                         status="danger" :is-danger="true" sub-text="需立即处理" />
                     <ExpStatCard title="进行中任务" :value="dashboardData.overview.ongoingTasks" icon="Cpu"
                         sub-text="固件升级中" />
+                </div>
+                <section class="mb-8">
+                    <ExpProductMatrix :products="dashboardData.products" />
                 </section>
-
-                <section class="grid-main">
-                    <div class="min-h-0" style="height: 400px;">
+                <div class="main-grid">
+                    <div class="chart-container-box">
                         <ExpChartContainer title="全网流量趋势" :options="chartOptions" :loading="loading">
                             <template #action>
-                                <el-radio-group v-model="timeRange" size="small">
+                                <el-radio-group v-model="timeRange" size="small" class="custom-radio">
                                     <el-radio-button value="24H">24H</el-radio-button>
                                     <el-radio-button value="7D">7天</el-radio-button>
                                 </el-radio-group>
@@ -49,62 +49,43 @@
                         </ExpChartContainer>
                     </div>
 
-                    <div class="min-h-0" style="height: 400px;">
+                    <div class="activity-container-box">
                         <ExpActivityList :activities="dashboardData.activities" @diagnose="openDiagnosis" />
                     </div>
-                </section>
+
+                </div>
             </div>
         </div>
 
-        <ExpAiDiagnosisModal v-model="showDiagnosis" :log-content="currentLogContent" @fix="handleCreateTicket" />
-
+        <ExpAiDiagnosisModal v-model="showDiagnosis" :log-content="currentLogContent" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import dayjs from 'dayjs';
-import { ElMessage } from 'element-plus';
-
-// Composables
 import { useExpDashboard } from '@/composables/useExpDashboard';
-
-// Components
 import ExpAiCommandBar from './components/ExpAiCommandBar.vue';
 import ExpStatCard from './components/ExpStatCard.vue';
 import ExpActivityList from './components/ExpActivityList.vue';
 import ExpChartContainer from './components/ExpChartContainer.vue';
 import ExpAiDiagnosisModal from './components/ExpAiDiagnosisModal.vue';
-import type { ActivityLogItem } from '@/types/dashboard';
+import ExpProductMatrix from './components/ExpProductMatrix.vue';
 
-// Init
-const currentDate = dayjs().format('YYYY-MM-DD');
+const currentDate = dayjs().format('YYYY年MM月DD日');
 const timeRange = ref('24H');
 const showDiagnosis = ref(false);
 const currentLogContent = ref('');
-
-// Data Fetching
 const { dashboardData, loading } = useExpDashboard();
 
-// Chart Options Computation
 const chartOptions = computed(() => {
     if (!dashboardData.value) return null;
     const trend = dashboardData.value.trafficTrend;
-
     return {
-        tooltip: { trigger: 'axis' },
-        grid: { top: 10, right: 10, bottom: 20, left: 40, containLabel: true },
-        xAxis: {
-            type: 'category',
-            data: trend.categories,
-            axisLine: { show: false },
-            axisTick: { show: false },
-            axisLabel: { color: '#94a3b8' }
-        },
-        yAxis: {
-            type: 'value',
-            splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }
-        },
+        tooltip: { trigger: 'axis', backgroundColor: '#fff', textStyle: { color: '#475569' } },
+        grid: { top: 20, right: 10, bottom: 20, left: 40, containLabel: true },
+        xAxis: { type: 'category', data: trend.categories, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#94a3b8' } },
+        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8' } },
         series: [{
             data: trend.series,
             type: 'line',
@@ -112,62 +93,124 @@ const chartOptions = computed(() => {
             showSymbol: false,
             itemStyle: { color: '#3b82f6' },
             areaStyle: {
-                color: {
-                    type: 'linear',
-                    x: 0, y: 0, x2: 0, y2: 1,
-                    colorStops: [
-                        { offset: 0, color: 'rgba(59, 130, 246, 0.2)' },
-                        { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }
-                    ]
-                }
+                color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(59, 130, 246, 0.2)' }, { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }] }
             }
         }]
     };
 });
 
-const openDiagnosis = (item: ActivityLogItem) => {
-    currentLogContent.value = `日志时间: ${item.time}\n日志内容: ${item.content}\n请分析可能的技术原因。`;
+const openDiagnosis = (item: any) => {
+    currentLogContent.value = `日志: ${item.content}`;
     showDiagnosis.value = true;
-};
-
-const handleCreateTicket = () => {
-    ElMessage.success('已自动创建维修工单 #WORK-8823');
 };
 </script>
 
 <style scoped>
-.dashboard-container {
-    padding: 24px;
-    max-width: 1600px;
+.dashboard-page-root {
+    min-height: 100vh;
+    background-color: #f8fafc;
+    /* 灰底背景 */
+    padding: 2rem;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.page-inner-container {
+    max-width: 1440px;
     margin: 0 auto;
 }
 
-/* Grid Layout System */
-.grid-stats {
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.main-title {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.title-accent {
+    background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.system-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.status-pulse {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: #f1f5f9;
+    color: #3b82f6;
+}
+
+.stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
-.grid-main {
+.main-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 24px;
+    gap: 1.5rem;
 }
 
-/* Responsive Handling */
+.chart-container-box,
+.activity-container-box {
+    min-height: 450px;
+}
+
 @media (max-width: 1200px) {
-    .grid-stats {
+    .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .grid-main {
+    .main-grid {
         grid-template-columns: 1fr;
     }
 }
 
-@media (max-width: 768px) {
-    .grid-stats {
+@media (max-width: 640px) {
+    .stats-grid {
         grid-template-columns: 1fr;
     }
 }

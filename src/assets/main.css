@@ -1,5 +1,45 @@
 /* src/assets/main.css */
 @import './base.css';
+/* 1. 引入 Inter 字体 (Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* 2. 全局重置 (模拟 Tailwind Preflight) */
+*, ::before, ::after {
+  box-sizing: border-box; /* 核心：防止 padding 撑大盒子 */
+  border-width: 0;
+  border-style: solid;
+  border-color: var(--border-color, #e5e7eb);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased; /* 让文字在 Mac 上更清晰 */
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* 清除默认边距，由工具类控制 */
+h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+  font-weight: inherit;
+}
+
+/* 链接与按钮重置 */
+a { color: inherit; text-decoration: none; }
+button { background-color: transparent; cursor: pointer; }
+
+/* 图片自适应 */
+img, svg, video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
 
 :root {
   /* ================= Light Mode (白昼模式) ================= */
@@ -55,6 +95,8 @@ body {
 /* 滚动条适配 */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 html.dark ::-webkit-scrollbar-thumb { background: #475569; }
 html.dark ::-webkit-scrollbar-track { background: #0f172a; }
 

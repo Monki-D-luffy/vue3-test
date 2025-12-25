@@ -1,39 +1,62 @@
-/* src/assets/utilities.css */
+/* src/assets/utilities.css - The Missing Parts */
 
-/* --- 核心布局 (Layout) --- */
+/* --- 布局系统 (Flex & Grid) --- */
 .flex { display: flex; }
-.flex-1 { flex: 1 1 0%; }
 .flex-col { display: flex; flex-direction: column; }
+.flex-1 { flex: 1 1 0%; }
+.flex-shrink-0 { flex-shrink: 0; }
+.flex-grow { flex-grow: 1; }
+
 .flex-center { display: flex; align-items: center; justify-content: center; }
 .flex-between { display: flex; align-items: center; justify-content: space-between; }
+
 .items-center { align-items: center; }
 .items-baseline { align-items: baseline; }
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
 
+.grid { display: grid; }
+/* 如果你用了 grid-cols-4 类名，这里补上 */
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } 
+
+/* --- 尺寸 (Sizing) --- */
 .w-full { width: 100%; }
 .h-full { height: 100%; }
 .min-h-0 { min-height: 0; }
+.w-10 { width: 2.5rem; } /* 40px */
+.h-10 { height: 2.5rem; }
+
 .relative { position: relative; }
 .absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.overflow-y-auto { overflow-y: auto; }
 
-/* --- 间距系统 (Spacing) --- */
+/* --- 间距 (Spacing) --- */
 .m-0 { margin: 0; }
 .mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
 .mt-4 { margin-top: 1rem; }
 .mb-1 { margin-bottom: 0.25rem; }
 .mb-2 { margin-bottom: 0.5rem; }
 .mb-4 { margin-bottom: 1rem; }
 .mb-6 { margin-bottom: 1.5rem; }
 .mb-8 { margin-bottom: 2rem; }
+
+.ml-1 { margin-left: 0.25rem; }
 .ml-2 { margin-left: 0.5rem; }
 .mr-1 { margin-right: 0.25rem; }
+.mr-2 { margin-right: 0.5rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
 
 .p-0 { padding: 0; }
+.p-4 { padding: 1rem; }
 .p-6 { padding: 1.5rem; }
-.pb-6 { padding-bottom: 1.5rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
 .py-20 { padding-top: 5rem; padding-bottom: 5rem; }
+.pb-6 { padding-bottom: 1.5rem; }
 .pr-2 { padding-right: 0.5rem; }
 
 .gap-2 { gap: 0.5rem; }
@@ -44,39 +67,57 @@
 .text-xs { font-size: 0.75rem; line-height: 1rem; }
 .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
 .text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
 .text-2xl { font-size: 1.5rem; line-height: 2rem; }
 .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
 
 .font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
 .font-bold { font-weight: 700; }
+.tracking-tight { letter-spacing: -0.025em; } /* 关键：紧凑的字间距增加精致感 */
 .text-center { text-align: center; }
 
-/* --- 颜色 (Colors - Using Variables) --- */
+/* --- 颜色 (Colors) --- */
 .text-primary { color: var(--text-primary); }
 .text-secondary { color: var(--text-secondary); }
 .text-success { color: var(--color-success); }
 .text-danger { color: var(--color-danger); }
+.text-warning { color: var(--color-warning); }
+
+/* 下面这几个是你组件里用到的具体色值 */
+.text-blue-500 { color: var(--color-blue-500); }
+.text-blue-600 { color: var(--color-blue-600); }
+.bg-blue-50 { background-color: var(--color-blue-50); }
+.bg-white { background-color: #ffffff; }
 
 /* --- 组件样式 (Components) --- */
 .dashboard-card {
   background-color: var(--bg-card);
   border-radius: var(--radius-xl);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-color, #e2e8f0); /* 增加默认边框色 */
   box-shadow: var(--shadow-sm);
   padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .hover-lift {
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  will-change: transform; /* 性能优化 */
 }
 .hover-lift:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-hover);
-  border-color: var(--color-blue-100);
+  border-color: var(--color-blue-200);
 }
 
+.rounded-xl { border-radius: 12px; }
+.rounded-2xl { border-radius: 16px; }
+.rounded-full { border-radius: 9999px; }
+
+/* 呼吸灯 */
 .pulse-dot {
   display: inline-block;
   width: 8px;
@@ -86,6 +127,7 @@
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
+/* AI 渐变文字 */
 .text-gradient-ai {
   background: var(--gemini-gradient);
   -webkit-background-clip: text;
@@ -94,7 +136,5 @@
   font-weight: 700;
 }
 
-/* 滚动条美化 */
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-slate-200); border-radius: 2px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+/* 隐藏 */
+.hidden { display: none; }
