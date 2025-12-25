@@ -38,6 +38,9 @@
 </template>
 
 <script setup lang="ts">
+// ✅ 修复点：显式导入图标
+import { Top, Bottom } from '@element-plus/icons-vue';
+
 defineProps<{
     title: string;
     value: number | string;
@@ -88,6 +91,8 @@ defineProps<{
     border-radius: 4px;
     font-weight: 600;
     gap: 2px;
+    display: flex;
+    /* 确保 flex-center 生效 */
 }
 
 .trend-up {

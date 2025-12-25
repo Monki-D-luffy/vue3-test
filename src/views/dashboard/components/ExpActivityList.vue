@@ -35,6 +35,8 @@
 
 <script setup lang="ts">
 import type { ActivityLogItem } from '@/types/dashboard';
+// ✅ 修复点：显式导入图标
+import { MagicStick } from '@element-plus/icons-vue';
 
 defineProps<{
     activities: ActivityLogItem[]
@@ -120,5 +122,9 @@ defineEmits<{
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--color-slate-200);
     border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
 }
 </style>

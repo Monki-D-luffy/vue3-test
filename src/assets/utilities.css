@@ -1,28 +1,63 @@
 /* src/assets/utilities.css */
 
-/* --- 布局助手 (Layout Helpers) --- */
-.flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* --- 核心布局 (Layout) --- */
+.flex { display: flex; }
+.flex-1 { flex: 1 1 0%; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.items-center { align-items: center; }
+.items-baseline { align-items: baseline; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
 
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.min-h-0 { min-height: 0; }
+.relative { position: relative; }
+.absolute { position: absolute; }
 
-.flex-col {
-  display: flex;
-  flex-direction: column;
-}
+/* --- 间距系统 (Spacing) --- */
+.m-0 { margin: 0; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-4 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.ml-2 { margin-left: 0.5rem; }
+.mr-1 { margin-right: 0.25rem; }
 
-.gap-2 { gap: 8px; }
-.gap-4 { gap: 16px; }
-.gap-6 { gap: 24px; }
+.p-0 { padding: 0; }
+.p-6 { padding: 1.5rem; }
+.pb-6 { padding-bottom: 1.5rem; }
+.py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+.py-20 { padding-top: 5rem; padding-bottom: 5rem; }
+.pr-2 { padding-right: 0.5rem; }
 
-/* --- 卡片基础 (Card Base) --- */
+.gap-2 { gap: 0.5rem; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+
+/* --- 排版 (Typography) --- */
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+
+.font-medium { font-weight: 500; }
+.font-bold { font-weight: 700; }
+.text-center { text-align: center; }
+
+/* --- 颜色 (Colors - Using Variables) --- */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-success { color: var(--color-success); }
+.text-danger { color: var(--color-danger); }
+
+/* --- 组件样式 (Components) --- */
 .dashboard-card {
   background-color: var(--bg-card);
   border-radius: var(--radius-xl);
@@ -32,44 +67,25 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- 交互特效 (Interactions) --- */
 .hover-lift {
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
 .hover-lift:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-hover);
-  border-color: var(--primary-light);
+  border-color: var(--color-blue-100);
 }
 
-/* --- 呼吸灯动画 (Pulse Animation) --- */
 .pulse-dot {
-  position: relative;
   display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background-color: currentColor;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
-.pulse-dot::after {
-  content: '';
-  position: absolute;
-  top: -4px; left: -4px; right: -4px; bottom: -4px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  opacity: 0.4;
-  animation: pulse-ring 2s cubic-bezier(0.2, 0, 0, 1) infinite;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.5); opacity: 1; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-
-/* --- AI 文字特效 --- */
 .text-gradient-ai {
   background: var(--gemini-gradient);
   -webkit-background-clip: text;
@@ -77,3 +93,8 @@
   background-clip: text;
   font-weight: 700;
 }
+
+/* 滚动条美化 */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-slate-200); border-radius: 2px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

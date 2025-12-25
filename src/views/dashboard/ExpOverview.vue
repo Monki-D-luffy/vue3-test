@@ -1,59 +1,64 @@
 <template>
-    <div class="dashboard-container">
-        <header class="flex-between mb-8">
-            <div>
-                <h1 class="text-2xl font-bold text-primary mb-1">
-                    Dashboard <span class="text-gradient-ai">Pro</span>
-                </h1>
-                <p class="text-sm text-secondary flex-center gap-2">
-                    <span class="pulse-dot text-success"></span>
-                    系统全域运行平稳 · {{ currentDate }}
-                </p>
-            </div>
-            <div class="flex-center gap-4">
-                <el-button circle plain icon="Bell" />
-                <el-avatar :size="40" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-            </div>
-        </header>
+    <div class="exp-overview-root">
 
-        <section class="mb-8">
-            <ExpAiCommandBar />
-        </section>
+        <div class="dashboard-container">
+            <header class="flex-between mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-primary mb-1">
+                        Dashboard <span class="text-gradient-ai">Pro</span>
+                    </h1>
+                    <p class="text-sm text-secondary flex items-center gap-2">
+                        <span class="pulse-dot text-success"></span>
+                        系统全域运行平稳 · {{ currentDate }}
+                    </p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <el-button circle plain icon="Bell" />
+                    <el-avatar :size="40" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+                </div>
+            </header>
 
-        <div v-if="loading && !dashboardData" class="py-20 flex-center">
-            <el-skeleton animated :rows="5" class="w-full" />
-        </div>
-
-        <div v-else-if="dashboardData">
-            <section class="grid-stats mb-8">
-                <ExpStatCard title="设备总数" :value="dashboardData.overview.totalDevices" icon="Monitor" trend="12" />
-                <ExpStatCard title="在线率" :value="dashboardData.overview.onlineRate" unit="%" icon="Connection"
-                    status="normal" sub-text="网络健康" />
-                <ExpStatCard title="当前告警" :value="dashboardData.overview.activeAlerts" icon="WarningFilled"
-                    status="danger" :is-danger="true" sub-text="需立即处理" />
-                <ExpStatCard title="进行中任务" :value="dashboardData.overview.ongoingTasks" icon="Cpu" sub-text="固件升级中" />
+            <section class="mb-8">
+                <ExpAiCommandBar />
             </section>
 
-            <section class="grid-main h-[400px]">
-                <div class="min-h-0">
-                    <ExpChartContainer title="全网流量趋势" :options="chartOptions" :loading="loading">
-                        <template #action>
-                            <el-radio-group v-model="timeRange" size="small">
-                                <el-radio-button label="24H" />
-                                <el-radio-button label="7D" />
-                            </el-radio-group>
-                        </template>
-                    </ExpChartContainer>
-                </div>
+            <div v-if="loading && !dashboardData" class="py-20 flex-center">
+                <el-skeleton animated :rows="5" class="w-full" />
+            </div>
 
-                <div class="min-h-0">
-                    <ExpActivityList :activities="dashboardData.activities" @diagnose="openDiagnosis" />
-                </div>
-            </section>
+            <div v-else-if="dashboardData">
+                <section class="grid-stats mb-8">
+                    <ExpStatCard title="设备总数" :value="dashboardData.overview.totalDevices" icon="Monitor" :trend="12" />
+                    <ExpStatCard title="在线率" :value="dashboardData.overview.onlineRate" unit="%" icon="Connection"
+                        status="normal" sub-text="网络健康" />
+                    <ExpStatCard title="当前告警" :value="dashboardData.overview.activeAlerts" icon="WarningFilled"
+                        status="danger" :is-danger="true" sub-text="需立即处理" />
+                    <ExpStatCard title="进行中任务" :value="dashboardData.overview.ongoingTasks" icon="Cpu"
+                        sub-text="固件升级中" />
+                </section>
+
+                <section class="grid-main">
+                    <div class="min-h-0" style="height: 400px;">
+                        <ExpChartContainer title="全网流量趋势" :options="chartOptions" :loading="loading">
+                            <template #action>
+                                <el-radio-group v-model="timeRange" size="small">
+                                    <el-radio-button value="24H">24H</el-radio-button>
+                                    <el-radio-button value="7D">7天</el-radio-button>
+                                </el-radio-group>
+                            </template>
+                        </ExpChartContainer>
+                    </div>
+
+                    <div class="min-h-0" style="height: 400px;">
+                        <ExpActivityList :activities="dashboardData.activities" @diagnose="openDiagnosis" />
+                    </div>
+                </section>
+            </div>
         </div>
+
+        <ExpAiDiagnosisModal v-model="showDiagnosis" :log-content="currentLogContent" @fix="handleCreateTicket" />
+
     </div>
-
-    <ExpAiDiagnosisModal v-model="showDiagnosis" :log-content="currentLogContent" @fix="handleCreateTicket" />
 </template>
 
 <script setup lang="ts">
@@ -81,7 +86,7 @@ const currentLogContent = ref('');
 // Data Fetching
 const { dashboardData, loading } = useExpDashboard();
 
-// Chart Options Computation (适配 ECharts)
+// Chart Options Computation
 const chartOptions = computed(() => {
     if (!dashboardData.value) return null;
     const trend = dashboardData.value.trafficTrend;
@@ -120,7 +125,6 @@ const chartOptions = computed(() => {
     };
 });
 
-// Event Handlers
 const openDiagnosis = (item: ActivityLogItem) => {
     currentLogContent.value = `日志时间: ${item.time}\n日志内容: ${item.content}\n请分析可能的技术原因。`;
     showDiagnosis.value = true;
@@ -136,18 +140,6 @@ const handleCreateTicket = () => {
     padding: 24px;
     max-width: 1600px;
     margin: 0 auto;
-}
-
-.text-primary {
-    color: var(--text-primary);
-}
-
-.text-secondary {
-    color: var(--text-secondary);
-}
-
-.text-success {
-    color: var(--color-success);
 }
 
 /* Grid Layout System */
@@ -171,7 +163,6 @@ const handleCreateTicket = () => {
 
     .grid-main {
         grid-template-columns: 1fr;
-        height: auto;
     }
 }
 

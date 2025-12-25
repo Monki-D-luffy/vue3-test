@@ -36,6 +36,7 @@
 import { ref, computed } from 'vue';
 import { useGemini } from '@/composables/useGemini';
 import { parseMarkdown } from '@/utils/markdown'; // 确保你创建了这个工具
+import { Microphone, Loading, ChatDotRound } from '@element-plus/icons-vue';
 
 const inputVal = ref('');
 const { loading, result, askAI } = useGemini();
