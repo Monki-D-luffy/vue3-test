@@ -1,37 +1,79 @@
 /* src/assets/utilities.css */
 
-/* 布局工具 */
-.flex-center { display: flex; align-items: center; justify-content: center; }
-.flex-between { display: flex; align-items: center; justify-content: space-between; }
-.flex-col { display: flex; flex-direction: column; }
-.gap-2 { gap: 0.5rem; }
-.gap-4 { gap: 1rem; }
-
-/* 视觉增强 */
-.rounded-xl { border-radius: 0.75rem !important; }
-.rounded-2xl { border-radius: 1rem !important; }
-
-.shadow-card { 
-  box-shadow: var(--shadow-sm); 
-  background: white; 
-  transition: all 0.3s ease;
-  border: 1px solid var(--color-slate-100);
+/* --- 布局助手 (Layout Helpers) --- */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 交互特效 (核心科技感来源) */
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.gap-6 { gap: 24px; }
+
+/* --- 卡片基础 (Card Base) --- */
+.dashboard-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- 交互特效 (Interactions) --- */
 .hover-lift {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .hover-lift:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--color-blue-200);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--primary-light);
 }
 
-/* AI 文字渐变 */
+/* --- 呼吸灯动画 (Pulse Animation) --- */
+.pulse-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0.4;
+  animation: pulse-ring 2s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* --- AI 文字特效 --- */
 .text-gradient-ai {
   background: var(--gemini-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-weight: 700;
 }

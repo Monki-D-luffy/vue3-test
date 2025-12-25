@@ -1,9 +1,14 @@
 /* src/assets/ai-theme.css */
 :root {
-  /* --- 核心色板 (模拟 Tailwind Slate & Blue) --- */
+  /* =========================================
+     1. 色彩系统 (Color Palette)
+     ========================================= */
+  
+  /* 基础色板 - Slate (冷灰) */
   --color-slate-50: #f8fafc;
   --color-slate-100: #f1f5f9;
   --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
   --color-slate-400: #94a3b8;
   --color-slate-500: #64748b;
   --color-slate-600: #475569;
@@ -11,24 +16,75 @@
   --color-slate-800: #1e293b;
   --color-slate-900: #0f172a;
 
+  /* 品牌色板 - Gemini Blue */
   --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
   --color-blue-500: #3b82f6;
   --color-blue-600: #2563eb;
-  
-  --color-primary: var(--color-blue-600);
-  --bg-app: var(--color-slate-50);
+  --color-blue-700: #1d4ed8;
 
-  /* --- 阴影系统 (模拟 Tailwind Shadow) --- */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  /* 状态色 - Semantic Colors */
+  --color-success: #10b981;
+  --color-success-bg: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-danger: #ef4444;
+  --color-danger-bg: #fef2f2;
+
+  /* =========================================
+     2. 语义化变量 (Semantic Variables)
+     * 暗黑模式只需重写这部分
+     ========================================= */
   
-  /* --- AI 特效 --- */
+  /* 背景层级 */
+  --bg-app: var(--color-slate-50);        /* 应用底色 */
+  --bg-card: #ffffff;                     /* 卡片背景 */
+  --bg-hover: var(--color-slate-50);      /* 悬浮背景 */
+  --bg-input: #ffffff;                    /* 输入框背景 */
+
+  /* 边框与分割线 */
+  --border-color: var(--color-slate-100);
+  --border-color-hover: var(--color-slate-200);
+
+  /* 文字层级 */
+  --text-primary: var(--color-slate-800); /* 标题/正文 */
+  --text-secondary: var(--color-slate-500); /* 次要信息 */
+  --text-placeholder: var(--color-slate-400);
+
+  /* 品牌主色 */
+  --primary-color: var(--color-blue-600);
+  --primary-color-hover: var(--color-blue-700);
+  --primary-light: var(--color-blue-50);
+
+  /* AI 特效渐变 */
   --gemini-gradient: linear-gradient(135deg, #1c7ed6 0%, #22b8cf 100%);
+  
+  /* =========================================
+     3. 空间与形态 (Spacing & Shape)
+     ========================================= */
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* =========================================
+     4. 阴影系统 (Elevation)
+     ========================================= */
+  /* 极轻微的阴影，用于静态卡片 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  
+  /* 悬浮时的扩散阴影 */
+  --shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  
+  /* 模态框/Dropdown阴影 */
+  --shadow-modal: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
 }
 
-/* 覆盖 Element Plus 的一些默认值以匹配现代风格 */
+/* 覆盖 Element Plus 的默认变量，使其融入我们的设计系统 */
 :root {
-  --el-color-primary: var(--color-blue-600);
+  --el-color-primary: var(--primary-color);
   --el-bg-color-page: var(--bg-app);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-border-radius-base: var(--radius-md);
 }
