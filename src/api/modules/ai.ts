@@ -1,58 +1,130 @@
-import request from '@/utils/request';
+// src/api/modules/ai.ts
 
-// 定义 Gemini API 的精简接口契约
-export interface GeminiRequest {
-    contents: Array<{
-        parts: Array<{ text: string }>
-    }>;
+// 1. 从环境变量读取配置
+const API_KEY = import.meta.env.VITE_AI_API_KEY || '';
+const BASE_URL = import.meta.env.VITE_AI_API_URL || 'https://api.deepseek.com';
+const MODEL_NAME = import.meta.env.VITE_AI_MODEL || 'deepseek-chat';
+
+export interface AiMessage {
+    role: 'user' | 'assistant' | 'system';
+    content: string;
 }
 
-export interface GeminiResponse {
-    candidates?: Array<{
-        content?: {
-            parts?: Array<{ text: string }>
+/**
+ * 真实的 OpenAI 兼容流式请求
+ * 适用于 DeepSeek, Moonshot, ChatGPT 等
+ */
+async function* realOpenAIStream(prompt: string, context: any): AsyncGenerator<string, void, unknown> {
+    if (!API_KEY) throw new Error('NO_API_KEY');
+
+    // 1. 构建 System Prompt (包含 Dashboard 上下文)
+    const systemPrompt = `
+你是一个专业的物联网(IoT)系统智能专家。
+你正在协助运维人员管理一个大型设备网络。
+
+【当前系统上下文数据】：
+${JSON.stringify(context, null, 2)}
+
+请根据上述数据回答用户问题。如果数据中没有答案，请诚实告知。
+回答风格要求：简洁、专业、使用 Markdown 格式。对于关键数据请加粗显示。
+    `.trim();
+
+    // 2. 发起 Fetch 请求
+    // 注意：这里直接拼接 /chat/completions，如果你的 BASE_URL 已经包含了，请自行调整
+    const url = BASE_URL.endsWith('/') ? `${BASE_URL}chat/completions` : `${BASE_URL}/chat/completions`;
+    console.log('🔗 Connecting to AI:', url);
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: MODEL_NAME,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: prompt }
+                ],
+                stream: true, // 开启流式传输
+                temperature: 0.7
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`API Error ${response.status}: ${errText}`);
         }
-    }>;
-    error?: {
-        message: string;
+
+        if (!response.body) throw new Error('No response body');
+
+        // 3. 处理流式响应 (SSE Parsing)
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            buffer += chunk;
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // 保留未完整的行
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+                const dataStr = trimmed.slice(6); // 去掉 'data: ' 前缀
+
+                if (dataStr === '[DONE]') return; // 结束标志
+
+                try {
+                    const data = JSON.parse(dataStr);
+                    // OpenAI 格式: choices[0].delta.content
+                    const contentDelta = data.choices?.[0]?.delta?.content;
+
+                    if (contentDelta) {
+                        yield contentDelta;
+                    }
+                } catch (e) {
+                    console.warn('AI Stream Parse Error:', e);
+                }
+            }
+        }
+
+    } catch (e: any) {
+        console.error('AI Service Error:', e);
+        yield `\n\n**[连接失败]** 无法连接到 AI 服务。\n错误信息: ${e.message}`;
     }
 }
 
-// ⚠️ 注意：实际项目中建议通过后端代理调用 Gemini 以隐藏 Key
-// 这里为了演示方便，直接在前端调用（需在 .env 中配置 VITE_GEMINI_API_KEY）
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+/**
+ * 模拟流式输出 (当没有 Key 或测试时使用)
+ */
+async function* mockStreamGenerator(prompt: string, context: any): AsyncGenerator<string, void, unknown> {
+    await new Promise(r => setTimeout(r, 600));
+    const responseText = `[模拟模式] 我收到了你的消息：“${prompt}”。\n当前 context 中有 ${context?.overview?.totalDevices || 0} 台设备。\n\n请在 .env.local 中配置真实的 VITE_AI_API_KEY 来激活我。`;
+
+    const chunkSize = 2;
+    for (let i = 0; i < responseText.length; i += chunkSize) {
+        yield responseText.slice(i, i + chunkSize);
+        await new Promise(r => setTimeout(r, 30));
+    }
+}
 
 export const aiApi = {
     /**
-     * 发送提示词到 Gemini
+     * 统一对话接口
      */
-    async generateContent(prompt: string): Promise<string> {
-        // 如果没有 Key，抛出特殊错误以便上层切换 Mock
-        if (!API_KEY) {
-            throw new Error('NO_API_KEY');
-        }
-
-        try {
-            // 这里我们使用原生 fetch 而不是 axios，因为 url 是谷歌的，不是我们自己后端的
-            const response = await fetch(`${BASE_URL}?key=${API_KEY}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
-            });
-
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error?.message || 'Gemini API Error');
-            }
-
-            const data: GeminiResponse = await response.json();
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        } catch (error: any) {
-            console.error('AI Service Error:', error);
-            throw error;
+    async *chatStream(prompt: string, context: any = {}): AsyncGenerator<string, void, unknown> {
+        // 如果环境变量里有 Key，就走真实接口
+        if (API_KEY && !API_KEY.includes('YOUR_KEY')) {
+            yield* realOpenAIStream(prompt, context);
+        } else {
+            yield* mockStreamGenerator(prompt, context);
         }
     }
 };

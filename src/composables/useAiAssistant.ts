@@ -1,68 +1,62 @@
+// src/composables/useAiAssistant.ts
 import { ref } from 'vue';
-import { sendAiMessage, type ChatMessage } from '@/utils/aiService';
-import { useExpDashboard } from '@/composables/useExpDashboard';
+import { aiApi, type AiMessage } from '@/api/modules/ai';
 
 export function useAiAssistant() {
-    // 聊天记录列表
-    const messages = ref<ChatMessage[]>([
+    const messages = ref<AiMessage[]>([
         {
             role: 'assistant',
-            content: '你好！我是您的 IoT 智能分析师。我已经连接到系统后台，您可以问我任何关于设备状态、故障趋势或运维建议的问题。'
+            content: '你好！我是全局智能助手。点击右下角悬浮窗或在 Dashboard 中输入指令，我随时为您服务。'
         }
     ]);
 
-    const isTyping = ref(false); // 是否正在输出中
-
-    // 获取 Dashboard 的数据获取能力
-    const { getAnalysisContext } = useExpDashboard();
+    const isTyping = ref(false);
 
     /**
-     * 发送问题
+     * 发送消息
      * @param userText 用户输入的文本
+     * @param contextGetter 一个异步函数，用于获取当前页面的“上下文数据”
      */
-    const ask = async (userText: string) => {
+    const ask = async (userText: string, contextGetter?: () => Promise<any>) => {
         if (!userText.trim() || isTyping.value) return;
 
-        // 1. 立即上屏用户消息
+        // 1. 用户消息上屏
         messages.value.push({ role: 'user', content: userText });
         isTyping.value = true;
 
-        // 2. 预先放入一条空的 AI 消息，用于接收流式数据
+        // 2. 准备 AI 消息占位
         const aiMsgIndex = messages.value.push({ role: 'assistant', content: '' }) - 1;
         const currentMsg = messages.value[aiMsgIndex];
+
         try {
-            // 3. 关键步骤：获取“全量数据体检报告”
-            // 这会调用后端 API，并结合当前页面状态
-            const contextSnapshot = await getAnalysisContext();
+            // 3. 动态获取上下文 (Dependency Injection)
+            // 如果没传 getter，就给一个空对象
+            const context = contextGetter ? await contextGetter() : {};
 
-            // 4. 调用 AI 服务
-            await sendAiMessage(
-                userText,
-                contextSnapshot,
-                (chunk) => {
-                    // 5. 实时更新 UI：将新字符追加到最后一条消息中
+            // 4. 调用流式 API
+            const stream = aiApi.chatStream(userText, context);
 
-                    if (currentMsg) {
-                        currentMsg.content += chunk;
-                    }
-                }
-            );
+            for await (const chunk of stream) {
+                if (currentMsg)
+                    currentMsg.content += chunk;
+            }
+
         } catch (err) {
             console.error('AI Error:', err);
             if (currentMsg)
-                currentMsg.content += "\n[系统错误] 无法连接到 AI 分析服务，请检查网络。";
+                currentMsg.content += "\n[系统错误] AI 服务暂时不可用。";
         } finally {
             isTyping.value = false;
         }
     };
 
     /**
-     * 清空上下文/重置对话
+     * 清空对话
      */
     const clearChat = () => {
         messages.value = [{
             role: 'assistant',
-            content: '对话已重置。我已重新同步最新的系统数据，随时待命。'
+            content: '对话已清空。您可以开始新的提问。'
         }];
     };
 

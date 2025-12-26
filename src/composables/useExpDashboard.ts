@@ -112,39 +112,43 @@ export function useExpDashboard() {
     });
 
     /**
-     * [新增] 获取 AI 分析所需的上下文 (Context Builder)
-     * 这个方法会被 AI 组件调用
-     */
+         * 构建轻量级 AI 上下文
+         * 专门用于 useAiAssistant 注入数据
+         */
     const getAnalysisContext = async () => {
-        try {
-            // 1. 并行获取：当前页面状态 + 后端全量报告
-            // 虽然 dashboardData 可能已经有了，但为了保险起见，或者你可以直接用当前 ref 的值
+        const data = dashboardData.value;
 
-            // 发起后端请求获取深层数据
-            const report = await fetchAnalysisReport();
+        // 1. 安全解构 Overview (防止 data 为 null)
+        // 使用 ?. 和 ?? 确保即使数据未加载也能返回默认值，避免 TS 报错
+        const overviewSafe = {
+            totalDevices: data?.overview?.totalDevices ?? 0,
+            onlineRate: data?.overview?.onlineRate ?? '0%',
+            activeAlertsCount: data?.overview?.activeAlerts ?? 0
+        };
 
-            // 2. 组装“混合上下文” (Hybrid Context)
-            // AI 既需要知道“全局发生了什么”(Report)，也需要知道“用户现在盯着什么”(Current View)
-            const contextPayload = {
-                // A. 用户当前视图状态
-                currentView: {
-                    timeFilter: timeRange.value, // 用户选了 7D 还是 24H
-                    selectedProduct: currentProductId.value || 'All Products', // 用户选了哪个产品
-                    // 还可以加上当前页面显示的数据快照（如可见的告警）
-                    visibleStats: dashboardData.value?.overview
-                },
-                // B. 后端全量审计报告
-                backendReport: report
-            };
+        // 2. 从 activities 中提取 Top 5 告警/异常
+        // 假设 activities 中 type 为 'danger' 或 'warning' 的是告警
+        const recentIssues = data?.activities
+            ?.filter(item => item.type === 'danger' || item.type === 'warning')
+            .slice(0, 5)
+            .map(item => ({
+                time: item.time,
+                msg: item.content,
+                type: item.type
+            })) || [];
 
-            // 返回 JSON 字符串，直接喂给 AI
-            return JSON.stringify(contextPayload);
-        } catch (e) {
-            console.error('Failed to build AI context:', e);
-            // 降级策略：如果接口挂了，返回一个基础的错误提示，让 AI 知道数据获取失败
-            return JSON.stringify({ error: "Failed to fetch backend data. Please analyze based on limited frontend view." });
-        }
-    }
+        // 3. 构建精简 Payload
+        return {
+            page: 'dashboard',
+            filter: {
+                range: timeRange.value,
+                product: currentProductId.value
+            },
+            overview: overviewSafe,
+            recentIssues: recentIssues
+        };
+    };
+
     return {
         // State
         loading,

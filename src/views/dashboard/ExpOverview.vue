@@ -14,7 +14,7 @@
                 </div>
                 <div class="header-right">
                     <button class="icon-btn"><el-icon>
-                            <Bell />
+                            <!-- <Bell /> -->
                         </el-icon></button>
                     <el-avatar :size="40" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
                 </div>

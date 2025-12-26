@@ -15,8 +15,10 @@
                         </transition>
                     </RouterView>
                 </el-main>
+                <ExpAiFloatingButton />
             </el-container>
         </el-container>
+
     </div>
 </template>
 
@@ -24,6 +26,7 @@
 import { ref } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
+import ExpAiFloatingButton from '@/components/ExpAiFloatingButton.vue'
 
 const isCollapsed = ref(false)
 
