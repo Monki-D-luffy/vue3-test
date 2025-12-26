@@ -45,3 +45,33 @@ export interface DashboardData {
     activities: ActivityLogItem[];
     trafficTrend: ChartTrendData;
 }
+
+/**
+ * AI 全量分析报告结构
+ * 对应后端 /api/dashboard/analysis-report
+ */
+export interface AiAnalysisReport {
+    meta: {
+        scope: string;
+        period: string;
+        generatedAt: string;
+    };
+    statistics: {
+        totalDevices: number;
+        onlineRate: string;
+        criticalAlerts: number;
+        avgResponseTime: string;
+    };
+    firmwareStats: Record<string, number>; // key 是版本号，value 是数量
+    topIssues: Array<{
+        issue: string;
+        count: number;
+        affectedProduct: string;
+        primaryZone: string;
+    }>;
+    usagePattern: {
+        peakLoginTime: string;
+        mostFrequentAction: string;
+        recentFailures: string;
+    };
+}

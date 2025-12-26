@@ -1,6 +1,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import request from '@/utils/request';
 import type { DashboardData } from '@/types/dashboard';
+import { fetchAnalysisReport } from '@/api/modules/dashboard';
 
 export function useExpDashboard() {
     // ================= State (状态) =================
@@ -110,6 +111,40 @@ export function useExpDashboard() {
         stopPolling();
     });
 
+    /**
+     * [新增] 获取 AI 分析所需的上下文 (Context Builder)
+     * 这个方法会被 AI 组件调用
+     */
+    const getAnalysisContext = async () => {
+        try {
+            // 1. 并行获取：当前页面状态 + 后端全量报告
+            // 虽然 dashboardData 可能已经有了，但为了保险起见，或者你可以直接用当前 ref 的值
+
+            // 发起后端请求获取深层数据
+            const report = await fetchAnalysisReport();
+
+            // 2. 组装“混合上下文” (Hybrid Context)
+            // AI 既需要知道“全局发生了什么”(Report)，也需要知道“用户现在盯着什么”(Current View)
+            const contextPayload = {
+                // A. 用户当前视图状态
+                currentView: {
+                    timeFilter: timeRange.value, // 用户选了 7D 还是 24H
+                    selectedProduct: currentProductId.value || 'All Products', // 用户选了哪个产品
+                    // 还可以加上当前页面显示的数据快照（如可见的告警）
+                    visibleStats: dashboardData.value?.overview
+                },
+                // B. 后端全量审计报告
+                backendReport: report
+            };
+
+            // 返回 JSON 字符串，直接喂给 AI
+            return JSON.stringify(contextPayload);
+        } catch (e) {
+            console.error('Failed to build AI context:', e);
+            // 降级策略：如果接口挂了，返回一个基础的错误提示，让 AI 知道数据获取失败
+            return JSON.stringify({ error: "Failed to fetch backend data. Please analyze based on limited frontend view." });
+        }
+    }
     return {
         // State
         loading,
@@ -121,6 +156,7 @@ export function useExpDashboard() {
         // Actions
         refresh: () => fetchData(false),
         setTimeRange,
-        toggleProduct
+        toggleProduct,
+        getAnalysisContext
     };
 }

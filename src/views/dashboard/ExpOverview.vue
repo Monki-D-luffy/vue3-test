@@ -154,6 +154,7 @@ const handleProductClick = (product: any) => {
 
 .title-accent {
     background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }

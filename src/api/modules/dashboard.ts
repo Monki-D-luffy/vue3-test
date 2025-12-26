@@ -1,10 +1,13 @@
-// src/api/modules/dashboard.ts
-import request from '@/utils/request'
-import type { DashboardData } from '@/composables/useDashboard'
-// 注意：如果 DashboardData 定义在 useDashboard 中，导入它可能会导致循环依赖。
-// 建议：将 DashboardData 的类型定义移动到 src/types/index.ts 中。
-// 这里暂时使用 any 或泛型来避免报错，或者你可以手动定义返回类型。
+import request from '@/utils/request';
+import type { DashboardData, AiAnalysisReport } from '@/types/dashboard';
 
-export const fetchDashboardData = () => {
-    return request.get<any>('/dashboard/stats')
-}
+// 1. 获取仪表盘概览数据 (原有)
+export const fetchDashboardData = (params?: { range?: string; productId?: string }) => {
+    return request.get<DashboardData>('/dashboard/stats', { params });
+};
+
+// 2. [新增] 获取 AI 分析用的全量报告
+export const fetchAnalysisReport = () => {
+    // 这里的泛型 <AiAnalysisReport> 会让返回值自动获得类型提示
+    return request.get<AiAnalysisReport>('/dashboard/analysis-report');
+};

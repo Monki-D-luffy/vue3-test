@@ -1,10 +1,10 @@
 <template>
     <div class="ai-module-wrapper">
-        <div class="ai-card-border" :class="{ 'is-loading': loading }">
+        <div class="ai-card-border" :class="{ 'is-loading': isTyping }">
             <div class="ai-card-inner">
                 <div class="ai-input-container">
                     <div class="ai-icon-section">
-                        <el-icon v-if="loading" class="is-loading ai-pulse">
+                        <el-icon v-if="isTyping" class="is-loading ai-pulse">
                             <Loading />
                         </el-icon>
                         <el-icon v-else class="ai-static-icon">
@@ -13,12 +13,19 @@
                     </div>
 
                     <input v-model="inputVal" class="ai-input-field" type="text"
-                        placeholder="输入指令，如：'检查 Zone-A 设备健康度' 或 '生成昨日运行报告'..." @keyup.enter="handleSend"
-                        :disabled="loading" />
+                        placeholder="输入指令，如：'分析 Zone-A 设备故障' 或 '查看在线率趋势'..." @keyup.enter="handleSend"
+                        :disabled="isTyping" />
 
                     <div class="ai-action-section">
-                        <button class="ai-submit-btn" @click="handleSend" :disabled="!inputVal.trim() || loading">
-                            <span>执行智能指令</span>
+                        <el-button v-if="messages.length > 1" circle size="small" class="clear-btn" @click="clearChat"
+                            title="清空对话">
+                            <el-icon>
+                                <Delete />
+                            </el-icon>
+                        </el-button>
+
+                        <button class="ai-submit-btn" @click="handleSend" :disabled="!inputVal.trim() || isTyping">
+                            <span>{{ isTyping ? '分析中...' : '执行指令' }}</span>
                             <el-icon>
                                 <MagicStick />
                             </el-icon>
@@ -29,17 +36,30 @@
         </div>
 
         <transition name="el-zoom-in-top">
-            <div v-if="result" class="ai-response-panel dashboard-card">
-                <div class="ai-response-header">
-                    <div class="ai-avatar">🤖</div>
-                    <span class="ai-name">Gemini Intelligence</span>
-                    <div class="ai-status-tag">Auto-Diagnosing</div>
-                </div>
+            <div v-if="messages.length > 0" class="ai-response-panel dashboard-card">
+                <div class="chat-scroll-container" ref="scrollArea">
+                    <div v-for="(msg, index) in messages" :key="index" class="message-row" :class="msg.role">
 
-                <div class="ai-markdown-content" v-html="parsedResult"></div>
+                        <div class="ai-response-header">
+                            <el-icon class="ai-avatar" :class="msg.role">
+                                <component :is="msg.role === 'assistant' ? 'Cpu' : 'UserFilled'" />
+                            </el-icon>
+                            <span class="ai-name">
+                                {{ msg.role === 'assistant' ? 'AI 分析师' : 'Me' }}
+                            </span>
+                            <span class="ai-time" v-if="msg.role === 'assistant'">
+                                {{ index === messages.length - 1 && isTyping ? '正在输入...' : 'Just now' }}
+                            </span>
+                        </div>
 
-                <div class="ai-response-footer">
-                    <span class="ai-hint">按 ESC 退出 · 指令已记录至系统日志</span>
+                        <div class="ai-content-body">
+                            <div class="markdown-body" v-html="renderContent(msg.content)"></div>
+                            <span v-if="isTyping && index === messages.length - 1 && msg.role === 'assistant'"
+                                class="typing-cursor">|</span>
+                        </div>
+
+                        <div v-if="index < messages.length - 1" class="message-divider"></div>
+                    </div>
                 </div>
             </div>
         </transition>
@@ -47,110 +67,109 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useGemini } from '@/composables/useGemini';
+import { ref, nextTick, watch } from 'vue';
+import {
+    Loading,
+    Microphone,
+    MagicStick,
+    UserFilled,
+    Cpu,
+    Delete
+} from '@element-plus/icons-vue';
+import { useAiAssistant } from '@/composables/useAiAssistant';
+// 尝试导入 markdown 工具，如果没有则使用降级函数
 import { parseMarkdown } from '@/utils/markdown';
-import { Microphone, Loading, MagicStick } from '@element-plus/icons-vue';
 
 const inputVal = ref('');
-const { loading, result, askAI } = useGemini();
+const scrollArea = ref<HTMLElement | null>(null);
 
-const parsedResult = computed(() => parseMarkdown(result.value));
+// 核心逻辑接入
+const { messages, isTyping, ask, clearChat } = useAiAssistant();
 
-const handleSend = async () => {
-    if (!inputVal.value.trim()) return;
-    await askAI(inputVal.value, 'chat');
+// 处理发送
+const handleSend = () => {
+    if (!inputVal.value.trim() || isTyping.value) return;
+    ask(inputVal.value);
+    inputVal.value = '';
 };
+
+// 渲染内容辅助函数
+const renderContent = (content: string) => {
+    try {
+        return parseMarkdown ? parseMarkdown(content) : content;
+    } catch (e) {
+        return content; // 降级显示纯文本
+    }
+};
+
+// 自动滚动到底部
+const scrollToBottom = () => {
+    nextTick(() => {
+        if (scrollArea.value) {
+            scrollArea.value.scrollTop = scrollArea.value.scrollHeight;
+        }
+    });
+};
+
+// 监听消息变化，触发滚动
+watch(() => messages.value, () => scrollToBottom(), { deep: true });
 </script>
 
 <style scoped>
 /* =========================================
-   核心视觉封装 (无需依赖外部 CSS)
+   原有样式保留 (Keep Original Styles)
    ========================================= */
-
 .ai-module-wrapper {
-    width: 100%;
-    margin-bottom: 2rem;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    position: relative;
+    z-index: 10;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-/* 渐变边框容器 */
 .ai-card-border {
-    padding: 2px;
-    /* 边框厚度 */
-    border-radius: 1rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 50%, #818cf8 100%);
-    background-size: 200% 200%;
-    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
-    transition: all 0.5s ease;
+    padding: 3px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #3b83f6b3 0%, #8a5cf6c5 100%);
+
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
+    transition: all 0.3s ease;
 }
 
+.ai-card-border:hover,
 .ai-card-border.is-loading {
-    animation: border-flow 2s linear infinite;
+    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+    box-shadow: 0 5px 10px 0px rgba(59, 130, 246, 0.2);
 }
 
-@keyframes border-flow {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-/* 内层白色容器 */
 .ai-card-inner {
-    background: #ffffff;
-    border-radius: calc(1rem - 2px);
-    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: 18px;
+    padding: 0.5rem 0.75rem;
 }
 
 .ai-input-container {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
+    height: 3.5rem;
 }
 
-/* 图标区 */
 .ai-icon-section {
-    width: 44px;
-    height: 44px;
+    width: 2.5rem;
+    height: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #eff6ff;
-    border-radius: 0.75rem;
-    color: #3b82f6;
-    font-size: 1.25rem;
+    background: #f1f5f9;
+    border-radius: 50%;
+    color: #64748b;
 }
 
 .ai-pulse {
-    animation: pulse-ring 2s infinite;
+    color: #3b82f6;
+    animation: spin 2s linear infinite;
 }
 
-@keyframes pulse-ring {
-    0% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-
-    50% {
-        transform: scale(1.05);
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-}
-
-/* 输入框主体 */
 .ai-input-field {
     flex: 1;
     border: none;
@@ -158,23 +177,27 @@ const handleSend = async () => {
     font-size: 1rem;
     color: #1e293b;
     background: transparent;
-    padding: 0.5rem 0;
 }
 
 .ai-input-field::placeholder {
     color: #94a3b8;
 }
 
-/* 按钮 */
+.ai-action-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .ai-submit-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: #0f172a;
     color: white;
     border: none;
-    border-radius: 0.75rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: 2rem;
     font-weight: 600;
     font-size: 0.875rem;
     cursor: pointer;
@@ -192,72 +215,144 @@ const handleSend = async () => {
     filter: grayscale(1);
 }
 
-/* 响应面板 */
+.clear-btn {
+    color: #94a3b8;
+    border-color: transparent;
+}
+
+.clear-btn:hover {
+    color: #ef4444;
+    background: #fee2e2;
+}
+
+/* =========================================
+   响应面板样式调整 (Adapted for Chat)
+   ========================================= */
 .ai-response-panel {
     margin-top: 1rem;
     background: white;
     border-radius: 1rem;
     border: 1px solid #e2e8f0;
-    padding: 1.5rem;
+    /* padding: 1.5rem;  <-- 改为内部容器 padding */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    /* 包含滚动条 */
+}
+
+/* 新增：滚动容器 */
+.chat-scroll-container {
+    padding: 1.5rem;
+    max-height: 400px;
+    /* 限制高度，超出滚动 */
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+/* 新增：单条消息行 */
+.message-row {
+    margin-bottom: 1.5rem;
 }
 
 .ai-response-header {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .ai-avatar {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-avatar.assistant {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.ai-avatar.user {
+    background: #f1f5f9;
+    color: #64748b;
 }
 
 .ai-name {
     font-weight: 700;
     color: #1e293b;
+    font-size: 0.9rem;
+}
+
+.ai-time {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+.ai-content-body {
+    padding-left: 2.75rem;
+    /* 对齐头像右侧 */
+    color: #334155;
+    line-height: 1.6;
     font-size: 0.95rem;
 }
 
-.ai-status-tag {
-    font-size: 0.7rem;
-    padding: 2px 8px;
-    background: #f0fdf4;
-    color: #16a34a;
-    border-radius: 99px;
-    border: 1px solid #dcfce7;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+/* 分割线 */
+.message-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 1.5rem 0 1.5rem 2.75rem;
 }
 
-/* Markdown 渲染微调 */
-.ai-markdown-content {
-    color: #475569;
-    font-size: 0.9375rem;
-    line-height: 1.6;
+/* 动画 */
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
-:deep(p) {
-    margin-bottom: 0.75rem;
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
 }
 
-:deep(strong) {
-    color: #2563eb;
+.typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: #3b82f6;
+    margin-left: 4px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
 }
 
-:deep(ul) {
-    padding-left: 1.25rem;
-    margin-bottom: 0.75rem;
+/* 简单的 Markdown 样式修正 (如果 markdown.css 未加载) */
+.markdown-body :deep(h3) {
+    font-size: 1.1em;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    color: #1e293b;
 }
 
-.ai-response-footer {
-    margin-top: 1.25rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #f1f5f9;
+.markdown-body :deep(ul) {
+    padding-left: 1.5em;
+    margin: 0.5em 0;
 }
 
-.ai-hint {
-    font-size: 0.75rem;
-    color: #94a3b8;
+.markdown-body :deep(li) {
+    margin-bottom: 0.25em;
+}
+
+.markdown-body :deep(strong) {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.markdown-body :deep(p) {
+    margin-bottom: 0.5em;
 }
 </style>
