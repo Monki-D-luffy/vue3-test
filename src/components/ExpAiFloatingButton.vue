@@ -26,37 +26,28 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { Cpu, Close } from '@element-plus/icons-vue';
 import ExpAiChatPanel from '@/components/ExpAiChatPanel.vue';
 import { useAiAssistant } from '@/composables/useAiAssistant';
+// ✅ 引入新的上下文管理器
+import { useAiContext } from '@/composables/useAiContext';
 
 const visible = ref(false);
-const route = useRoute();
 const { messages, isTyping, ask } = useAiAssistant();
+const { getGlobalContext } = useAiContext();
 
 const toggleVisible = () => {
     visible.value = !visible.value;
 };
 
-// 【关键逻辑】全局上下文获取器
-// 当你在非 Dashboard 页面提问时，AI 只能看到这些通用信息
-const getGlobalContext = async () => {
-    return {
-        currentPage: route.path,
-        pageTitle: document.title,
-        timestamp: new Date().toLocaleString(),
-        note: "User is asking from global floating button."
-    };
-};
-
 const handleSend = (text: string) => {
-    // 注入全局上下文
+    // ✅ 关键修改：传入 getGlobalContext，AI 将能根据当前路由自动抓取不同数据
     ask(text, getGlobalContext);
 };
 </script>
 
 <style scoped>
+/* 保持原有样式不变 */
 .ai-float-container {
     position: fixed;
     bottom: 2rem;
@@ -65,8 +56,8 @@ const handleSend = (text: string) => {
 }
 
 .float-btn {
-    width: 40px;
-    height: 40px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
     color: white;
@@ -84,12 +75,10 @@ const handleSend = (text: string) => {
     transform: scale(1.1);
 }
 
-/* 点击展开后，按钮旋转并变透明（可选） */
 .float-btn.is-active {
     transform: rotate(90deg) scale(0.8);
     opacity: 0;
     pointer-events: none;
-    /* 防止遮挡抽屉 */
 }
 
 .pulse-ring {
@@ -111,7 +100,6 @@ const handleSend = (text: string) => {
     width: 380px;
     height: 600px;
     max-height: 80vh;
-    /* 防止在小屏幕溢出 */
     background: white;
     border-radius: 16px;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
@@ -139,10 +127,8 @@ const handleSend = (text: string) => {
 }
 
 .close-btn {
-    width: 20px;
-    height: 20px;
     cursor: pointer;
-    color: #cd16e9;
+    color: #94a3b8;
     padding: 4px;
     border-radius: 4px;
     transition: all 0.2s;

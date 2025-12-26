@@ -94,27 +94,24 @@ import { ElMessage } from 'element-plus'
 import AppPagination from '@/components/AppPagination.vue'
 import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
 
-// 引入修复后的 Composable
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
 import { useDataExport } from '@/composables/useDataExport'
+// ✅ 引入 AI 上下文
+import { useAiContext } from '@/composables/useAiContext'
 
 import { formatDateTime } from '@/utils/formatters'
 import { parseLogDetails } from '@/utils/logParser'
 
 const route = useRoute()
-
-// --- 1. 基础参数 ---
 const deviceId = ref(route.query.id as string || 'N/A')
 const deviceName = ref(route.query.name as string || '未知设备')
 const pageTitle = computed(() => `设备日志`)
 
-// --- 2. 使用 Composable ---
-// 注意：filters 现在是从 useDeviceLogs 中解构出来的，直接绑定到模板
 const {
     loading,
     logData,
     pagination,
-    filters, // ✨ 直接使用内部状态，保持响应式连接
+    filters,
     fetchLogs,
     handleSizeChange,
     handleCurrentChange,
@@ -125,8 +122,8 @@ const {
 } = useDeviceLogs()
 
 const { isExporting, exportData } = useDataExport()
+const { setPageContext } = useAiContext() // Hook
 
-// --- 3. 辅助计算属性 ---
 const deviceForModal = computed(() => {
     if (deviceId.value === 'N/A') {
         return null
@@ -137,13 +134,10 @@ const deviceForModal = computed(() => {
     } as any
 })
 
-// --- 4. 业务逻辑方法 ---
-
+// ... 原有的 export / data load 逻辑 ...
 const truncateRawDetails = (rawDetails: any): string => {
     const str = String(rawDetails);
-    if (str.length > 50) {
-        return str.substring(0, 50) + '...';
-    }
+    if (str.length > 50) return str.substring(0, 50) + '...';
     return str;
 }
 
@@ -155,7 +149,6 @@ const logDataProcessor = (data: any[]) => {
     }))
 }
 
-// 导出列定义
 const logTableColumns = [
     { label: '时间(GMT+8)', key: 'time' },
     { label: '设备事件', key: 'event' },
@@ -166,22 +159,35 @@ const logTableColumns = [
 
 const handleExport = () => {
     const exportParams = buildDeviceLogParams(deviceId.value, filters)
-    exportData(
-        '/deviceLogs',
-        exportParams,
-        logTableColumns,
-        `设备日志_${deviceName.value}`,
-        logDataProcessor
-    )
+    exportData('/deviceLogs', exportParams, logTableColumns, `设备日志_${deviceName.value}`, logDataProcessor)
 }
 
-const loadData = () => {
+const loadData = async () => {
     if (deviceId.value === 'N/A') {
         ElMessage.error('未指定设备ID，无法查询日志')
         return
     }
-    // ✨ 这里的 filters 已经是 Composable 内部的 reactive 对象，fetchLogs 会自动使用它
-    fetchLogs(deviceId.value)
+    await fetchLogs(deviceId.value)
+
+    // ✅ 注册 AI 上下文：日志分析模式
+    // 注意：一定要在 fetchLogs 完成后注册，这样 logData 才有数据
+    setPageContext(async () => {
+        // 提取日志的文本快照
+        const logSnapshot = logData.value.map(log =>
+            `[${formatDateTime(log.time)}] [${log.type}] ${log.event}: ${String(log.details).substring(0, 200)}`
+        ).join('\n');
+
+        return {
+            scene: 'DeviceLogAnalysis',
+            description: `Analyzing logs for device: ${deviceName.value} (${deviceId.value})`,
+            contextData: {
+                deviceId: deviceId.value,
+                deviceName: deviceName.value,
+                logCount: pagination.total,
+                recentLogs: logSnapshot // 直接把拼接好的日志喂给 AI
+            }
+        }
+    })
 }
 
 const onUpgradeDone = () => {
@@ -194,7 +200,6 @@ const handleSearch = () => {
     loadData()
 }
 
-// 分页事件适配
 const onSizeChange = (newSize: number) => {
     handleSizeChange(newSize, deviceId.value)
 }
@@ -203,13 +208,13 @@ const onCurrentChange = (newPage: number) => {
     handleCurrentChange(newPage, deviceId.value)
 }
 
-// --- 5. 生命周期 ---
 onMounted(() => {
     loadData()
 })
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .device-log-container {
     padding: 0;
 }
@@ -220,7 +225,6 @@ onMounted(() => {
     margin-top: 0;
     margin-bottom: 20px;
 }
-
 
 .upgrade-alert {
     margin-top: 20px;
@@ -247,8 +251,6 @@ onMounted(() => {
     width: 180px;
 }
 
-
-/* 设备信息栏样式 */
 .info-card :deep(.el-card__body) {
     padding: 15px 20px;
     display: flex;
@@ -268,7 +270,6 @@ onMounted(() => {
     gap: 10px;
 }
 
-/* 表格日志详情样式 */
 .log-details {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
@@ -281,7 +282,6 @@ onMounted(() => {
     word-break: break-all;
 }
 
-/* 分页组件的样式 */
 .log-table-card :deep(.pagination-block) {
     justify-content: center;
     border-top: 1px solid var(--el-border-color-lighter);
@@ -289,34 +289,26 @@ onMounted(() => {
     margin-top: 20px;
 }
 
-/* 单元格的 flex 布局 */
 .details-cell-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-/* 单元格中 "原始" 数据的 <pre> 样式 */
 .log-details-raw {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
     color: #909399;
-    /* 灰色, 表示是原始数据 */
     margin: 0;
     white-space: pre-wrap;
     word-break: break-all;
     flex-grow: 1;
-    /* 占据主要空间 */
 }
 
-/* "解析" 标签的样式 */
 .details-trigger-tag {
     margin-left: 10px;
     cursor: pointer;
     flex-shrink: 0;
-    /* 防止标签被压缩 */
-
-    /* (可选) 微调, 让 'plain' 标签的边框更明显 */
     border-color: var(--el-color-primary-light-5);
     color: var(--el-color-primary);
 }
@@ -325,10 +317,6 @@ onMounted(() => {
     background-color: var(--el-color-primary-light-9);
 }
 
-
-/* * Popover 内部的 <pre> 样式 (保持不变)
- * 必须使用 :global(), 因为 Popover 默认渲染在 <body> 下
-*/
 :global(.log-details-popover pre.log-details-parsed) {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;

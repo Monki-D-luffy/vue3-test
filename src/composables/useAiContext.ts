@@ -1,65 +1,77 @@
 // src/composables/useAiContext.ts
-import { computed } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { useExpDashboard } from '@/composables/useExpDashboard';
-// 假设你还有这些 Store 或 Composable
-import { useDeviceList } from '@/composables/useDeviceList';
-// import { useDeviceDetail } from '@/composables/useDeviceDetail';
+// ✅ 引入 Auth Store 获取当前登录用户信息
+import { useAuthStore } from '@/stores/authStore';
+
+// 全局状态：存储当前活动页面的数据获取函数
+const activePageContextGetter = ref<(() => Promise<any>) | null>(null);
 
 export function useAiContext() {
     const route = useRoute();
-    const dashboardStore = useExpDashboard();
-    const deviceListStore = useDeviceList(); // 假设你有这个
+    const authStore = useAuthStore();
 
-    // 策略模式：根据路由匹配不同的数据源
-    const currentContext = computed(() => {
-        const path = route.path;
+    /**
+     * 【提供者调用】
+     * 页面组件调用此方法，注册自己的数据源
+     */
+    const setPageContext = (getter: () => Promise<any>) => {
+        activePageContextGetter.value = getter;
+        
+        // 自动清理逻辑
+        onUnmounted(() => {
+            if (activePageContextGetter.value === getter) {
+                activePageContextGetter.value = null;
+            }
+        });
+    };
 
-        // 场景 1: Dashboard 首页
-        if (path === '/dashboard' || path === '/') {
-            return {
-                scene: 'Dashboard',
-                summary: '用户正在查看全局概览',
-                data: dashboardStore.getAnalysisContext() // 复用之前的
-            };
-        }
-
-        // 场景 2: 设备管理列表页
-        if (path.includes('/device/list')) {
-            // 只喂给 AI 当前页显示的这 10 条数据，不要给全部，防止 Token 爆炸
-            const visibleDevices = deviceListStore.deviceList.value.map(d => ({
-                id: d.id,
-                name: d.name,
-                status: d.status,
-                firmware: d.firmwareVersion
-            }));
-
-            return {
-                scene: 'DeviceManagement',
-                summary: '用户正在浏览设备列表',
-                data: {
-                    totalCount: deviceListStore.total.value,
-                    filters: deviceListStore.searchParams.value, // 让 AI 知道当前过滤条件
-                    currentView: visibleDevices
-                }
-            };
-        }
-
-        // 场景 3: 这里的详情页 (假设 URL 是 /device/detail/:id)
-        if (path.includes('/device/detail')) {
-            return {
-                scene: 'DeviceDetail',
-                summary: `用户正在分析设备 ${route.params.id} 的详情`,
-                // data: ... 获取详情和日志
-            };
-        }
-
-        // 默认兜底
-        return {
-            scene: 'Unknown',
-            data: { url: path }
+    /**
+     * 【消费者调用】
+     * AI 组件调用此方法，聚合“身份信息”、“路由信息”和“页面数据”
+     */
+    const getGlobalContext = async () => {
+        // 1. 获取当前操作员画像 (Operator Profile)
+        const operatorProfile = {
+            name: authStore.userInfo?.nickname || authStore.userInfo?.username || 'Guest',
+            role: 'Administrator', // 这里可以根据 authStore.userInfo.roles 动态获取
+            id: authStore.userInfo?.id || 'unknown'
         };
-    });
 
-    return { currentContext };
+        // 2. 基础路由上下文
+        const baseContext = {
+            timestamp: new Date().toLocaleString(),
+            environment: import.meta.env.MODE, // 'development' or 'production'
+            operator: operatorProfile, // 👈 AI 现在知道你在跟谁说话了
+            currentPage: {
+                path: route.path,
+                name: String(route.name || 'Unknown'),
+                meta: route.meta
+            }
+        };
+
+        // 3. 尝试获取页面级详细上下文 (Page Context)
+        let pageData = {};
+        if (activePageContextGetter.value) {
+            try {
+                pageData = await activePageContextGetter.value();
+            } catch (e) {
+                console.warn('AI Context Error: Failed to get page data', e);
+                pageData = { error: 'Failed to retrieve page data' };
+            }
+        } else {
+            pageData = { note: 'No specific page context registered.' };
+        }
+
+        // 4. 合并返回
+        return {
+            system: baseContext,
+            activeView: pageData
+        };
+    };
+
+    return {
+        setPageContext,
+        getGlobalContext
+    };
 }
