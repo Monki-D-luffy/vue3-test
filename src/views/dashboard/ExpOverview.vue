@@ -35,15 +35,16 @@
                         sub-text="固件升级中" />
                 </div>
                 <section class="mb-8">
-                    <ExpProductMatrix :products="dashboardData.products" />
+                    <ExpProductMatrix :products="dashboardData.products" :active-id="currentProductId"
+                        @select="handleProductClick" />
                 </section>
                 <div class="main-grid">
                     <div class="chart-container-box">
                         <ExpChartContainer title="全网流量趋势" :options="chartOptions" :loading="loading">
                             <template #action>
                                 <el-radio-group v-model="timeRange" size="small" class="custom-radio">
-                                    <el-radio-button value="24H">24H</el-radio-button>
-                                    <el-radio-button value="7D">7天</el-radio-button>
+                                    <el-radio-button label="24H" value="24H">24H</el-radio-button>
+                                    <el-radio-button label="7D" value="7D">7天</el-radio-button>
                                 </el-radio-group>
                             </template>
                         </ExpChartContainer>
@@ -71,12 +72,20 @@ import ExpActivityList from './components/ExpActivityList.vue';
 import ExpChartContainer from './components/ExpChartContainer.vue';
 import ExpAiDiagnosisModal from './components/ExpAiDiagnosisModal.vue';
 import ExpProductMatrix from './components/ExpProductMatrix.vue';
+import { Bell } from '@element-plus/icons-vue';
 
 const currentDate = dayjs().format('YYYY年MM月DD日');
-const timeRange = ref('24H');
+// const timeRange = ref('24H');
 const showDiagnosis = ref(false);
 const currentLogContent = ref('');
-const { dashboardData, loading } = useExpDashboard();
+const {
+    dashboardData,
+    loading,
+    timeRange,          // 直接从这里获取状态
+    currentProductId,   // 获取当前选中的产品ID
+    toggleProduct       // 获取操作方法
+} = useExpDashboard();
+
 
 const chartOptions = computed(() => {
     if (!dashboardData.value) return null;
@@ -94,7 +103,12 @@ const chartOptions = computed(() => {
             itemStyle: { color: '#3b82f6' },
             areaStyle: {
                 color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(59, 130, 246, 0.2)' }, { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }] }
-            }
+            },
+            xAxis: { type: 'category', data: trend.categories /* ... */ },
+            series: [{
+                data: trend.series,
+                // ...
+            }]
         }]
     };
 });
@@ -102,6 +116,10 @@ const chartOptions = computed(() => {
 const openDiagnosis = (item: any) => {
     currentLogContent.value = `日志: ${item.content}`;
     showDiagnosis.value = true;
+};
+
+const handleProductClick = (product: any) => {
+    toggleProduct(product.id);
 };
 </script>
 

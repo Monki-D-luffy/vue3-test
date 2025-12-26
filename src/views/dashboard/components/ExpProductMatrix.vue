@@ -8,7 +8,8 @@
         </div>
 
         <div class="product-grid">
-            <div v-for="item in products" :key="item.id" class="product-item-card hover-lift">
+            <div v-for="item in products" :key="item.id" class="product-item-card hover-lift"
+                :class="{ 'is-active': activeId === item.id }" @click="$emit('select', item.id)">
                 <div class="item-header">
                     <div class="product-icon" :class="`is-${item.status}`">
                         <el-icon>
@@ -47,8 +48,14 @@
 <script setup lang="ts">
 import type { ProductStatusItem } from '@/types/dashboard';
 
+// 定义 Props 和 Emits
 defineProps<{
-    products: ProductStatusItem[]
+    products: ProductStatusItem[];
+    activeId?: string; // 新增：接收当前选中的ID
+}>();
+
+defineEmits<{
+    (e: 'select', id: string): void
 }>();
 
 const formatStatus = (status: string) => {
@@ -62,6 +69,7 @@ const formatStatus = (status: string) => {
 </script>
 
 <style scoped>
+/* ... 原有样式保持不变 ... */
 .product-matrix-section {
     margin-bottom: 2rem;
     font-family: 'Inter', system-ui, sans-serif;
@@ -80,7 +88,6 @@ const formatStatus = (status: string) => {
     color: #1e293b;
 }
 
-/* Grid 布局 */
 .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -94,15 +101,32 @@ const formatStatus = (status: string) => {
     padding: 1.25rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    /* 增加手型光标 */
+    position: relative;
+    /* 为可能的绝对定位元素做准备 */
 }
 
+/* 悬停效果 */
 .product-item-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08);
     border-color: #dbeafe;
 }
 
-/* 头部样式 */
+/* ================= 新增：选中态样式 ================= */
+.product-item-card.is-active {
+    border-color: #3b82f6;
+    background-color: #f0f9ff;
+    /* 极淡的蓝色背景 */
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.product-item-card.is-active .product-name {
+    color: #0f172a;
+}
+
+/* ... 其他原有样式 (item-header, product-icon 等) ... */
 .item-header {
     display: flex;
     justify-content: space-between;
@@ -171,7 +195,6 @@ const formatStatus = (status: string) => {
     color: #64748b;
 }
 
-/* 主体样式 */
 .product-name {
     font-size: 1rem;
     font-weight: 700;
@@ -202,7 +225,6 @@ const formatStatus = (status: string) => {
     font-family: monospace;
 }
 
-/* 底部进度条 */
 .progress-info {
     display: flex;
     justify-content: space-between;

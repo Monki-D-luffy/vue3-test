@@ -11,12 +11,17 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 // 2. 然后引入 Element Plus 组件
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 // 3. ⚠️ 最后引入你的自定义样式 (确保能覆盖上面的默认值)
 import './assets/page-layouts.css'
 import './assets/main.css'
 
 const app = createApp(App)
+
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component)
+}
 
 app.use(createPinia())
 app.use(router)
