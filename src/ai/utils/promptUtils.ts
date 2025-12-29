@@ -1,4 +1,4 @@
-// src/utils/aiUtils.ts
+// src/ai/utils/promptUtils.ts
 
 /**
  * 将任意对象数组转换为紧凑的 AI 可读字符串快照
@@ -13,11 +13,15 @@ export function generateAiSnapshot(data: any[], options: {
     // 截取前 N 条
     const slice = data.slice(0, maxItems);
 
+    if (slice.length === 0) {
+        return 'No data available.';
+    }
+
     return slice.map((item, index) => {
         // 提取属性并拼接
         const propsStr = Object.entries(item)
             .filter(([key, val]) => {
-                // 过滤掉被排除的 Key、空值、或过于复杂的深层对象(视情况而定)
+                // 过滤掉被排除的 Key、空值、或过于复杂的深层对象
                 return !excludeKeys.includes(key) && val !== null && val !== undefined && typeof val !== 'function';
             })
             .map(([key, val]) => {
@@ -36,6 +40,8 @@ export function generateAiSnapshot(data: any[], options: {
  */
 export function generateObjectProfile(obj: any, excludeKeys: string[] = []): Record<string, any> {
     const result: any = {};
+    if (!obj) return result;
+
     Object.keys(obj).forEach(key => {
         if (!excludeKeys.includes(key) && obj[key] != null) {
             result[key] = obj[key];

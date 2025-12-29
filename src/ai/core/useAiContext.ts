@@ -1,7 +1,8 @@
-// src/composables/useAiContext.ts
+// src/ai/core/useAiContext.ts
 import { ref, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
+import type { AiContext } from '../types';
 
 // 全局单例：存储当前页面主动提供的上下文获取函数
 const activePageContextGetter = ref<(() => Promise<any>) | null>(null);
@@ -14,7 +15,6 @@ export function useAiContext() {
     let myGetter: (() => Promise<any>) | null = null;
 
     // ✅ 关键修复：在 useAiContext 被调用时（setup 阶段）同步注册销毁钩子
-    // 这样无论 setPageContext 何时被调用，清理逻辑都已经安全注册了
     onUnmounted(() => {
         // 只有当全局 Context 是我自己设置的时候，才清理它
         // 防止清理了其他新页面注册的 Context
@@ -35,7 +35,7 @@ export function useAiContext() {
     /**
      * 【消费者】AI 组件调用此方法获取完整上下文
      */
-    const getGlobalContext = async () => {
+    const getGlobalContext = async (): Promise<AiContext> => {
         // 1. 身份与环境信息
         const operatorProfile = {
             name: authStore.userInfo?.nickname || authStore.userInfo?.username || 'Guest',

@@ -63,8 +63,7 @@ import { useDataExport } from '@/composables/useDataExport'
 import { useProducts } from '@/composables/useProducts'
 
 // ✅ 引入 AI 上下文与 API
-import { useDeviceListAi } from '@/composables/context/useDeviceAi'
-
+import { useDeviceListAi } from '@/ai'
 import type { Device, DeviceListFilters } from '@/types'
 
 const router = useRouter()

@@ -11,6 +11,8 @@ export interface UserInfo {
     email: string;
     avatar?: string;
     token?: string; // 登录响应中通常包含 token
+    id?: string | number;
+    username?: string;
 }
 
 // 注册请求数据

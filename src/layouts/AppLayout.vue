@@ -26,7 +26,7 @@
 import { ref } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
-import ExpAiFloatingButton from '@/components/ExpAiFloatingButton.vue'
+import ExpAiFloatingButton from '@/components/AiFloatingButton.vue'
 
 const isCollapsed = ref(false)
 

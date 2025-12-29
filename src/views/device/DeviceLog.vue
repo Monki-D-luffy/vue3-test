@@ -150,7 +150,7 @@ import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
 import { useDataExport } from '@/composables/useDataExport'
 // ✅ 引入 AI 上下文
-import { useAiContext } from '@/composables/useAiContext'
+import { useAiContext } from '@/ai'
 
 import { formatDateTime } from '@/utils/formatters'
 import { parseLogDetails } from '@/utils/logParser'
@@ -248,7 +248,7 @@ const loadData = async () => {
     // 生成虚拟客户 (Mock)
     const mockCustomers = ['长沙智能制造示范工厂', '深圳南山科技园机房', '上海张江高科实验室', '北京亦庄数据中心'];
     const customerIndex = deviceId.value.charCodeAt(0) % mockCustomers.length;
-    mockOwnerName.value = mockCustomers[customerIndex];
+    mockOwnerName.value = mockCustomers[customerIndex] || '未知客户';
 
     // 2. AI 上下文注册
     setPageContext(async () => {

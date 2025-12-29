@@ -1,21 +1,17 @@
-// src/api/modules/ai.ts
-import { getToolsDescription } from '@/utils/aiTools';
+// src/ai/api.ts
+import { getToolsDescription } from './utils/aiTools';
+import type { AiContext } from './types';
 
 // 1. 从环境变量读取配置
 const API_KEY = import.meta.env.VITE_AI_API_KEY || '';
 const BASE_URL = import.meta.env.VITE_AI_API_URL || 'https://api.deepseek.com';
 const MODEL_NAME = import.meta.env.VITE_AI_MODEL || 'deepseek-chat';
 
-export interface AiMessage {
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-}
-
 /**
  * 真实的 OpenAI 兼容流式请求
  * 适用于 DeepSeek, Moonshot, ChatGPT 等
  */
-async function* realOpenAIStream(prompt: string, context: any): AsyncGenerator<string, void, unknown> {
+async function* realOpenAIStream(prompt: string, context: AiContext): AsyncGenerator<string, void, unknown> {
     if (!API_KEY) throw new Error('NO_API_KEY');
 
     // 1. 构建包含工具说明的 System Prompt
@@ -42,9 +38,9 @@ async function* realOpenAIStream(prompt: string, context: any): AsyncGenerator<s
     `.trim();
 
     // 2. 发起 Fetch 请求
-    // 注意：这里直接拼接 /chat/completions，如果你的 BASE_URL 已经包含了，请自行调整
     const url = BASE_URL.endsWith('/') ? `${BASE_URL}chat/completions` : `${BASE_URL}/chat/completions`;
     console.log('🔗 Connecting to AI:', url);
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -116,9 +112,11 @@ async function* realOpenAIStream(prompt: string, context: any): AsyncGenerator<s
 /**
  * 模拟流式输出 (当没有 Key 或测试时使用)
  */
-async function* mockStreamGenerator(prompt: string, context: any): AsyncGenerator<string, void, unknown> {
+async function* mockStreamGenerator(prompt: string, context: AiContext): AsyncGenerator<string, void, unknown> {
     await new Promise(r => setTimeout(r, 600));
-    const responseText = `[模拟模式] 我收到了你的消息：“${prompt}”。\n当前 context 中有 ${context?.overview?.totalDevices || 0} 台设备。\n\n请在 .env.local 中配置真实的 VITE_AI_API_KEY 来激活我。`;
+
+    // 简单的 Mock 响应逻辑，实际应用中可以扩展更复杂的 mockChat 逻辑
+    const responseText = `[模拟模式] 我收到了你的消息：“${prompt}”。\n当前 context 中有 ${context?.activeView?.visibleCount || 0} 条可见数据。\n\n请在 .env.local 中配置真实的 VITE_AI_API_KEY 来激活我。`;
 
     const chunkSize = 2;
     for (let i = 0; i < responseText.length; i += chunkSize) {
@@ -131,7 +129,7 @@ export const aiApi = {
     /**
      * 统一对话接口
      */
-    async *chatStream(prompt: string, context: any = {}): AsyncGenerator<string, void, unknown> {
+    async *chatStream(prompt: string, context: AiContext = {}): AsyncGenerator<string, void, unknown> {
         // 如果环境变量里有 Key，就走真实接口
         if (API_KEY && !API_KEY.includes('YOUR_KEY')) {
             yield* realOpenAIStream(prompt, context);

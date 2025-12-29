@@ -1,14 +1,9 @@
-// src/utils/aiTools.ts
+// src/ai/tools/index.ts
 import router from '@/router';
-import { useDeviceList } from '@/composables/useDeviceList';
-// 假设这里可以引用到 Store 或其他全局状态
+import type { AiTool } from '../types';
 
-export interface AiTool {
-    name: string;
-    description: string;
-    parameters?: string;
-    execute: (args: any) => Promise<any>;
-}
+// 注意：这里未来可以拆分为单独的文件，例如 tools/navigation.ts, tools/statistics.ts
+// 目前为了保持迁移平滑，先集中在一起
 
 export const toolsRegistry: Record<string, AiTool> = {
     // 🛠️ 工具 1: 页面跳转
@@ -19,6 +14,7 @@ export const toolsRegistry: Record<string, AiTool> = {
         parameters: '{ path: string }',
         execute: async ({ path }) => {
             try {
+                if (!path) throw new Error('Path is required');
                 await router.push(path);
                 return { success: true, message: `Mapsd to ${path}` };
             } catch (e: any) {
@@ -36,7 +32,6 @@ export const toolsRegistry: Record<string, AiTool> = {
         execute: async () => {
             // 这里我们模拟一个“全量统计”的逻辑
             // 在真实场景中，这里应该调用一个专门的聚合 API: request.get('/stats/products')
-            // 这里为了演示，我们临时发起一个大 Limit 的请求或返回 Mock 的全量数据
 
             // 模拟延迟
             await new Promise(r => setTimeout(r, 800));
@@ -50,7 +45,7 @@ export const toolsRegistry: Record<string, AiTool> = {
                     '智能灯泡': 30,
                     'NB-IoT水表': 27
                 },
-                source: 'Database Full Scan'
+                source: 'Database Full Scan (Mocked)'
             };
         }
     }
@@ -58,6 +53,7 @@ export const toolsRegistry: Record<string, AiTool> = {
 
 /**
  * 生成给 AI 看的工具描述文档
+ * 供 api.ts 中的 System Prompt 使用
  */
 export function getToolsDescription() {
     return Object.values(toolsRegistry).map(t => {

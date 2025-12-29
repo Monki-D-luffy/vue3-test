@@ -25,9 +25,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { MagicStick, Position } from '@element-plus/icons-vue';
-import { useAiAssistant } from '@/composables/useAiAssistant';
+import { useAiAssistant } from '@/ai/core/useAiAssistant';
 import { useExpDashboard } from '@/composables/useExpDashboard';
-import ExpAiChatPanel from '@/components/ExpAiChatPanel.vue';
+import ExpAiChatPanel from '@/components/AiChatPanel.vue';
 
 const inputVal = ref('');
 const { messages, isTyping, ask } = useAiAssistant();

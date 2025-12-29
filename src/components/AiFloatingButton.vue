@@ -27,10 +27,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Cpu, Close } from '@element-plus/icons-vue';
-import ExpAiChatPanel from '@/components/ExpAiChatPanel.vue';
-import { useAiAssistant } from '@/composables/useAiAssistant';
-// ✅ 引入新的上下文管理器
-import { useAiContext } from '@/composables/useAiContext';
+import ExpAiChatPanel from '@/components/AiChatPanel.vue';
+import { useAiAssistant } from '@/ai';// ✅ 引入新的上下文管理器
+import { useAiContext } from '@/ai';
 
 const visible = ref(false);
 const { messages, isTyping, ask } = useAiAssistant();

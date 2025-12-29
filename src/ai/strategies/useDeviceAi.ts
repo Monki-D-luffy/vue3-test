@@ -1,9 +1,9 @@
-// src/composables/context/useDeviceAi.ts
+// src/ai/strategies/useDeviceAi.ts
 import { watch } from 'vue';
-import { useAiContext } from '@/composables/useAiContext';
+import { useAiContext } from '../core/useAiContext';
+import { generateAiSnapshot } from '../utils/promptUtils';
 import { fetchDevices as fetchDevicesApi } from '@/api/modules/device';
 import { buildDeviceListParams } from '@/composables/useDeviceList';
-import { generateAiSnapshot } from '@/utils/aiUtils';
 import type { DeviceListFilters } from '@/types';
 
 /**
@@ -13,7 +13,7 @@ import type { DeviceListFilters } from '@/types';
 export function useDeviceListAi(dependencies: {
     filters: DeviceListFilters;
     pagination: { total: number };
-    summary: any; // 传入 Summary 对象的引用
+    summary: any; // 传入 Summary 对象的引用 (Ref)
     dataCenterMap: Record<string, string>;
 }) {
     const { setPageContext } = useAiContext();
@@ -25,6 +25,7 @@ export function useDeviceListAi(dependencies: {
         // 这一步是自动的，不管 Device 对象里加了什么属性，fetchDevicesApi 返回什么就是什么
         let shadowList: any[] = [];
         try {
+            // 使用 buildDeviceListParams 确保过滤条件与界面一致
             const shadowParams = buildDeviceListParams(filters, { _page: 1, _limit: 100 });
             const res: any = await fetchDevicesApi(shadowParams);
 
@@ -35,10 +36,8 @@ export function useDeviceListAi(dependencies: {
         }
 
         // 2. 使用通用工具生成快照
-        // ✅ 核心优化：这里不再硬编码 `ID:${d.id}...`
-        // 它会自动把 shadowList 里所有的字段都拼进去 (如 sn, ipv4, firmware...)
         const snapshot = generateAiSnapshot(shadowList, {
-            // 如果有些字段完全没用且占地方（比如 rawData），可以在这里排除
+            // 排除敏感或无用字段，节省 token
             excludeKeys: ['rawData', 'secretKey', 'token']
         });
 
@@ -72,9 +71,9 @@ export function useDeviceListAi(dependencies: {
     };
 
     // 注册到 AI 上下文
-    // 我们可以选择在 filters 变化时自动刷新，或者只在 AI 被唤起时懒加载 (Getter 模式就是懒加载)
+    // 当 AI 助手被唤起时，它会调用这个 getter 获取最新数据
     setPageContext(aiContextGetter);
 
-    // 如果需要在 filters 变化时主动通知 AI (可选，视交互需求而定)
+    // 如果需要在 filters 变化时主动通知 AI (可选)
     // watch(() => filters, () => { ... }, { deep: true });
 }
