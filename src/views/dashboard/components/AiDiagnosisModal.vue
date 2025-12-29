@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { useGemini } from '@/composables/useGemini';
+import { useDeepseek } from '@/ai/legacy/useDeepseek';
 import { parseMarkdown } from '@/utils/markdown';
 
 const props = defineProps<{
@@ -37,7 +37,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue', 'fix']);
 
-const { loading, result, askAI } = useGemini();
+const { loading, result, askAI } = useDeepseek();
 const parsedResult = computed(() => parseMarkdown(result.value));
 
 // 双向绑定 Dialog 可见性

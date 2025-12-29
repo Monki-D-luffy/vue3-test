@@ -66,12 +66,12 @@
 import { ref, computed } from 'vue';
 import dayjs from 'dayjs';
 import { useExpDashboard } from '@/composables/useExpDashboard';
-import ExpAiCommandBar from './components/ExpAiCommandBar.vue';
-import ExpStatCard from './components/ExpStatCard.vue';
-import ExpActivityList from './components/ExpActivityList.vue';
-import ExpChartContainer from './components/ExpChartContainer.vue';
-import ExpAiDiagnosisModal from './components/ExpAiDiagnosisModal.vue';
-import ExpProductMatrix from './components/ExpProductMatrix.vue';
+import ExpAiCommandBar from './components/AiCommandBar.vue';
+import ExpStatCard from './components/StatCard.vue';
+import ExpActivityList from './components/ActivityList.vue';
+import ExpChartContainer from './components/ChartContainer.vue';
+import ExpAiDiagnosisModal from './components/AiDiagnosisModal.vue';
+import ExpProductMatrix from './components/ProductMatrix.vue';
 import { Bell } from '@element-plus/icons-vue';
 
 const currentDate = dayjs().format('YYYY年MM月DD日');

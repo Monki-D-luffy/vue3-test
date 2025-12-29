@@ -12,3 +12,6 @@ export type { AiMessage, AiTool, AiContext } from './types';
 
 // 导出工具函数 (如果外界需要手动生成快照)
 export { generateAiSnapshot, generateObjectProfile } from './utils/promptUtils';
+
+// ✅ 导出轻量级兼容模块
+export { useDeepseek } from './legacy/useDeepseek';
