@@ -99,7 +99,7 @@
     {
       "id": "5efCD90d-2FAf-Ed3E-CEE1-28f7A63d3EB5",
       "name": "断类关县",
-      "status": "离线",
+      "status": "故障",
       "puuid": "PU-20230375",
       "productInfo": "智能插座 / prod_socket_01",
       "deviceType": "智能插座",
@@ -26828,6 +26828,18 @@
       "errorMessage": null,
       "startedAt": "2025-12-18 06:59:08",
       "finishedAt": "2025-12-18 06:59:08"
+    },
+    {
+      "id": "task_261cFE62-155E-d2d3-fdAd-FcA49beDF08d",
+      "deviceId": "5efCD90d-2FAf-Ed3E-CEE1-28f7A63d3EB5",
+      "deviceName": "断类关县",
+      "firmwareId": "fw_002",
+      "firmwareVersion": "1.0.1",
+      "status": "failed",
+      "progress": 0,
+      "errorMessage": "校验失败",
+      "startedAt": "2025-12-26 09:15:30",
+      "finishedAt": "2025-12-26 09:15:31"
     }
   ],
   "campaigns": [

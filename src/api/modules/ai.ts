@@ -1,4 +1,5 @@
 // src/api/modules/ai.ts
+import { getToolsDescription } from '@/utils/aiTools';
 
 // 1. 从环境变量读取配置
 const API_KEY = import.meta.env.VITE_AI_API_KEY || '';
@@ -17,16 +18,27 @@ export interface AiMessage {
 async function* realOpenAIStream(prompt: string, context: any): AsyncGenerator<string, void, unknown> {
     if (!API_KEY) throw new Error('NO_API_KEY');
 
-    // 1. 构建 System Prompt (包含 Dashboard 上下文)
+    // 1. 构建包含工具说明的 System Prompt
+    const toolsDesc = getToolsDescription();
+
     const systemPrompt = `
-你是一个专业的物联网(IoT)系统智能专家。
-你正在协助运维人员管理一个大型设备网络。
+        你是一个专业的物联网(IoT)系统智能专家。
+        你正在协助运维人员管理一个大型设备网络。
 
-【当前系统上下文数据】：
-${JSON.stringify(context, null, 2)}
+        【当前页面上下文】:
+        ${JSON.stringify(context, null, 2)}
 
-请根据上述数据回答用户问题。如果数据中没有答案，请诚实告知。
-回答风格要求：简洁、专业、使用 Markdown 格式。对于关键数据请加粗显示。
+        【可用工具 (Available Tools)】:
+        你可以调用以下前端函数来获取更多数据或控制界面。
+        如果需要调用工具，请**只返回**如下 JSON 格式的指令，不要包含其他文字：
+        {"tool": "工具名称", "args": { ...参数... }}
+
+        ${toolsDesc}
+
+        【回答规则】:
+        1. 如果用户的问题可以通过【当前页面上下文】直接回答，请直接回答。
+        2. 如果数据不全（例如上下文只有前 100 条，但用户问全局统计），或者需要跳转页面，请返回 JSON 工具指令。
+        3. 收到工具运行结果后，请基于结果生成最终回答。
     `.trim();
 
     // 2. 发起 Fetch 请求

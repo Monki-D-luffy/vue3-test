@@ -1,9 +1,9 @@
 <template>
     <div class="page-container">
-        <PageMainHeader title="设备明细" subtitle="实时监控设备运行状态与配置详情">
+        <PageMainHeader title="设备资源池" subtitle="全网设备资产监控与生命周期管理">
             <template #actions>
-                <el-select v-model="filters.dataCenter" placeholder="切换区域 / 数据中心" size="default"
-                    class="datacenter-select" effect="light" clearable @change="handleDataCenterChange">
+                <el-select v-model="filters.dataCenter" placeholder="所有区域" size="default" class="datacenter-select"
+                    effect="light" clearable @change="handleDataCenterChange">
                     <template #prefix>
                         <el-icon>
                             <Location />
@@ -32,18 +32,17 @@
             @batch-restart="handleBatchRestart" @batch-enable="handleBatchEnable" @clear-selection="clearSelection" />
 
         <DeviceDetailDrawer v-model="drawerVisible" :device="currentDevice" @refresh="fetchDevices" />
-
         <DeviceUnbindDialog v-model="unbindDialogVisible" :device="deviceToUnbind" @success="handleUnbindSuccess" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Location } from '@element-plus/icons-vue'
 
-// ... 原有的组件引入保持不变 ...
+// 组件引入
 import PageMainHeader from '@/components/PageMainHeader.vue'
 import DeviceStatsOverview from './components/DeviceStatsOverview.vue'
 import DeviceFilterBar from '@/components/DeviceFilterBar.vue'
@@ -52,23 +51,27 @@ import DeviceBatchActionBar from './components/DeviceBatchActionBar.vue'
 import DeviceDetailDrawer from '@/components/DeviceDetailDrawer.vue'
 import DeviceUnbindDialog from '@/components/DeviceUnbindDialog.vue'
 
+// 工具与常量
 import { DEVICE_EXPORT_COLUMNS } from '@/constants/device'
 import { DATA_CENTER_MAP } from '@/constants/dictionaries'
 import { formatDateTime } from '@/utils/formatters'
 
+// 组合式函数
 import { useDeviceList, buildDeviceListParams } from '@/composables/useDeviceList'
 import { useDeviceSummary } from '@/composables/useDeviceSummary'
 import { useDataExport } from '@/composables/useDataExport'
 import { useProducts } from '@/composables/useProducts'
 
-// ✅ 1. 引入上下文 Hook
+// ✅ 引入 AI 上下文与 API
 import { useAiContext } from '@/composables/useAiContext'
+import { fetchDevices as fetchDevicesApi } from '@/api/modules/device'
 
 import type { Device, DeviceListFilters } from '@/types'
 
 const router = useRouter()
 const dataCenterMap: Record<string, string> = DATA_CENTER_MAP
 
+// --- Core Logic ---
 const {
     loading,
     deviceList,
@@ -85,6 +88,7 @@ const { summary, fetchSummary } = useDeviceSummary()
 const { products, fetchProducts, getProductName } = useProducts()
 const { isExporting, exportData } = useDataExport()
 
+// --- Local State ---
 const selectedRows = ref<Device[]>([])
 const drawerVisible = ref(false)
 const currentDevice = ref<Device | null>(null)
@@ -92,49 +96,68 @@ const unbindDialogVisible = ref(false)
 const deviceToUnbind = ref<Device | null>(null)
 const tableComponentRef = ref<InstanceType<typeof DeviceListTable> | null>(null)
 
-// ✅ 2. 初始化 AI 上下文注册
+// ==========================================
+// 🧠 AI 上下文注入 (Shadow Fetch 策略)
+// ==========================================
 const { setPageContext } = useAiContext()
 
-onMounted(async () => {
-    await Promise.all([
-        fetchDevices(),
-        fetchProducts()
-    ])
-    fetchSummary(filters.dataCenter || '')
-
-    // ✅ 3. 注册当前页面的数据源给 AI
-    // 当用户在这一页点击 AI 时，AI 就会读到这些数据
+const registerAiContext = () => {
     setPageContext(async () => {
-        // 为了节省 Token，只提取关键字段
-        const visibleSnapshot = deviceList.value.map(d => ({
-            id: d.id,
-            name: d.name,
-            status: d.status, // online/offline
-            ver: d.firmwareVersion,
-            product: d.productName || getProductName(d.productId)
-        }));
+        // 1. 影子请求：突破 UI 分页限制，拉取 100 条数据
+        let shadowList: any[] = []
+        try {
+            const shadowParams = buildDeviceListParams(filters, { _page: 1, _limit: 100 })
+            const res: any = await fetchDevicesApi(shadowParams)
+
+            if (Array.isArray(res)) shadowList = res
+            else if (res?.items) shadowList = res.items
+        } catch (e) {
+            console.warn('AI Shadow Fetch Failed', e)
+            shadowList = deviceList.value // 降级
+        }
+
+        // 2. 构建数据快照 (关键修改：加入 SN 字段)
+        // 注意：这里尝试获取 d.sn 或 d.identifier，请根据你实际的 API 字段名调整
+        const deviceSnapshot = shadowList.map(d =>
+            `ID:${d.id} | SN:${d.sn || d.identifier || 'N/A'} | Name:${d.name} | Status:${d.status} | Ver:${d.firmwareVersion} | Product:${d.productName || getProductName(d.productId)}`
+        ).join('\n')
+
+        // 3. 计算业务统计
+        const total = pagination.total || 1
+        const onlineCount = summary.value.online || 0
+        const healthRate = ((onlineCount / total) * 100).toFixed(1) + '%'
 
         return {
             scene: 'DeviceListManagement',
-            description: 'User is viewing the device list table.',
-            // 告诉 AI 当前的宏观统计
-            stats: {
-                totalDevices: pagination.total,
-                onlineCount: summary.value.online,
-                offlineCount: summary.value.offline
+            description: 'User is managing the device fleet. Use "deviceListSnapshot" to find specific devices.',
+
+            // 宏观统计
+            businessStats: {
+                totalAssets: pagination.total,
+                onlineRate: healthRate,
+                currentRegion: filters.dataCenter ? dataCenterMap[filters.dataCenter] : 'Global',
+                filterSummary: { ...filters }
             },
-            // 告诉 AI 用户当前的筛选意图
-            currentFilters: {
-                ...filters,
-                dataCenter: filters.dataCenter ? dataCenterMap[filters.dataCenter] : 'All'
-            },
-            // 告诉 AI 用户具体看到了哪些设备 (前 10-20 条)
-            currentTableData: visibleSnapshot.slice(0, 15)
+
+            // 微观数据
+            dataScope: `Top ${shadowList.length} devices (Snapshot)`,
+            deviceListSnapshot: deviceSnapshot // 👈 现在这里面包含了 SN
         }
     })
+}
+
+onMounted(async () => {
+    await Promise.all([fetchDevices(), fetchProducts()])
+    fetchSummary(filters.dataCenter || '')
+
+    // 初始化注册
+    registerAiContext()
 })
 
-// ... 下面的业务逻辑保持不变 ...
+// ==========================================
+// 业务逻辑
+// ==========================================
+
 const handleFilterUpdate = (newFilters: Partial<DeviceListFilters>) => {
     Object.assign(filters, newFilters)
 }
@@ -183,22 +206,22 @@ const handleUnbindSuccess = () => {
     fetchSummary(filters.dataCenter)
 }
 
+// 批量操作
 const handleBatchDelete = () => {
     ElMessage.success(`已删除 ${selectedRows.value.length} 个设备`)
     clearSelection()
     fetchDevices()
 }
-
 const handleBatchRestart = () => {
     ElMessage.success(`已发送重启指令至 ${selectedRows.value.length} 个设备`)
     clearSelection()
 }
-
 const handleBatchEnable = () => {
     ElMessage.success(`已启用 ${selectedRows.value.length} 个设备`)
     clearSelection()
 }
 
+// 导出
 const exportProcessor = (data: Device[]) => {
     return data.map(device => ({
         ...device,
@@ -227,7 +250,9 @@ const handleExport = () => {
 .main-table-card {
     background: var(--app-bg-card);
     padding: 24px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-top: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(226, 232, 240, 0.6);
 }
 </style>
