@@ -63,8 +63,7 @@ import { useDataExport } from '@/composables/useDataExport'
 import { useProducts } from '@/composables/useProducts'
 
 // ✅ 引入 AI 上下文与 API
-import { useAiContext } from '@/composables/useAiContext'
-import { fetchDevices as fetchDevicesApi } from '@/api/modules/device'
+import { useDeviceListAi } from '@/composables/context/useDeviceAi'
 
 import type { Device, DeviceListFilters } from '@/types'
 
@@ -97,61 +96,20 @@ const deviceToUnbind = ref<Device | null>(null)
 const tableComponentRef = ref<InstanceType<typeof DeviceListTable> | null>(null)
 
 // ==========================================
-// 🧠 AI 上下文注入 (Shadow Fetch 策略)
+// 🧠 AI 上下文挂载 (一行代码搞定)
 // ==========================================
-const { setPageContext } = useAiContext()
-
-const registerAiContext = () => {
-    setPageContext(async () => {
-        // 1. 影子请求：突破 UI 分页限制，拉取 100 条数据
-        let shadowList: any[] = []
-        try {
-            const shadowParams = buildDeviceListParams(filters, { _page: 1, _limit: 100 })
-            const res: any = await fetchDevicesApi(shadowParams)
-
-            if (Array.isArray(res)) shadowList = res
-            else if (res?.items) shadowList = res.items
-        } catch (e) {
-            console.warn('AI Shadow Fetch Failed', e)
-            shadowList = deviceList.value // 降级
-        }
-
-        // 2. 构建数据快照 (关键修改：加入 SN 字段)
-        // 注意：这里尝试获取 d.sn 或 d.identifier，请根据你实际的 API 字段名调整
-        const deviceSnapshot = shadowList.map(d =>
-            `ID:${d.id} | SN:${d.sn || d.identifier || 'N/A'} | Name:${d.name} | Status:${d.status} | Ver:${d.firmwareVersion} | Product:${d.productName || getProductName(d.productId)}`
-        ).join('\n')
-
-        // 3. 计算业务统计
-        const total = pagination.total || 1
-        const onlineCount = summary.value.online || 0
-        const healthRate = ((onlineCount / total) * 100).toFixed(1) + '%'
-
-        return {
-            scene: 'DeviceListManagement',
-            description: 'User is managing the device fleet. Use "deviceListSnapshot" to find specific devices.',
-
-            // 宏观统计
-            businessStats: {
-                totalAssets: pagination.total,
-                onlineRate: healthRate,
-                currentRegion: filters.dataCenter ? dataCenterMap[filters.dataCenter] : 'Global',
-                filterSummary: { ...filters }
-            },
-
-            // 微观数据
-            dataScope: `Top ${shadowList.length} devices (Snapshot)`,
-            deviceListSnapshot: deviceSnapshot // 👈 现在这里面包含了 SN
-        }
-    })
-}
+// 只要把页面上的状态扔进去，剩下的交给 Composable 处理
+useDeviceListAi({
+    filters,
+    pagination,
+    summary,
+    dataCenterMap
+});
 
 onMounted(async () => {
     await Promise.all([fetchDevices(), fetchProducts()])
     fetchSummary(filters.dataCenter || '')
 
-    // 初始化注册
-    registerAiContext()
 })
 
 // ==========================================
