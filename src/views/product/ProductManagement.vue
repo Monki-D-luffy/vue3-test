@@ -1,102 +1,80 @@
 <template>
-    <div class="page-container">
-        <PageMainHeader title="产品管理" subtitle="定义与管理 IoT 设备的产品模型与物模型">
-            <template #actions>
-                <el-button type="primary" icon="Plus" @click="handleCreate">
+    <div class="p-6 h-full flex flex-col gap-6 bg-[var(--bg-canvas)] overflow-hidden">
+
+        <div class="flex justify-between items-end shrink-0">
+            <div>
+                <h1 class="text-2xl font-bold text-[var(--text-primary)] tracking-tight">产品管理</h1>
+                <p class="text-[var(--text-secondary)] mt-1 text-sm">管理您的 IoT 设备定义与生命周期</p>
+            </div>
+
+            <div class="flex gap-3">
+                <el-input v-model="searchKeyword" placeholder="搜索产品..." prefix-icon="Search" class="w-64" clearable
+                    @input="handleSearch" />
+
+                <el-button type="primary" size="default" icon="Plus" class="shadow-md shadow-primary/30"
+                    @click="goCreate">
                     创建产品
                 </el-button>
-            </template>
-        </PageMainHeader>
-
-        <div class="filter-card card-base mb-4">
-            <el-input v-model="searchKeyword" placeholder="输入产品名称或 Key..." class="filter-item-input" clearable
-                @keyup.enter="handleSearch">
-                <template #prefix><el-icon>
-                        <Search />
-                    </el-icon></template>
-            </el-input>
-            <el-button type="primary" @click="handleSearch">查询</el-button>
-            <el-button plain @click="handleReset">重置</el-button>
+            </div>
         </div>
 
-        <div class="card-base table-card">
-            <el-table :data="tableData" v-loading="loading" style="width: 100%">
-                <el-table-column prop="name" label="产品名称" min-width="180" />
-                <el-table-column prop="productKey" label="Product Key" width="200" show-overflow-tooltip />
-                <el-table-column prop="nodeType" label="节点类型" width="120">
-                    <template #default="{ row }">
-                        <el-tag :type="row.nodeType === 1 ? 'success' : 'info'">
-                            {{ row.nodeType === 1 ? '直连设备' : '网关子设备' }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="deviceCount" label="设备数量" align="center" width="100" />
-                <el-table-column prop="createTime" label="创建时间" width="180" />
+        <div class="flex-1 overflow-y-auto min-h-0 -mr-2 pr-2" v-loading="loading">
 
-                <el-table-column label="操作" width="220" fixed="right">
-                    <template #default>
-                        <el-button link type="primary">查看</el-button>
-                        <el-button link type="primary">功能定义</el-button>
-                        <el-button link type="danger">删除</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-
-            <div class="pagination-wrapper">
-                <el-pagination layout="total, prev, pager, next" :total="100" background />
+            <div v-if="products.length > 0"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10">
+                <ProductCard v-for="item in products" :key="item.id" :product="item" @enter="handleEnter" />
             </div>
+
+            <div v-else-if="!loading"
+                class="h-full flex flex-col items-center justify-center text-[var(--text-secondary)]">
+                <el-empty description="暂无产品，去创建一个吧！" />
+            </div>
+
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import PageMainHeader from '@/components/PageMainHeader.vue'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useDebounceFn } from '@vueuse/core';
+import ProductCard from './components/ProductCard.vue';
+import { fetchProducts } from '@/api/modules/product';
+import type { ProductListItem } from '@/types/product';
 
-const loading = ref(false)
-const searchKeyword = ref('')
-// 模拟数据，实际请从 API 获取
-const tableData = ref([
-    { id: 1, name: '智能温湿度传感器', productKey: 'a1G8s9f...', nodeType: 1, deviceCount: 234, createTime: '2024-03-20 10:00:00' },
-    { id: 2, name: '工业网关 X1', productKey: 'b2K9d0a...', nodeType: 0, deviceCount: 12, createTime: '2024-03-19 15:30:00' },
-])
+const router = useRouter();
+const loading = ref(false);
+const products = ref<ProductListItem[]>([]);
+const searchKeyword = ref('');
 
-const handleSearch = () => { console.log('Searching...') }
-const handleReset = () => { searchKeyword.value = '' }
-const handleCreate = () => { console.log('Create new product') }
+// 获取数据
+const loadData = async () => {
+    loading.value = true;
+    try {
+        const res = await fetchProducts({ q: searchKeyword.value });
+        // 兼容 mock-server 的不同返回结构
+        // @ts-ignore
+        products.value = Array.isArray(res) ? res : (res.data?.items || []);
+    } catch (err) {
+        console.error('Failed to load products:', err);
+    } finally {
+        loading.value = false;
+    }
+};
+
+// 搜索防抖
+const handleSearch = useDebounceFn(() => {
+    loadData();
+}, 400);
+
+// 跳转逻辑
+const goCreate = () => router.push({ name: 'ProductCreate' });
+const handleEnter = (pid: string) => {
+    // 跳转到产品详情页 (底层架构已定义好)
+    router.push({ name: 'ProductOverview', params: { pid } });
+};
+
+onMounted(() => {
+    loadData();
+});
 </script>
-
-<style scoped>
-.page-container {
-    padding-bottom: 40px;
-}
-
-.mb-4 {
-    margin-bottom: 16px;
-}
-
-/* 筛选栏样式微调 */
-.filter-card {
-    padding: 16px 24px;
-    background: var(--app-bg-card);
-    display: flex;
-    gap: 12px;
-}
-
-.filter-item-input {
-    width: 240px;
-}
-
-.table-card {
-    background: var(--app-bg-card);
-    padding: 24px;
-    min-height: 500px;
-}
-
-.pagination-wrapper {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-}
-</style>

@@ -1,0 +1,51 @@
+/* src/styles/theme-var.scss */
+
+:root {
+  /* 核心背景色 (Z-Axis Depth) */
+  --bg-canvas: #f5f7fa;      /* L0: 最底层背景 */
+  --bg-card: #ffffff;        /* L1: 卡片/侧边栏 */
+  --bg-overlay: #ffffff;     /* L2: 弹窗/下拉 */
+  
+  /* 边框与分割 */
+  --border-base: #e4e7ed;    /* 极其微弱的分割线 */
+  --border-dark: #dcdfe6;    /* 稍重的边框 */
+
+  /* 阴影系统 (弥散感) */
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.12);
+
+  /* 文字颜色 */
+  --text-primary: #303133;
+  --text-regular: #606266;
+  --text-secondary: #909399;
+  --text-placeholder: #a8abb2;
+
+  /* 状态色 (Light Mode) */
+  --color-success: #67c23a;
+  --color-warning: #e6a23c;
+  --color-danger: #f56c6c;
+  --color-info: #909399;
+}
+
+/* 暗黑模式适配 (Dark Mode) */
+html.dark {
+  --bg-canvas: #0d0d0d;
+  --bg-card: #1a1a1a;
+  --bg-overlay: #262626;
+  
+  --border-base: #333333;
+  --border-dark: #4c4d4f;
+
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.8);
+
+  --text-primary: #E5EAF3;
+  --text-regular: #CFD3DC;
+  --text-secondary: #A3A6AD;
+  
+  /* 荧光化状态色 (Neon Colors) */
+  --color-success: #6be585; /* 荧光绿 */
+  --color-warning: #e6b03c; /* 荧光黄 */
+}

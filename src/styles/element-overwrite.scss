@@ -1,0 +1,57 @@
+/* src/styles/element-overwrite.scss */
+
+/* 1. 卡片去边框化 */
+.el-card {
+  border: none !important;
+  border-radius: 12px !important;
+  background-color: var(--bg-card) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* 移除 Header 分割线 */
+  .el-card__header {
+    border-bottom: none !important;
+    padding: 20px 24px 0 24px !important;
+  }
+  
+  .el-card__body {
+    padding: 24px !important;
+  }
+}
+
+/* 2. 按钮样式优化 */
+.el-button {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  
+  /* 主按钮微弱阴影 */
+  &.el-button--primary {
+    box-shadow: 0 2px 6px rgba(var(--el-color-primary-rgb), 0.3);
+  }
+}
+
+/* 3. 输入框/选择器圆角 */
+.el-input__wrapper, .el-select__wrapper {
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 1px var(--border-base) inset !important;
+  background-color: var(--bg-card) !important;
+  
+  &.is-focus {
+    box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+  }
+}
+
+/* 4. 标签 Tag 柔和化 */
+.el-tag {
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 500;
+}
+
+/* 5. 通用动画类 */
+.hover-lift {
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover) !important;
+  }
+}

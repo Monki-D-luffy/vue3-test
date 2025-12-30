@@ -15,6 +15,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import authRoutes from './routes/auth.js';
 import firmwareRoutes from './routes/firmware.js';
 import campaignRoutes from './routes/campaign.js';
+import productRoutes from './routes/product.js';
 
 server.use(middlewares);
 server.use(jsonServer.bodyParser);
@@ -25,6 +26,7 @@ server.use('/api/dashboard', dashboardRoutes);
 authRoutes(server, router.db);
 firmwareRoutes(server, router.db);
 campaignRoutes(server, router.db);
+productRoutes(server, router.db);
 
 // --- 🔥🔥 核心修复：自定义 json-server 的返回格式 ---
 // 这一步会将 json-server 的默认返回结果（数组或对象）包装进 { code: 200, data: ... }

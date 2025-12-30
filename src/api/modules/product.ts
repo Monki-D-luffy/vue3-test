@@ -1,12 +1,30 @@
-import request from '@/utils/request'
-import type { Product } from '@/types'
+// src/api/modules/product.ts
+import request from '@/utils/request';
+import type { ProductDetail, ProductListItem, ProductQueryParams } from '@/types/product';
 
-// 获取产品列表
-export const fetchProducts = async (): Promise<Product[]> => {
-    // 泛型请求：假设后端返回 { data: Product[], code: 200 ... } 或直接返回数组
-    // 这里使用 any 稍微宽容一点，适配不同的 request 封装
-    const res = await request.get<any>('/products')
+// 获取产品列表 (支持搜索、筛选、分页)
+export const fetchProducts = (params?: ProductQueryParams) => {
+    return request.get<{ items: ProductListItem[]; total: number }>('/products', {
+        params: {
+            ...params,
+            _sort: 'createTime',
+            _order: 'desc'
+        }
+    });
+};
 
-    // 兼容逻辑：如果是数组直接返回，如果是对象取 data
-    return Array.isArray(res) ? res : (res.data || [])
-}
+// 获取单个产品详情
+export const fetchProductDetail = (pid: string) => {
+    return request.get<ProductDetail>(`/products/${pid}`);
+};
+
+// 获取产品统计概览 (调用 mock-server 的自定义聚合接口)
+export const fetchProductStats = () => {
+    return request.get<{
+        total: number;
+        development: number;
+        released: number;
+        alert: number;
+        totalActiveDevices: number;
+    }>('/products/stats/summary');
+};
