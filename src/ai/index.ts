@@ -3,6 +3,10 @@
 // 导出核心 Hook
 export { useAiAssistant } from './core/useAiAssistant';
 export { useAiContext } from './core/useAiContext';
+export { useAgent } from './core/agent';
+
+import AiChatPanel from './components/AiChatPanel.vue';
+export { AiChatPanel };
 
 // 导出业务策略 (按需引入)
 export { useDeviceListAi } from './strategies/useDeviceAi';

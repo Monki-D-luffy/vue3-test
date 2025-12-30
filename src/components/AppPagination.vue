@@ -1,42 +1,49 @@
 <!-- 分页功能 -->
 <template>
-    <div class="pagination-block" v-if="props.total > 0">
-        <el-pagination :total="props.total" :current-page="currentPage" :page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
-            @size-change="emit('size-change', $event)" @current-change="emit('current-change', $event)"
-            @update:current-page="emit('update:currentPage', $event)"
-            @update:page-size="emit('update:pageSize', $event)" />
+    <div class="fixed bottom-8 right-8 z-[2000] flex flex-col items-end gap-4 pointer-events-none">
+        <div v-show="isOpen" class="pointer-events-auto transition-all duration-300 origin-bottom-right"
+            :class="isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-4'">
+            <div class="w-[380px] h-[600px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100/50">
+                <AiChatPanel />
+            </div>
+        </div>
+
+        <button @click="toggleOpen"
+            class="pointer-events-auto group relative flex items-center justify-center w-14 h-14 rounded-full bg-indigo-600 text-white shadow-xl shadow-indigo-300/50 hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all duration-300 ease-out"
+            :class="{ 'rotate-90 bg-gray-600 hover:bg-gray-700': isOpen }">
+
+            <div class="relative w-6 h-6">
+                <el-icon class="absolute inset-0 transition-all duration-300"
+                    :class="isOpen ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'">
+                    <ChatDotRound />
+                </el-icon>
+                <el-icon class="absolute inset-0 transition-all duration-300"
+                    :class="isOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'">
+                    <Close />
+                </el-icon>
+            </div>
+
+            <span v-if="status !== 'idle' && !isOpen" class="absolute -top-1 -right-1 flex h-4 w-4">
+                <span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
+            </span>
+        </button>
     </div>
 </template>
 
-<script setup>
-import { defineProps, defineEmits, defineModel } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue';
+import { ChatDotRound, Close } from '@element-plus/icons-vue';
+// 🟢 引入新组件和 Agent Hook
+import { AiChatPanel, useAgent } from '@/ai';
 
-// --- 核心逻辑 ---
+const isOpen = ref(false);
+const { status } = useAgent(); // 获取全局 Agent 状态
 
-// 1. 接收父组件的 v-model 绑定
-// (你的 vue 版本 ^3.5.22 支持 defineModel)
-const currentPage = defineModel('currentPage')
-const pageSize = defineModel('pageSize')
-
-// 2. 接收父组件传入的 'total' 总数
-const props = defineProps({
-    total: {
-        type: Number,
-        default: 0
-    }
-})
-
-// 3. 声明(转发)父组件需要监听的事件
-// 我们需要转发 el-pagination 所有的事件，
-// 这样父组件才能像直接使用 el-pagination 一样
-const emit = defineEmits([
-    'size-change',      // 触发 handleSizeChange
-    'current-change',   // 触发 handleCurrentChange
-    'update:currentPage', // 驱动 v-model:current-page
-    'update:pageSize'     // 驱动 v-model:page-size
-])
-
+const toggleOpen = () => {
+    isOpen.value = !isOpen.value;
+};
 </script>
 
 <style scoped>
