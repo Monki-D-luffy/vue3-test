@@ -59,7 +59,7 @@
                 </el-button>
                 <el-button type="primary" size="small" plain>
                     <el-icon class="mr-1">
-                        <Terminal />
+                        <Monitor />
                     </el-icon> 调试终端
                 </el-button>
             </div>
@@ -79,7 +79,7 @@
 import { computed, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProductContext } from '@/stores/productContext';
-import { ArrowLeft, Cpu, Refresh, Terminal } from '@element-plus/icons-vue';
+import { ArrowLeft, Cpu, Refresh, Monitor } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();

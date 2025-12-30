@@ -3,12 +3,12 @@ import type { RouteRecordRaw } from 'vue-router';
 
 const productRoutes: RouteRecordRaw = {
     path: '/products',
-    redirect: { name: 'ProductList' }, // 默认跳转列表
+    redirect: { name: 'ProductManagement' }, // 修复：统一重定向名称
     children: [
         // 1. 产品列表 (入口)
         {
             path: '',
-            name: 'ProductList',
+            name: 'ProductManagement', // 修复：原来是 ProductList，改为 ProductManagement
             component: () => import('@/views/product/ProductManagement.vue'),
             meta: { title: '产品管理' }
         },
@@ -17,13 +17,14 @@ const productRoutes: RouteRecordRaw = {
             path: 'create',
             name: 'ProductCreate',
             component: () => import('@/views/product/ProductCreateWizard.vue'),
-            meta: { title: '创建新产品' }
+            meta: { title: '创建新产品', activeMenu: 'ProductManagement' }
         },
         // 3. 产品详情工作台 (Context Mode)
         {
             path: ':pid',
             component: () => import('@/views/product/layout/ProductDetailLayout.vue'),
             redirect: { name: 'ProductOverview' },
+            meta: { activeMenu: 'ProductManagement' },
             children: [
                 {
                     path: 'overview',
@@ -47,7 +48,7 @@ const productRoutes: RouteRecordRaw = {
                     path: 'settings',
                     name: 'ProductSettings',
                     component: () => import('@/views/product/detail/ProductSettings.vue'),
-                    meta: { title: '设置' }
+                    meta: { title: '产品设置' }
                 }
             ]
         }

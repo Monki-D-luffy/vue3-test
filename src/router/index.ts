@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // 1. 统一使用 @ 别名导入布局，保持风格一致
 import AppLayout from '@/layouts/AppLayout.vue'
-
+import productRoutes from './modules/product'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -38,11 +38,12 @@ const router = createRouter({
           name: 'DeviceLog', // 规范：PascalCase (原 device-log)
           component: () => import('@/views/device/DeviceLog.vue')
         },
-        {
-          path: 'products',
-          name: 'ProductManagement', // 规范：与组件文件名保持一致 (原 product-list)
-          component: () => import('@/views/product/ProductManagement.vue')
-        },
+        // {
+        //   path: 'products',
+        //   name: 'ProductManagement', // 规范：与组件文件名保持一致 (原 product-list)
+        //   component: () => import('@/views/product/ProductManagement.vue')
+        // },
+        productRoutes,
         {
           path: 'system',
           name: 'SystemManagement', // 规范：PascalCase

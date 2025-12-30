@@ -1,59 +1,68 @@
 <template>
-    <div class="product-card group relative flex flex-col bg-[var(--bg-card)] rounded-xl p-5 border border-transparent hover:border-[var(--border-base)] shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-hover)] hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
-        @click="$emit('enter', product.id)">
-        <div class="flex justify-between items-start mb-4 relative z-10">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-colors duration-300"
-                :class="getCategoryStyle(product.category)">
-                <el-icon size="24">
-                    <component :is="getIcon(product.category)" />
-                </el-icon>
+    <div class="product-card">
+        <div class="card-header">
+            <div class="header-top">
+                <div class="icon-box" :class="getCategoryClass(product.category)">
+                    <el-icon size="24">
+                        <component :is="getIcon(product.category)" />
+                    </el-icon>
+                </div>
+                <div class="status-badge" :class="getStatusClass(product.status)">
+                    <div class="status-dot"></div>
+                    {{ product.status }}
+                </div>
             </div>
 
-            <el-tag :type="getStatusType(product.status)" effect="light" size="small" class="!border-none !font-medium">
-                {{ product.status }}
-            </el-tag>
+            <h3 class="product-name text-ellipsis">{{ product.name }}</h3>
+            <div class="product-pid">PID: {{ product.id }}</div>
         </div>
 
-        <div class="flex-1 z-10">
-            <h3
-                class="text-base font-bold text-[var(--text-primary)] truncate mb-1 pr-2 group-hover:text-primary transition-colors">
-                {{ product.name }}
-            </h3>
-            <div class="flex items-center gap-2 text-xs text-[var(--text-secondary)] font-mono">
-                <span class="bg-[var(--bg-canvas)] px-1.5 py-0.5 rounded text-[var(--text-regular)]">
-                    {{ product.id }}
-                </span>
-                <span class="opacity-30">|</span>
-                <span class="flex items-center gap-1">
+        <div class="card-body">
+            <el-row :gutter="8">
+                <el-col :span="12">
+                    <div class="info-item">
+                        <span class="label">品类</span>
+                        <span class="value">{{ product.category }}</span>
+                    </div>
+                </el-col>
+                <el-col :span="12">
+                    <div class="info-item">
+                        <span class="label">协议</span>
+                        <span class="value">
+                            <el-icon class="mr-1 text-[var(--text-secondary)]">
+                                <Connection />
+                            </el-icon>
+                            {{ product.protocol }}
+                        </span>
+                    </div>
+                </el-col>
+                <el-col :span="24" class="mt-3">
+                    <div class="info-item">
+                        <span class="label">在线设备</span>
+                        <span class="value font-mono text-lg">{{ product.activeDeviceCount?.toLocaleString() || 0
+                            }}</span>
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+
+        <div class="card-footer">
+            <el-tooltip content="直达功能定义" placement="top">
+                <el-button link class="action-btn-icon" @click.stop="emit('develop', product.id)">
                     <el-icon>
-                        <Connection />
-                    </el-icon> {{ product.protocol }}
-                </span>
-            </div>
-        </div>
+                        <Tools />
+                    </el-icon>
+                </el-button>
+            </el-tooltip>
 
-        <div class="mt-4 flex items-center justify-between text-xs bg-[var(--bg-canvas)] rounded-lg px-3 py-2.5 z-10">
-            <div class="flex flex-col gap-0.5">
-                <span class="text-[10px] text-[var(--text-secondary)]">在线设备</span>
-                <span class="font-bold font-mono text-[var(--text-primary)]">
-                    {{ formatNumber(product.activeDeviceCount) }}
-                </span>
-            </div>
-            <div class="w-px h-6 bg-[var(--border-base)]"></div>
-            <div class="flex flex-col items-end gap-0.5">
-                <span class="text-[10px] text-[var(--text-secondary)]">固件版本</span>
-                <span class="font-mono text-[var(--text-primary)]">{{ product.latestFirmware || '--' }}</span>
-            </div>
-        </div>
+            <el-divider direction="vertical" />
 
-        <div
-            class="absolute inset-0 bg-gradient-to-t from-[var(--bg-card)] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0">
-        </div>
-        <div
-            class="absolute bottom-4 right-4 flex gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20">
-            <el-button type="primary" size="small" round class="shadow-lg shadow-primary/20"
-                @click.stop="$emit('enter', product.id)">
+            <el-button type="primary" plain round size="small" class="main-action-btn"
+                @click.stop="emit('manage', product.id)">
                 进入控制台
+                <el-icon class="ml-1">
+                    <ArrowRight />
+                </el-icon>
             </el-button>
         </div>
     </div>
@@ -61,43 +70,247 @@
 
 <script setup lang="ts">
 import {
-    Sunny, Odometer, Cpu, Box, Lock, Connection
+    Connection, Tools, ArrowRight,
+    Sunny, Odometer, Cpu, Box, Lock, Switch
 } from '@element-plus/icons-vue';
-import type { ProductListItem, DeviceType, ProductStatus } from '@/types/product';
+import type { ProductListItem, DeviceType } from '@/types/product';
 
 defineProps<{ product: ProductListItem }>();
-defineEmits(['enter']);
+// 定义两个明确的事件
+const emit = defineEmits(['manage', 'develop']);
 
-// 格式化数字 (1.2k)
-const formatNumber = (num: number) => {
-    return num > 999 ? (num / 1000).toFixed(1) + 'k' : num;
-};
+// --- 视觉辅助函数 (与 Table 保持一致) ---
 
-// 状态映射
-const getStatusType = (status: ProductStatus) => {
-    const map: Record<string, string> = {
-        'RELEASED': 'success',
-        'ALERT': 'danger',
-        'TESTING': 'warning',
-        'DEVELOPMENT': 'info'
-    };
-    return map[status] || 'info';
-};
-
-// 品类图标映射
 const getIcon = (cat: DeviceType) => {
-    const map: any = { 'LIGHT': Sunny, 'SENSOR': Odometer, 'GATEWAY': Cpu, 'LOCK': Lock };
+    const map: any = { 'LIGHT': Sunny, 'SENSOR': Odometer, 'GATEWAY': Cpu, 'LOCK': Lock, 'SWITCH': Switch };
     return map[cat] || Box;
 };
 
-// 品类颜色映射 (Tailwind 类名)
-const getCategoryStyle = (cat: DeviceType) => {
+// 使用 CSS 变量或固定色值
+const getCategoryClass = (cat: DeviceType) => {
     const map: Record<string, string> = {
-        'LIGHT': 'bg-orange-50 text-orange-500 dark:bg-orange-900/20',
-        'SENSOR': 'bg-blue-50 text-blue-500 dark:bg-blue-900/20',
-        'GATEWAY': 'bg-purple-50 text-purple-500 dark:bg-purple-900/20',
-        'LOCK': 'bg-teal-50 text-teal-500 dark:bg-teal-900/20'
+        'LIGHT': 'style-orange',
+        'SENSOR': 'style-blue',
+        'GATEWAY': 'style-purple',
+        'LOCK': 'style-teal',
+        'SWITCH': 'style-indigo'
     };
-    return map[cat] || 'bg-gray-50 text-gray-500 dark:bg-gray-800';
+    return map[cat] || 'style-gray';
+};
+
+const getStatusClass = (status: string) => {
+    if (status === 'RELEASED') return 'status-success';
+    if (status === 'ALERT') return 'status-danger';
+    return 'status-warning';
 };
 </script>
+
+<style scoped>
+.product-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-base);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 悬浮效果：上浮并增强阴影 */
+.product-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--el-color-primary-light-7);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* --- 头部 --- */
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s;
+}
+
+.product-card:hover .icon-box {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* 类别颜色风格 */
+.style-orange {
+    background: rgba(255, 165, 0, 0.1);
+    color: #ff9800;
+}
+
+.style-blue {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.style-purple {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+}
+
+.style-teal {
+    background: rgba(20, 184, 166, 0.1);
+    color: #14b8a6;
+}
+
+.style-indigo {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+.style-gray {
+    background: var(--bg-canvas);
+    color: var(--text-secondary);
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-success {
+    background: var(--el-color-success-light-9);
+    color: var(--el-color-success);
+}
+
+.status-success .status-dot {
+    background: var(--el-color-success);
+}
+
+.status-warning {
+    background: var(--el-color-warning-light-9);
+    color: var(--el-color-warning);
+}
+
+.status-warning .status-dot {
+    background: var(--el-color-warning);
+}
+
+.status-danger {
+    background: var(--el-color-danger-light-9);
+    color: var(--el-color-danger);
+}
+
+.status-danger .status-dot {
+    background: var(--el-color-danger);
+}
+
+.product-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-pid {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+/* --- 中部指标 --- */
+.card-body {
+    flex: 1;
+    /* 撑开高度 */
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed var(--border-base);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+.mr-1 {
+    margin-right: 4px;
+}
+
+.mt-3 {
+    margin-top: 12px;
+}
+
+.font-mono {
+    font-family: monospace;
+}
+
+/* --- 底部操作栏 --- */
+.card-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-base);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.action-btn-icon {
+    font-size: 16px;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+}
+
+.action-btn-icon:hover {
+    color: var(--el-color-primary);
+}
+
+.main-action-btn {
+    padding-left: 16px;
+    padding-right: 16px;
+    transition: all 0.2s;
+}
+
+.main-action-btn:hover {
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(var(--el-color-primary-rgb), 0.2);
+}
+</style>
