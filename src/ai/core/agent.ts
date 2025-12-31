@@ -39,7 +39,7 @@ export function useAgent() {
                 // 我们假设 streamLlmResponse 会处理好 system prompt，我们只传当前需要关注的内容)
                 // 在真实 Agent 中，通常会维护一个完整的 Messages Window。
 
-                let promptToSend = loopCount === 0
+                const promptToSend = loopCount === 0
                     ? buildAgentPrompt(messages.value, context) // 第一轮：带完整 System Prompt
                     : `(System: Tool executed. Result: ${JSON.stringify(context.toolResult)}. Please analyze and answer.)`;
 

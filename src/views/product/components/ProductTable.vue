@@ -67,13 +67,21 @@
                             </el-button>
                         </el-tooltip>
 
+                        <el-tooltip content="进入Studio工作台" placement="top">
+                            <el-button link type="success" @click="emit('studio', row.id)">
+                                <el-icon class="mr-1">
+                                    <MagicStick />
+                                </el-icon> Studio
+                            </el-button>
+                        </el-tooltip>
+
                         <el-divider direction="vertical" />
 
                         <el-button link type="primary" @click="emit('manage', row.id)">
                             管理
                         </el-button>
 
-                        <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, row)">
+                        <el-dropdown trigger="click" @command="(cmd: string) => handleCommand(cmd, row)">
                             <el-button link
                                 class="ml-2 !text-[var(--text-secondary)] hover:!text-[var(--text-primary)]">
                                 <el-icon>
@@ -99,13 +107,13 @@
 
 <script setup lang="ts">
 import {
-    Tools, Connection, MoreFilled,
+    Tools, Connection, MoreFilled, MagicStick,
     Sunny, Odometer, Cpu, Box, Lock, Switch
 } from '@element-plus/icons-vue';
 import type { ProductListItem, DeviceType } from '@/types/product';
 
 defineProps<{ products: ProductListItem[] }>();
-const emit = defineEmits(['manage', 'develop', 'delete']);
+const emit = defineEmits(['manage', 'develop', 'studio', 'delete']);
 
 // 交互处理
 const handleManage = (row: ProductListItem) => {

@@ -21,7 +21,7 @@
                     <div v-if="products.length > 0">
                         <el-row :gutter="20">
                             <el-col v-for="item in products" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
-                                <ProductCard :product="item" @manage="handleEnter" @develop="handleDevelop"
+                                <ProductCard :product="item" @manage="handleEnter" @develop="handleDevelop" @studio="handleStudio"
                                     class="mb-4" />
                             </el-col>
                         </el-row>
@@ -29,7 +29,7 @@
                     <el-empty v-else description="没有找到匹配的产品" />
                 </div>
 
-                <ProductTable v-else key="list" :products="products" @manage="handleEnter" @develop="handleDevelop" />
+                <ProductTable v-else key="list" :products="products" @manage="handleEnter" @develop="handleDevelop" @studio="handleStudio" />
             </transition>
         </div>
     </div>
@@ -85,6 +85,13 @@ const handleSearchChange = (params: any) => loadData(params);
 const handleDevelop = (pid: string) => {
     router.push({
         name: 'ProductDevelop',
+        params: { pid }
+    });
+};
+
+const handleStudio = (pid: string) => {
+    router.push({
+        name: 'ProductFunction',
         params: { pid }
     });
 };

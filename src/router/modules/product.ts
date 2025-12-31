@@ -19,7 +19,49 @@ const productRoutes: RouteRecordRaw = {
             component: () => import('@/views/product/ProductCreateWizard.vue'),
             meta: { title: '创建新产品', activeMenu: 'ProductManagement' }
         },
-        // 3. 产品详情工作台 (Context Mode)
+        // 3. Studio 开发工作台 (新架构)
+        {
+            path: ':pid/studio',
+            component: () => import('@/layouts/StudioLayout.vue'),
+            redirect: { name: 'ProductFunction' },
+            meta: {
+                activeMenu: 'ProductManagement',
+                requiresAuth: true
+            },
+            children: [
+                {
+                    path: 'function',
+                    name: 'ProductFunction',
+                    component: () => import('@/views/studio/ProductFunction.vue'),
+                    meta: { title: '功能定义', step: 1 }
+                },
+                {
+                    path: 'panel',
+                    name: 'ProductPanel',
+                    component: () => import('@/views/studio/ProductPanel.vue'),
+                    meta: { title: '面板设计', step: 2 }
+                },
+                {
+                    path: 'hardware',
+                    name: 'ProductHardware',
+                    component: () => import('@/views/studio/ProductHardware.vue'),
+                    meta: { title: '硬件开发', step: 3 }
+                },
+                {
+                    path: 'config',
+                    name: 'ProductConfig',
+                    component: () => import('@/views/studio/ProductConfig.vue'),
+                    meta: { title: '产品配置', step: 4 }
+                },
+                {
+                    path: 'test',
+                    name: 'ProductTest',
+                    component: () => import('@/views/studio/ProductTest.vue'),
+                    meta: { title: '测试发布', step: 5 }
+                }
+            ]
+        },
+        // 4. 产品详情工作台 (原有架构，保持兼容)
         {
             path: ':pid',
             component: () => import('@/views/product/layout/ProductDetailLayout.vue'),

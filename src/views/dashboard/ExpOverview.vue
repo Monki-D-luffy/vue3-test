@@ -43,8 +43,8 @@
                         <ExpChartContainer title="全网流量趋势" :options="chartOptions" :loading="loading">
                             <template #action>
                                 <el-radio-group v-model="timeRange" size="small" class="custom-radio">
-                                    <el-radio-button label="24H" value="24H">24H</el-radio-button>
-                                    <el-radio-button label="7D" value="7D">7天</el-radio-button>
+                                    <el-radio-button value="24H">24H</el-radio-button>
+                                    <el-radio-button value="7D">7天</el-radio-button>
                                 </el-radio-group>
                             </template>
                         </ExpChartContainer>

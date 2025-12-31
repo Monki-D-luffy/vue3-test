@@ -55,6 +55,14 @@
                 </el-button>
             </el-tooltip>
 
+            <el-tooltip content="进入Studio开发工作台" placement="top">
+                <el-button link class="action-btn-icon studio-btn" @click.stop="emit('studio', product.id)">
+                    <el-icon>
+                        <MagicStick />
+                    </el-icon>
+                </el-button>
+            </el-tooltip>
+
             <el-divider direction="vertical" />
 
             <el-button type="primary" plain round size="small" class="main-action-btn"
@@ -70,14 +78,14 @@
 
 <script setup lang="ts">
 import {
-    Connection, Tools, ArrowRight,
+    Connection, Tools, ArrowRight, MagicStick,
     Sunny, Odometer, Cpu, Box, Lock, Switch
 } from '@element-plus/icons-vue';
 import type { ProductListItem, DeviceType } from '@/types/product';
 
 defineProps<{ product: ProductListItem }>();
-// 定义两个明确的事件
-const emit = defineEmits(['manage', 'develop']);
+// 定义三个明确的事件
+const emit = defineEmits(['manage', 'develop', 'studio']);
 
 // --- 视觉辅助函数 (与 Table 保持一致) ---
 

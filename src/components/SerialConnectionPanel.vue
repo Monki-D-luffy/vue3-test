@@ -110,14 +110,14 @@ const handleChangeDevice = async () => {
                         <div class="param-item">
                             <span class="param-label">数据位 (Data Bits)</span>
                             <el-radio-group v-model="config.dataBits" size="small" @change="handleConfigChange">
-                                <el-radio-button v-for="opt in dataBitsOpts" :key="opt" :value="opt" :label="opt">{{ opt
+                                <el-radio-button v-for="opt in dataBitsOpts" :key="opt" :value="opt">{{ opt
                                     }}</el-radio-button>
                             </el-radio-group>
                         </div>
                         <div class="param-item">
                             <span class="param-label">停止位 (Stop Bits)</span>
                             <el-radio-group v-model="config.stopBits" size="small" @change="handleConfigChange">
-                                <el-radio-button v-for="opt in stopBitsOpts" :key="opt" :value="opt" :label="opt">{{ opt
+                                <el-radio-button v-for="opt in stopBitsOpts" :key="opt" :value="opt">{{ opt
                                     }}</el-radio-button>
                             </el-radio-group>
                         </div>

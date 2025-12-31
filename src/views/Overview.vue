@@ -35,8 +35,8 @@
                     <div class="card-header-row">
                         <h3 class="card-title">设备在线趋势</h3>
                         <el-radio-group v-model="chartRange" size="small">
-                            <el-radio-button label="7days">近7天</el-radio-button>
-                            <el-radio-button label="30days">近30天</el-radio-button>
+                            <el-radio-button value="7days">近7天</el-radio-button>
+                            <el-radio-button value="30days">近30天</el-radio-button>
                         </el-radio-group>
                     </div>
                     <div class="chart-container" ref="chartRef"></div>
