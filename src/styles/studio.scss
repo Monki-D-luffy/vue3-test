@@ -1,0 +1,48 @@
+/* Studio 专属布局变量 */
+:root {
+  --studio-header-height: 60px;
+  --studio-footer-height: 70px;
+  --studio-min-width: 1100px; /* 防止内容被过度挤压的底线 */
+  
+  --bg-canvas: #f5f7fa;
+  --bg-panel-l: #ffffff;
+  --bg-panel-r: #ffffff;
+  
+  /* 阴影体系 */
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-floating: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 滚动条美化 (Chrome/Edge/Safari) */
+.studio-scroll-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.studio-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.studio-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.studio-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* 全局卡片规范 */
+.studio-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--el-border-color-lighter);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* 工具类：去除原生滚动条并保持功能 */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

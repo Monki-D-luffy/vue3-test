@@ -1,784 +1,349 @@
 <template>
-  <div class="studio-layout">
-    <!-- 顶部导航区 -->
-    <div class="studio-header">
-      <div class="header-glass">
-        <!-- 左侧：返回 + 产品信息 -->
-        <div class="header-left">
-          <el-button link icon="ArrowLeft" @click="goBackToList" class="back-btn">
-            <el-icon><ArrowLeft /></el-icon>
-            返回列表
-          </el-button>
-          <div class="product-info">
-            <div class="product-name">{{ currentProduct?.name || '未命名产品' }}</div>
-            <div class="product-meta">
-              <span class="product-id">PID: {{ currentProduct?.id || 'N/A' }}</span>
-              <el-tag
-                :type="getStatusType(currentProduct?.status)"
-                size="small"
-                class="status-badge"
-              >
-                {{ getStatusText(currentProduct?.status) }}
-              </el-tag>
-            </div>
+  <el-container class="studio-layout">
+    <el-header class="studio-header">
+
+      <div class="header-section left">
+        <el-button link class="back-btn" @click="goBack">
+          <el-icon :size="20">
+            <ArrowLeft />
+          </el-icon>
+        </el-button>
+        <div class="divider"></div>
+        <div class="product-info">
+          <div class="product-icon">
+            <el-icon>
+              <files />
+            </el-icon>
           </div>
-        </div>
-
-        <!-- 中央：五步进度条 -->
-        <div class="header-center">
-          <div class="progress-container">
-            <div class="step-indicators">
-              <div
-                v-for="(step, index) in studioSteps"
-                :key="step.id"
-                class="step-item"
-                :class="{ active: index + 1 <= currentStep, current: index + 1 === currentStep }"
-              >
-                <div class="step-icon">
-                  <el-icon :size="20"><component :is="getStepIcon(step.icon)" /></el-icon>
-                </div>
-                <div class="step-info">
-                  <div class="step-title">{{ step.title }}</div>
-                  <div class="step-desc">{{ step.description }}</div>
-                </div>
-                <div v-if="index < studioSteps.length - 1" class="step-connector">
-                  <div class="connector-line" :class="{ completed: index + 1 < currentStep }"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右侧：辅助操作 -->
-        <div class="header-right">
-          <el-button link icon="Document" @click="openHelpDoc" circle>
-            <el-icon><Document /></el-icon>
-          </el-button>
-          <el-button link icon="Setting" @click="openSettings" circle>
-            <el-icon><Setting /></el-icon>
-          </el-button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 主工作区 -->
-    <div class="studio-content">
-      <router-view />
-    </div>
-
-    <!-- 底部全局操作栏 -->
-    <div class="studio-footer">
-      <div class="footer-glass">
-        <!-- 主操作区 -->
-        <div class="footer-main">
-          <!-- 左侧：保存按钮 -->
-          <div class="footer-left">
-            <el-button
-              v-if="showSaveButton"
-              type="default"
-              :loading="saving"
-              @click="handleSave"
-              class="save-btn"
-            >
-              <el-icon><Check /></el-icon>
-              <span class="btn-text">保存草稿</span>
-            </el-button>
-          </div>
-
-          <!-- 中央：主要操作 -->
-          <div class="footer-center">
-            <el-button
-              v-if="!isLastStep"
-              type="primary"
-              size="large"
-              :loading="nextLoading"
-              @click="handleNext"
-              class="primary-btn"
-            >
-              <span class="btn-text">下一步</span>
-              <span class="step-name">{{ nextStepName }}</span>
-              <el-icon class="arrow-icon"><ArrowRight /></el-icon>
-            </el-button>
-            <el-button
-              v-else
-              type="success"
-              size="large"
-              :loading="publishLoading"
-              @click="handlePublish"
-              class="primary-btn"
-            >
-              <el-icon><Upload /></el-icon>
-              <span class="btn-text">发布产品</span>
-            </el-button>
-          </div>
-
-          <!-- 右侧：辅助操作 -->
-          <div class="footer-right">
-            <!-- 调试终端按钮 -->
-            <el-tooltip content="调试终端" placement="top">
-              <el-button
-                circle
-                :type="isTerminalOpen ? 'primary' : 'default'"
-                @click="toggleTerminal"
-                class="terminal-btn"
-                :class="{ active: isTerminalOpen }"
-              >
-                <el-icon><component :is="isTerminalOpen ? Close : Monitor" /></el-icon>
-              </el-button>
-            </el-tooltip>
+          <div class="info-text">
+            <span class="product-name">智能空气净化器 Pro</span>
+            <el-tag size="small" type="info" effect="plain" class="pid-tag">PID: x8s9d7</el-tag>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 调试终端面板 -->
-    <StudioTerminal v-if="isTerminalOpen" v-model="isTerminalOpen" :product-id="productId" />
-  </div>
+      <div class="header-section center">
+        <div class="stepper-container">
+          <div v-for="(step, index) in steps" :key="step.key" class="nav-step" :class="{
+            'is-active': activeIndex === index,
+            'is-finished': activeIndex > index,
+            'is-next': activeIndex < index
+          }" @click="handleStepClick(step)">
+            <div class="step-indicator">
+              <el-icon v-if="activeIndex > index" class="icon-finished"><Select /></el-icon>
+              <span v-else class="step-num">{{ index + 1 }}</span>
+            </div>
+            <span class="step-label">{{ step.label }}</span>
+
+            <div v-if="index < steps.length - 1" class="step-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-section right">
+        <el-button-group>
+          <el-button plain size="default">
+            <el-icon class="el-icon--left">
+              <Document />
+            </el-icon>
+            草稿
+          </el-button>
+          <el-button type="primary" color="#000" size="default">
+            <el-icon class="el-icon--left">
+              <Promotion />
+            </el-icon>
+            发布
+          </el-button>
+        </el-button-group>
+
+        <div class="divider"></div>
+
+        <el-dropdown trigger="click">
+          <span class="user-avatar">
+            <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item>帮助文档</el-dropdown-item>
+              <el-dropdown-item divided>退出工作台</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+    </el-header>
+
+    <el-main class="studio-canvas">
+      <router-view v-slot="{ Component }">
+        <transition name="fade-slide" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </el-main>
+  </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import {
-  ArrowLeft,
-  Document,
-  Setting,
-  Monitor,
-  Close,
-  Check,
-  Upload,
-  DocumentAdd,
-  Picture,
-  Cpu,
-  Tools,
-} from '@element-plus/icons-vue'
-import StudioTerminal from '@/components/studio/StudioTerminal.vue'
-import type { ProductListItem } from '@/types/product'
+  ArrowLeft, Files, Document, Promotion, Select
+} from '@element-plus/icons-vue';
 
-// 步骤定义
-const studioSteps = [
-  {
-    id: 1,
-    title: '功能定义',
-    description: '定义产品功能点',
-    icon: 'DocumentAdd',
-  },
-  {
-    id: 2,
-    title: '面板设计',
-    description: '设计控制面板',
-    icon: 'Picture',
-  },
-  {
-    id: 3,
-    title: '硬件开发',
-    description: '选择模组与固件',
-    icon: 'Cpu',
-  },
-  {
-    id: 4,
-    title: '产品配置',
-    description: '配置产品参数',
-    icon: 'Setting',
-  },
-  {
-    id: 5,
-    title: '测试发布',
-    description: '测试并发布产品',
-    icon: 'Check',
-  },
-]
+// --- State ---
+const router = useRouter();
+const route = useRoute();
 
-// Props
-interface Props {
-  productId?: string
-}
+// --- Configuration ---
+const steps = [
+  { key: 'define', label: '功能定义', route: 'ProductFunction' },
+  { key: 'panel', label: '面板设计', route: 'ProductPanel' },
+  { key: 'hardware', label: '硬件开发', route: 'ProductHardware' },
+  { key: 'config', label: '产品配置', route: 'ProductConfig' },
+  { key: 'test', label: '测试发布', route: 'ProductTest' }
+];
 
-const props = withDefaults(defineProps<Props>(), {
-  productId: '',
-})
+// --- Computed ---
+// 根据当前路由名称计算 Active Index
+const activeIndex = computed(() => {
+  const index = steps.findIndex(s => s.route === route.name);
+  return index !== -1 ? index : 0;
+});
 
-// Emits
-const emit = defineEmits<{
-  stepChange: [step: number]
-  save: []
-  next: []
-  publish: []
-}>()
+// --- Actions ---
+const goBack = () => {
+  router.push('/products');
+};
 
-// 响应式数据
-const route = useRoute()
-const router = useRouter()
-const currentStep = ref(1)
-const currentProduct = ref<ProductListItem | null>(null)
-const isTerminalOpen = ref(false)
-const saving = ref(false)
-const nextLoading = ref(false)
-const publishLoading = ref(false)
+const handleStepClick = (step: any) => {
+  // 核心修复：允许点击跳转
+  router.push({ name: step.route });
+  console.log('Navigating to:', step.label);
+};
 
-// 计算属性
-const productId = computed(() => props.productId || (route.params.pid as string))
-const isLastStep = computed(() => currentStep.value === studioSteps.length)
-const nextStepName = computed(() => {
-  if (isLastStep.value) return '发布'
-  return studioSteps[currentStep.value]?.title || ''
-})
-const showSaveButton = computed(() => currentStep.value !== studioSteps.length)
-
-// 方法
-const goBackToList = () => {
-  router.push({ name: 'ProductManagement' })
-}
-
-const getStatusType = (status?: string) => {
-  const statusMap: Record<string, string> = {
-    draft: 'warning',
-    developing: 'info',
-    testing: 'primary',
-    published: 'success',
-  }
-  return statusMap[status || ''] || 'info'
-}
-
-const getStatusText = (status?: string) => {
-  const statusMap: Record<string, string> = {
-    draft: '草稿',
-    developing: '开发中',
-    testing: '测试中',
-    published: '已发布',
-  }
-  return statusMap[status || ''] || '未知'
-}
-
-const getStepIcon = (iconName: string) => {
-  const iconMap: Record<string, any> = {
-    DocumentAdd: DocumentAdd,
-    Picture: Picture,
-    Cpu: Cpu,
-    Setting: Setting,
-    Check: Check,
-  }
-  return iconMap[iconName] || DocumentAdd
-}
-
-const onStepChange = (step: number) => {
-  // 这里可以添加步骤切换的验证逻辑
-  currentStep.value = step
-  emit('stepChange', step)
-}
-
-const openHelpDoc = () => {
-  // 打开帮助文档
-  ElMessage.info('帮助文档功能开发中...')
-}
-
-const openSettings = () => {
-  // 打开设置
-  ElMessage.info('设置功能开发中...')
-}
-
-const toggleTerminal = () => {
-  isTerminalOpen.value = !isTerminalOpen.value
-}
-
-const handleSave = async () => {
-  saving.value = true
-  try {
-    await emit('save')
-    ElMessage.success('保存成功')
-  } catch (error) {
-    ElMessage.error('保存失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-const handleNext = async () => {
-  nextLoading.value = true
-  try {
-    await emit('next')
-    if (currentStep.value < studioSteps.length) {
-      currentStep.value++
-      // 跳转到对应步骤的路由
-      const stepRoute = getStepRoute(currentStep.value)
-      if (stepRoute) {
-        router.push(stepRoute)
-      }
-    }
-  } catch (error) {
-    ElMessage.error('操作失败')
-  } finally {
-    nextLoading.value = false
-  }
-}
-
-const handlePublish = async () => {
-  try {
-    await ElMessageBox.confirm('确定要发布这个产品吗？发布后功能点将无法修改。', '发布确认', {
-      confirmButtonText: '确定发布',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-
-    publishLoading.value = true
-    await emit('publish')
-    ElMessage.success('产品发布成功！')
-    goBackToList()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('发布失败')
-    }
-  } finally {
-    publishLoading.value = false
-  }
-}
-
-const getStepRoute = (step: number) => {
-  const routeMap: Record<number, string> = {
-    1: 'ProductFunction',
-    2: 'ProductPanel',
-    3: 'ProductHardware',
-    4: 'ProductConfig',
-    5: 'ProductTest',
-  }
-  const routeName = routeMap[step]
-  return routeName ? { name: routeName, params: { pid: productId.value } } : null
-}
-
-// 监听路由变化，更新当前步骤
-watch(
-  () => route.name,
-  (newName) => {
-    const routeStepMap: Record<string, number> = {
-      ProductFunction: 1,
-      ProductPanel: 2,
-      ProductHardware: 3,
-      ProductConfig: 4,
-      ProductTest: 5,
-    }
-    const step = routeStepMap[newName as string] || 1
-    currentStep.value = step
-  },
-  { immediate: true },
-)
-
-// 初始化
-onMounted(async () => {
-  // 加载产品信息
-  if (productId.value) {
-    try {
-      // 这里应该调用API获取产品信息
-      // currentProduct.value = await fetchProduct(productId.value)
-    } catch (error) {
-      ElMessage.error('加载产品信息失败')
-    }
-  }
-})
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
+/* Studio Layout CSS 
+  Design Token Mapping:
+  --bg-canvas: #f5f7fa
+  --bg-card: #ffffff
+  --border-base: #e4e7ed
+  --text-primary: #303133
+  --color-primary: var(--el-color-primary)
+*/
+
 .studio-layout {
   height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-canvas, #f5f7fa);
   display: flex;
   flex-direction: column;
-  background: var(--bg-canvas);
-
-  .studio-header {
-    background: white;
-    border-bottom: 1px solid var(--border-base);
-    padding: 24px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-
-      .back-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: var(--text-secondary);
-        font-weight: 500;
-        transition: all 0.2s ease;
-
-        &:hover {
-          color: var(--el-color-primary);
-          transform: translateX(-2px);
-        }
-      }
-
-      .product-info {
-        .product-name {
-          font-size: 20px;
-          font-weight: 700;
-          color: var(--text-primary);
-          margin-bottom: 4px;
-        }
-
-        .product-meta {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-
-          .product-id {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-family: 'SF Mono', monospace;
-          }
-
-          .status-badge {
-            font-weight: 500;
-          }
-        }
-      }
-    }
-
-    .header-center {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      padding: 0 40px;
-      max-width: 900px;
-
-      .step-indicators {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: relative;
-        width: 100%;
-
-        .step-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          position: relative;
-          z-index: 2;
-
-          .step-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--bg-canvas);
-            border: 2px solid var(--border-base);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-          }
-
-          .step-info {
-            text-align: center;
-            min-width: 80px;
-
-            .step-title {
-              font-size: 13px;
-              font-weight: 600;
-              color: var(--text-primary);
-              margin-bottom: 2px;
-            }
-
-            .step-desc {
-              font-size: 11px;
-              color: var(--text-secondary);
-            }
-          }
-
-          &.active .step-icon {
-            background: var(--el-color-primary-light-9);
-            border-color: var(--el-color-primary);
-            color: var(--el-color-primary);
-          }
-
-          &.current .step-icon {
-            background: var(--el-color-primary);
-            border-color: var(--el-color-primary);
-            color: white;
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(var(--el-color-primary-rgb), 0.3);
-          }
-
-          .step-connector {
-            position: absolute;
-            left: 48px;
-            top: 24px;
-            width: calc(100% - 48px);
-            height: 2px;
-            z-index: 1;
-
-            .connector-line {
-              width: 100%;
-              height: 100%;
-              background: var(--border-base);
-              transition: all 0.3s ease;
-
-              &.completed {
-                background: var(--el-color-primary);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    .header-right {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-
-      .el-button {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: var(--bg-canvas);
-        border: 1px solid var(--border-base);
-        color: var(--text-secondary);
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: var(--bg-card);
-          color: var(--el-color-primary);
-          transform: scale(1.05);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-      }
-    }
-  }
-
-  .studio-content {
-    flex: 1;
-    height: calc(100vh - 120px - 80px);
-    overflow: hidden;
-    background: var(--bg-canvas);
-  }
-
-  .studio-footer {
-    height: 80px;
-    background: white;
-    border-top: 1px solid var(--border-base);
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
-
-    .footer-main {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      .footer-left {
-        .save-btn {
-          border: 1px solid var(--border-base);
-          background: white;
-          color: var(--text-secondary);
-          border-radius: 8px;
-          padding: 8px 16px;
-          transition: all 0.2s ease;
-
-          &:hover {
-            background: var(--bg-canvas);
-            border-color: var(--el-color-primary);
-            color: var(--el-color-primary);
-          }
-
-          .btn-text {
-            margin-left: 6px;
-          }
-        }
-      }
-
-      .footer-center {
-        .primary-btn {
-          min-width: 200px;
-          height: 48px;
-          border-radius: 12px;
-          font-size: 15px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          transition: all 0.2s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-          }
-
-          .btn-text {
-            font-size: 16px;
-          }
-
-          .step-name {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-left: 4px;
-          }
-
-          .arrow-icon {
-            margin-left: 8px;
-          }
-        }
-      }
-
-      .footer-right {
-        .terminal-btn {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          border: 2px solid var(--border-base);
-          background: white;
-          transition: all 0.2s ease;
-
-          &:hover {
-            border-color: var(--el-color-primary);
-            background: var(--el-color-primary-light-9);
-            transform: scale(1.05);
-          }
-
-          &.active {
-            background: var(--el-color-primary);
-            border-color: var(--el-color-primary);
-            color: white;
-            box-shadow: 0 0 0 3px rgba(var(--el-color-primary-rgb), 0.2);
-          }
-        }
-      }
-    }
-  }
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(67, 217, 173, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(67, 217, 173, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(67, 217, 173, 0);
-  }
+/* --- Header Styles --- */
+.studio-header {
+  height: 64px;
+  /* 紧凑高度 */
+  background-color: var(--bg-card, #ffffff);
+  border-bottom: 1px solid var(--border-base, #e4e7ed);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  z-index: 10;
 }
 
-// 响应式设计
-@media (max-width: 1200px) {
-  .studio-layout {
-    .studio-header {
-      padding: 20px 24px;
-
-      .header-left {
-        flex: 0 0 280px;
-      }
-
-      .header-center {
-        padding: 0 20px;
-      }
-
-      .header-right {
-        flex: 0 0 100px;
-      }
-    }
-
-    .studio-footer {
-      padding: 0 24px;
-
-      .footer-right {
-        .next-btn,
-        .publish-btn {
-          min-width: 140px;
-        }
-      }
-    }
-  }
+.header-section {
+  display: flex;
+  align-items: center;
 }
 
-@media (max-width: 768px) {
-  .studio-layout {
-    .studio-header {
-      padding: 16px;
-      flex-direction: column;
-      gap: 16px;
+.header-section.left {
+  width: 280px;
+  /* 固定宽度，防止挤压中间 */
+}
 
-      .header-left {
-        width: 100%;
-        justify-content: center;
+.header-section.center {
+  flex: 1;
+  justify-content: center;
+}
 
-        .product-info {
-          text-align: center;
+.header-section.right {
+  width: 280px;
+  /* 固定宽度，对称 */
+  justify-content: flex-end;
+  gap: 16px;
+}
 
-          .product-name {
-            font-size: 18px;
-          }
-        }
-      }
+/* Back & Product Info */
+.back-btn {
+  color: var(--text-secondary, #909399);
+  padding: 0;
+}
 
-      .header-center {
-        width: 100%;
-        padding: 0;
+.back-btn:hover {
+  color: var(--el-color-primary);
+}
 
-        .step-indicators {
-          flex-wrap: wrap;
-          gap: 12px;
+.divider {
+  width: 1px;
+  height: 24px;
+  background-color: var(--border-base, #e4e7ed);
+  margin: 0 16px;
+}
 
-          .step-item {
-            flex: 1;
-            min-width: 80px;
+.product-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-            .step-info {
-              display: none;
-            }
+.product-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-            .step-connector {
-              display: none;
-            }
-          }
-        }
-      }
+.info-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
 
-      .header-right {
-        width: 100%;
-        justify-content: center;
-      }
-    }
+.product-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #303133);
+}
 
-    .studio-footer {
-      height: 100px;
+.pid-tag {
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  margin-top: 2px;
+  border: none;
+  background-color: var(--bg-canvas);
+}
 
-      .footer-main {
-        flex-direction: column;
-        gap: 16px;
-        padding: 16px;
+/* --- Stepper Navigation (Custom) --- */
+.stepper-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-        .footer-left,
-        .footer-center,
-        .footer-right {
-          width: 100%;
-          justify-content: center;
-        }
+.nav-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  transition: all 0.2s;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
 
-        .footer-center {
-          order: 1;
-        }
+.nav-step:hover {
+  background-color: var(--bg-canvas, #f5f7fa);
+}
 
-        .footer-left {
-          order: 2;
-        }
+.step-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--border-base, #e4e7ed);
+  color: var(--text-secondary, #909399);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
 
-        .footer-right {
-          order: 3;
-        }
+.step-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary, #909399);
+  transition: color 0.3s;
+}
 
-        .primary-btn {
-          width: 100%;
-          max-width: 280px;
-        }
-      }
-    }
-  }
+.step-line {
+  width: 32px;
+  height: 2px;
+  background-color: var(--border-base, #ebedf0);
+  margin-left: 12px;
+  margin-right: 4px;
+}
+
+/* Active State */
+.nav-step.is-active .step-indicator {
+  background-color: var(--el-color-primary);
+  color: white;
+  box-shadow: 0 2px 6px rgba(var(--el-color-primary-rgb), 0.4);
+}
+
+.nav-step.is-active .step-label {
+  color: var(--text-primary, #303133);
+  font-weight: 600;
+}
+
+/* Finished State */
+.nav-step.is-finished .step-indicator {
+  background-color: var(--el-color-success-light-9);
+  color: var(--el-color-success);
+  border: 1px solid var(--el-color-success-light-5);
+}
+
+.nav-step.is-finished .step-label {
+  color: var(--text-primary, #303133);
+}
+
+.nav-step.is-finished+.nav-step .step-indicator {
+  /* Next step logic if needed */
+}
+
+/* User Avatar */
+.user-avatar {
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  transition: border-color 0.2s;
+}
+
+.user-avatar:hover {
+  border-color: var(--el-color-primary-light-5);
+}
+
+/* --- Main Canvas --- */
+.studio-canvas {
+  padding: 0;
+  /* Let children handle padding for full-bleed flexibility */
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 64px);
+}
+
+/* Transition */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
 }
 </style>
