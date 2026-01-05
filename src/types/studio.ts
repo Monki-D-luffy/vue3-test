@@ -1,14 +1,14 @@
 // src/types/studio.ts
 
 // DP 数据类型枚举
-export type DpDataType = 'Boolean' | 'Integer' | 'Enum' | 'String' | 'Json';
+export type DpDataType = 'Boolean' | 'Integer' | 'Enum' | 'String' | 'Json' | 'Raw';
 
 // DP 读写模式
 export type DpRwMode = 'rw' | 'ro'; // rw=下发和上报, ro=只上报
 
 // 核心：功能点定义 (Data Point)
 export interface DataPoint {
-  id: number;           // DP ID (e.g., 1, 101)
+  id: number | string;           // DP ID (e.g., 1, 101)
   code: string;         // 标识符 (e.g., "switch_led")
   name: string;         // 功能名称 (e.g., "开关")
   type: DpDataType;     // 数据类型
