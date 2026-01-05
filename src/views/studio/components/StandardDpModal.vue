@@ -1,293 +1,159 @@
 <template>
-    <el-dialog v-model="visible" title="添加标准功能" width="800px" :close-on-click-modal="false" append-to-body
-        class="standard-dp-modal">
-        <div class="modal-layout">
-            <div class="category-sidebar">
-                <div v-for="cat in categories" :key="cat.key" class="category-item"
-                    :class="{ active: currentCategory === cat.key }" @click="currentCategory = cat.key">
-                    <el-icon>
-                        <component :is="cat.icon" />
-                    </el-icon>
-                    <span>{{ cat.label }}</span>
-                </div>
+    <el-dialog v-model="visible" title="添加标准功能" width="800px" destroy-on-close append-to-body class="studio-modal">
+        <div class="modal-body">
+            <div class="filter-bar">
+                <el-input v-model="searchKey" placeholder="搜索功能名称或标识符..." prefix-icon="Search" class="search-input" />
+                <el-alert title="已为您筛选出 空气净化器 品类的标准功能" type="info" :closable="false" class="filter-alert" />
             </div>
 
-            <div class="dp-selection-area">
-                <div class="selection-header">
-                    <span class="tip">已选择 {{ selectedDps.length }} 个功能</span>
-                    <el-input v-model="searchKey" placeholder="搜索功能..." prefix-icon="Search" size="small"
-                        style="width: 200px" />
-                </div>
-
-                <div class="dp-grid">
-                    <div v-for="dp in filteredDps" :key="dp.identifier" class="dp-card"
-                        :class="{ selected: isSelected(dp) }" @click="toggleSelection(dp)">
-                        <div class="check-mark" v-if="isSelected(dp)">
-                            <el-icon>
-                                <Check />
-                            </el-icon>
+            <el-table ref="tableRef" :data="standardLibrary" style="width: 100%" height="450"
+                @selection-change="handleSelectionChange"
+                :header-cell-style="{ background: '#f8fafc', color: '#64748b' }">
+                <el-table-column type="selection" width="50" align="center" />
+                <el-table-column prop="id" label="ID" width="70" align="center">
+                    <template #default="{ row }">
+                        <span class="font-mono text-gray-400">#{{ row.id }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="name" label="功能" width="140">
+                    <template #default="{ row }">
+                        <div class="name-box">
+                            <span class="font-bold text-gray-700">{{ row.name }}</span>
                         </div>
-
-                        <div class="dp-info">
-                            <span class="dp-name">{{ dp.name }}</span>
-                            <span class="dp-id">{{ dp.identifier }}</span>
-                        </div>
-
-                        <div class="dp-meta">
-                            <el-tag size="small" type="info" effect="plain">{{ dp.type }}</el-tag>
-                            <span class="dp-mode">{{ dp.mode === 'rw' ? '可下发' : '只读' }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="code" label="标识符" width="180">
+                    <template #default="{ row }">
+                        <span class="tag-code">{{ row.code }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="type" label="类型" width="100">
+                    <template #default="{ row }">
+                        <el-tag size="small" effect="plain" round>{{ row.type }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="说明" min-width="200">
+                    <template #default="{ row }">
+                        <span class="text-gray-500 text-xs">{{ row.desc }}</span>
+                    </template>
+                </el-table-column>
+            </el-table>
         </div>
 
         <template #footer>
             <div class="dialog-footer">
-                <el-button @click="visible = false">取消</el-button>
-                <el-button type="primary" @click="handleConfirm" :disabled="selectedDps.length === 0">
-                    确认添加 ({{ selectedDps.length }})
-                </el-button>
+                <div class="selection-stat" v-if="selectedRows.length > 0">
+                    已选择 <span class="highlight">{{ selectedRows.length }}</span> 项
+                </div>
+                <div class="actions">
+                    <el-button @click="visible = false">取消</el-button>
+                    <el-button type="primary" class="btn-tech" @click="handleConfirm"
+                        :disabled="selectedRows.length === 0">
+                        确认添加
+                    </el-button>
+                </div>
             </div>
         </template>
     </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import {
-    Search, Check,
-    Sunny, Connection, Timer, Setting // Icons
-} from '@element-plus/icons-vue';
+import { ref, watch } from 'vue';
+import { Search } from '@element-plus/icons-vue';
+import type { DataPoint } from '@/types/studio';
+import { useStudioStore } from '@/stores/studioStore';
+import { ElMessage } from 'element-plus';
 
-// --- Types ---
-interface StandardDp {
-    identifier: string;
-    name: string;
-    type: string;
-    mode: 'rw' | 'ro';
-    specs?: any;
-}
-
-// --- Props & Emits ---
-const props = defineProps<{
-    modelValue: boolean
-}>();
-
-const emit = defineEmits(['update:modelValue', 'confirm']);
-
-// --- State ---
-const visible = computed({
-    get: () => props.modelValue,
-    set: (val) => emit('update:modelValue', val)
-});
-
-const currentCategory = ref('common');
+const props = defineProps<{ modelValue: boolean; }>();
+const emit = defineEmits(['update:modelValue', 'success']);
+const store = useStudioStore();
+const visible = ref(false);
 const searchKey = ref('');
-const selectedDps = ref<StandardDp[]>([]);
+const selectedRows = ref<DataPoint[]>([]);
 
-// --- Mock Data: 标准功能库 ---
-const categories = [
-    { key: 'common', label: '通用功能', icon: 'Connection' },
-    { key: 'light', label: '照明能力', icon: 'Sunny' },
-    { key: 'electric', label: '电工能力', icon: 'Timer' },
-    { key: 'sensor', label: '传感器', icon: 'Setting' },
+// Mock Data
+const standardLibrary: DataPoint[] = [
+    { id: 1, code: 'switch_led', name: '电源开关', type: 'Boolean', mode: 'rw', isStandard: true, property: {}, desc: '设备总电源控制' },
+    { id: 2, code: 'work_mode', name: '工作模式', type: 'Enum', mode: 'rw', isStandard: true, property: { range: ['auto', 'sleep', 'smart'] }, desc: '设备运行模式设定' },
+    { id: 3, code: 'temp_set', name: '目标温度', type: 'Integer', mode: 'rw', isStandard: true, property: { min: 16, max: 30, step: 1, unit: '℃' }, desc: '空调/温控器目标温度' },
+    { id: 4, code: 'pm25_value', name: 'PM2.5', type: 'Integer', mode: 'ro', isStandard: true, property: { min: 0, max: 999, step: 1, unit: 'ug/m3' }, desc: '空气质量检测数值' },
+    { id: 5, code: 'filter_life', name: '滤芯寿命', type: 'Integer', mode: 'ro', isStandard: true, property: { min: 0, max: 100, step: 1, unit: '%' }, desc: '滤芯剩余寿命百分比' },
+    { id: 6, code: 'child_lock', name: '童锁', type: 'Boolean', mode: 'rw', isStandard: true, property: {}, desc: '防止儿童误触' },
+    { id: 20, code: 'fault_flags', name: '故障告警', type: 'Integer', mode: 'ro', isStandard: true, property: { min: 0, max: 255 }, desc: '设备故障位图' },
 ];
 
-const standardLibrary: Record<string, StandardDp[]> = {
-    common: [
-        { identifier: 'switch', name: '开关', type: 'bool', mode: 'rw', specs: { true: 'ON', false: 'OFF' } },
-        { identifier: 'countdown', name: '倒计时', type: 'value', mode: 'rw', specs: { unit: 's', min: 0, max: 86400 } },
-        { identifier: 'battery', name: '电池电量', type: 'value', mode: 'ro', specs: { unit: '%', min: 0, max: 100 } },
-    ],
-    light: [
-        { identifier: 'bright_value', name: '亮度值', type: 'value', mode: 'rw', specs: { min: 10, max: 1000 } },
-        { identifier: 'temp_value', name: '色温值', type: 'value', mode: 'rw', specs: { min: 0, max: 1000 } },
-        { identifier: 'work_mode', name: '工作模式', type: 'enum', mode: 'rw', specs: { range: ['white', 'colour', 'scene'] } },
-        { identifier: 'scene_data', name: '场景数据', type: 'string', mode: 'rw' },
-    ],
-    electric: [
-        { identifier: 'cur_current', name: '当前电流', type: 'value', mode: 'ro', specs: { unit: 'mA' } },
-        { identifier: 'cur_power', name: '当前功率', type: 'value', mode: 'ro', specs: { unit: 'W' } },
-        { identifier: 'cur_voltage', name: '当前电压', type: 'value', mode: 'ro', specs: { unit: 'V' } },
-    ],
-    sensor: [
-        { identifier: 'temp_current', name: '当前温度', type: 'value', mode: 'ro', specs: { unit: '°C' } },
-        { identifier: 'humidity_value', name: '当前湿度', type: 'value', mode: 'ro', specs: { unit: '%' } },
-        { identifier: 'alarm_state', name: '报警状态', type: 'enum', mode: 'ro', specs: { range: ['normal', 'alarm'] } },
-    ]
-};
+watch(() => props.modelValue, (val) => visible.value = val);
+watch(visible, (val) => { emit('update:modelValue', val); if (val) selectedRows.value = []; });
 
-// --- Computed ---
-const filteredDps = computed(() => {
-    const list = standardLibrary[currentCategory.value] || [];
-    if (!searchKey.value) return list;
-    return list.filter(item =>
-        item.name.includes(searchKey.value) ||
-        item.identifier.includes(searchKey.value)
-    );
-});
-
-// --- Actions ---
-const isSelected = (dp: StandardDp) => {
-    return selectedDps.value.some(item => item.identifier === dp.identifier);
-};
-
-const toggleSelection = (dp: StandardDp) => {
-    const index = selectedDps.value.findIndex(item => item.identifier === dp.identifier);
-    if (index !== -1) {
-        selectedDps.value.splice(index, 1);
-    } else {
-        selectedDps.value.push(dp);
-    }
-};
+const handleSelectionChange = (val: DataPoint[]) => selectedRows.value = val;
 
 const handleConfirm = () => {
-    // 深拷贝选中的数据，避免引用关联
-    const dpsToAdd = JSON.parse(JSON.stringify(selectedDps.value));
-    emit('confirm', dpsToAdd);
+    const existingIds = new Set(store.dps.map(dp => dp.id));
+    const newDps = selectedRows.value.filter(dp => !existingIds.has(dp.id));
+
+    newDps.forEach(dp => store.upsertDp(dp));
+
+    if (newDps.length > 0) {
+        ElMessage.success(`成功添加 ${newDps.length} 个功能`);
+        emit('success');
+    } else {
+        ElMessage.warning('所选功能已存在');
+    }
     visible.value = false;
-    selectedDps.value = []; // 清空选择
 };
 </script>
 
 <style scoped>
-.modal-layout {
+.filter-bar {
     display: flex;
-    height: 400px;
-    border: 1px solid var(--border-base);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-/* Sidebar */
-.category-sidebar {
-    width: 140px;
-    background-color: var(--bg-canvas);
-    border-right: 1px solid var(--border-base);
-    padding: 12px 0;
-}
-
-.category-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    font-size: 13px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.category-item:hover {
-    background-color: rgba(0, 0, 0, 0.03);
-    color: var(--text-primary);
-}
-
-.category-item.active {
-    background-color: white;
-    color: var(--el-color-primary);
-    font-weight: 500;
-    box-shadow: inset 2px 0 0 var(--el-color-primary);
-}
-
-/* Selection Area */
-.dp-selection-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background-color: white;
-}
-
-.selection-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-base);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.tip {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.dp-grid {
-    flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    grid-auto-rows: max-content;
-    /* 防止拉伸 */
     gap: 12px;
-}
-
-/* DP Card */
-.dp-card {
-    border: 1px solid var(--border-base);
-    border-radius: 8px;
-    padding: 12px;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.2s;
-    background-color: white;
-}
-
-.dp-card:hover {
-    border-color: var(--el-color-primary-light-5);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-card);
-}
-
-.dp-card.selected {
-    border-color: var(--el-color-primary);
-    background-color: var(--el-color-primary-light-9);
-}
-
-.check-mark {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 18px;
-    height: 18px;
-    background-color: var(--el-color-primary);
-    border-radius: 50%;
-    color: white;
-    display: flex;
+    margin-bottom: 16px;
     align-items: center;
-    justify-content: center;
-    font-size: 12px;
 }
 
-.dp-info {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 8px;
+.search-input {
+    width: 300px;
 }
 
-.dp-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
+.filter-alert {
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 6px 16px;
+    height: 32px;
 }
 
-.dp-id {
-    font-size: 12px;
-    color: var(--text-secondary);
-    font-family: monospace;
-}
-
-.dp-meta {
+.dialog-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
 }
 
-.dp-mode {
-    color: var(--text-secondary);
-    transform: scale(0.9);
-    transform-origin: right center;
+.selection-stat {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.highlight {
+    color: var(--studio-primary);
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0 4px;
+}
+
+.font-mono {
+    font-family: var(--font-mono);
+}
+
+.text-gray-400 {
+    color: #94a3b8;
+}
+
+.text-gray-700 {
+    color: #334155;
+}
+
+.text-xs {
+    font-size: 12px;
 }
 </style>

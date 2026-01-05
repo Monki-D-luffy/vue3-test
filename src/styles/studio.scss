@@ -1,48 +1,59 @@
-/* Studio 专属布局变量 */
+/* src/styles/studio.scss */
+
+/* --- Studio 专属设计令牌 (Design Tokens) --- */
 :root {
-  --studio-header-height: 60px;
-  --studio-footer-height: 70px;
-  --studio-min-width: 1100px; /* 防止内容被过度挤压的底线 */
+  --studio-primary: #1a1a1a;       /* 核心主色：黑曜石 */
+  --studio-primary-hover: #333333; /* 悬浮色 */
+  --studio-accent: #3b82f6;        /* 提亮色：科技蓝 */
+  --studio-bg-card: #ffffff;
+  --studio-bg-canvas: #f8fafc;     /* 更冷淡的灰背景 */
+  --studio-border: #e2e8f0;
+  --studio-text-main: #1e293b;
+  --studio-text-sub: #64748b;
   
-  --bg-canvas: #f5f7fa;
-  --bg-panel-l: #ffffff;
-  --bg-panel-r: #ffffff;
-  
-  /* 阴影体系 */
-  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
-  --shadow-floating: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --shadow-float: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* 滚动条美化 (Chrome/Edge/Safari) */
-.studio-scroll-container::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* 通用：黑曜石按钮 (替代默认的蓝色 primary) */
+.el-button--primary.btn-tech {
+  background-color: var(--studio-primary);
+  border-color: var(--studio-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  
+  &:hover, &:focus {
+    background-color: var(--studio-primary-hover);
+    border-color: var(--studio-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
 }
-.studio-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.studio-scroll-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+
+/* 通用：代码胶囊 */
+.tag-code {
+  font-family: var(--font-mono);
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 2px 8px;
   border-radius: 4px;
-}
-.studio-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  font-size: 12px;
 }
 
-/* 全局卡片规范 */
-.studio-card {
-  background: white;
-  border-radius: 12px;
+/* 通用：卡片容器优化 */
+.tech-card {
+  background: var(--studio-bg-card);
+  border-radius: 16px; /* 更大的圆角 */
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 32px;
   box-shadow: var(--shadow-card);
-  border: 1px solid var(--el-border-color-lighter);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-/* 工具类：去除原生滚动条并保持功能 */
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: var(--shadow-float);
+    border-color: rgba(226, 232, 240, 0.5);
+  }
 }

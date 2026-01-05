@@ -117,7 +117,7 @@ const handleCommand = (command) => {
 /* --- 顶栏 (Header) --- */
 
 .el-header {
-    height: 60px;
+    height: 50px;
     /* ✨ 背景色改为变量，适配黑夜模式 */
     background-color: var(--bg-card);
     border-bottom: 1px solid var(--border-color-light);

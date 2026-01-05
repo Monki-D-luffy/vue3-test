@@ -8,7 +8,7 @@ const productRoutes: RouteRecordRaw = {
         // 1. 产品列表 (入口)
         {
             path: '',
-            name: 'ProductManagement', // 修复：原来是 ProductList，改为 ProductManagement
+            name: 'ProductManagement',
             component: () => import('@/views/product/ProductManagement.vue'),
             meta: { title: '产品管理' }
         },
@@ -26,38 +26,39 @@ const productRoutes: RouteRecordRaw = {
             redirect: { name: 'ProductFunction' },
             meta: {
                 activeMenu: 'ProductManagement',
-                requiresAuth: true
+                requiresAuth: true,
+                isFullScreen: true, // ✅ 核心标记：告诉 AppLayout "请消失"
             },
             children: [
                 {
                     path: 'function',
                     name: 'ProductFunction',
                     component: () => import('@/views/studio/ProductFunction.vue'),
-                    meta: { title: '功能定义', step: 1 }
+                    meta: { title: '1. 功能定义', step: 0 }
                 },
                 {
                     path: 'panel',
                     name: 'ProductPanel',
                     component: () => import('@/views/studio/ProductPanel.vue'),
-                    meta: { title: '面板设计', step: 2 }
+                    meta: { title: '2. 面板设计', step: 1 }
                 },
                 {
                     path: 'hardware',
                     name: 'ProductHardware',
                     component: () => import('@/views/studio/ProductHardware.vue'),
-                    meta: { title: '硬件开发', step: 3 }
+                    meta: { title: '3. 硬件开发', step: 2 }
                 },
                 {
                     path: 'config',
                     name: 'ProductConfig',
                     component: () => import('@/views/studio/ProductConfig.vue'),
-                    meta: { title: '产品配置', step: 4 }
+                    meta: { title: '4. 产品配置', step: 3 }
                 },
                 {
                     path: 'test',
                     name: 'ProductTest',
                     component: () => import('@/views/studio/ProductTest.vue'),
-                    meta: { title: '测试发布', step: 5 }
+                    meta: { title: '5. 测试发布', step: 4 }
                 }
             ]
         },

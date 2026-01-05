@@ -16,6 +16,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 // 3. ⚠️ 最后引入你的自定义样式 (确保能覆盖上面的默认值)
 import './assets/page-layouts.css'
 import './assets/main.css'
+import '@/styles/studio.scss'
 
 const app = createApp(App)
 

@@ -51,7 +51,7 @@ const toggleCollapse = () => {
 
 /* 头部样式：玻璃拟态或纯白卡片 */
 .app-header {
-    height: 60px;
+    height: 50px;
     padding: 0;
     background-color: var(--app-bg-card);
     /* ✅ 使用变量 */
@@ -71,7 +71,7 @@ const toggleCollapse = () => {
     height: calc(100vh - 60px);
     background-color: var(--app-bg-canvas);
     /* ✅ 使用变量：浅灰背景 */
-    padding: 24px;
+    padding: 10px;
     /* ✅ 统一内边距，子页面无需自己写 margin */
     overflow-y: auto;
     /* 纵向滚动 */
