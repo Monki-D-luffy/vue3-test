@@ -33,3 +33,51 @@ export interface StudioState {
   dps: DataPoint[]; // 功能点列表
   isDirty: boolean; // 是否有未保存的修改
 }
+// ==========================================
+// 新增：硬件开发相关类型定义
+// ==========================================
+
+export type ChipArchitecture = 'RISC-V' | 'Xtensa' | 'ARM' | '8051';
+export type ChipSeries = 'Entry' | 'Standard' | 'Performance';
+
+/**
+ * 硬件模组定义 (物理实体)
+ */
+export interface IModule {
+  id: string;
+  name: string;             // 例如: "ESP32-C3-MINI"
+  vendor: string;           // 例如: "Espressif"
+  architecture: ChipArchitecture;
+  series: ChipSeries;       // 用于UI上的标签分类
+  flashSize: number;        // 单位: MB
+  ramSize: number;          // 单位: KB
+  clockSpeed: number;       // 单位: MHz
+  description: string;
+  thumbnail?: string;       // 芯片图片URL
+  recommended?: boolean;    // 是否为推荐模组
+}
+
+/**
+ * 资源评估报告 (软硬碰撞结果)
+ * 用于驱动 UI 上的 "液压管" 进度条
+ */
+export interface IResourceAnalysis {
+  ramUsageKB: number;       // 预估 RAM 占用 (KB)
+  ramPercentage: number;    // RAM 占用百分比 (0-100)
+  flashUsageKB: number;     // 预估 Flash 占用 (KB)
+  flashPercentage: number;  // Flash 占用百分比 (0-100)
+  riskLevel: 'safe' | 'warning' | 'critical'; // 风险等级
+  details: string[];        // 具体的分析日志，例如 "DP数量过多导致内存吃紧"
+}
+
+/**
+ * 交付产物定义
+ */
+export interface IFirmwareArtifact {
+  id: string;
+  version: string;          // e.g. "1.0.0-build.20231027"
+  createdAt: number;        // Timestamp
+  size: number;             // Bytes
+  type: 'debug' | 'release';
+  downloadUrl: string;      // 模拟的下载链接
+}

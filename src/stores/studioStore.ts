@@ -1,8 +1,44 @@
 // src/stores/studioStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { DataPoint } from '@/types/studio';
-
+import type { DataPoint, IModule, IResourceAnalysis, IFirmwareArtifact } from '@/types/studio';
+// 模拟的模组数据库 (可以想象这是从后端 API 获取的)
+const MOCK_MODULES: IModule[] = [
+    {
+        id: 'mod_c3_mini',
+        name: 'ESP32-C3-MINI',
+        vendor: 'Espressif',
+        architecture: 'RISC-V',
+        series: 'Entry',
+        flashSize: 4,     // 4MB
+        ramSize: 400,     // 400KB
+        clockSpeed: 160,
+        description: '高性价比 RISC-V 芯片，适合简单的开关/照明设备。',
+        recommended: true
+    },
+    {
+        id: 'mod_s3_wroom',
+        name: 'ESP32-S3-WROOM',
+        vendor: 'Espressif',
+        architecture: 'Xtensa',
+        series: 'Performance',
+        flashSize: 8,     // 8MB
+        ramSize: 512,     // 512KB + PSRAM potential
+        clockSpeed: 240,
+        description: '高性能 AIoT 芯片，支持 AI 加速指令，适合复杂交互场景。'
+    },
+    {
+        id: 'mod_bl602',
+        name: 'BL602-IoT',
+        vendor: 'Bouffalo',
+        architecture: 'RISC-V',
+        series: 'Entry',
+        flashSize: 2,     // 2MB
+        ramSize: 276,     // 276KB
+        clockSpeed: 192,
+        description: '极低功耗 Wi-Fi + BLE 组合，适合电池供电设备。'
+    }
+];
 export const useStudioStore = defineStore('studio', () => {
     // --- State ---
     const dps = ref<DataPoint[]>([]);
