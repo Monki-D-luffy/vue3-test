@@ -55,8 +55,31 @@ export interface IModule {
   description: string;
   thumbnail?: string;       // 芯片图片URL
   recommended?: boolean;    // 是否为推荐模组
+  availablePins: string[];
+  pinoutImage?: string;     // 引脚图 URL
+  datasheetUrl?: string;    //规格书下载链接
+  pinoutUrl?: string;       // 引脚定义图 (真实图片链接)
+}
+/**
+ * 引脚高级属性
+ */
+export interface IPinAttributes {
+  pullMode: 'up' | 'down' | 'none'; // 上下拉
+  driveStrength: '5mA' | '10mA' | '20mA'; // 驱动能力
 }
 
+/**
+ * 引脚配置定义 (BSP Layer)
+ * 顺序: 引脚 - 功能 - 有效电平 - 其他功能 - 说明
+ */
+export interface IPinDefinition {
+  id: string;           // 唯一标识 (UUID)
+  pin: string;          // 物理引脚名, e.g. "GPIO 5"
+  peripheral: string;   // 功能/外设名, e.g. "UART0_TX", "PWM_1"
+  activeLevel: 'high' | 'low';
+  attributes: IPinAttributes; // 其他高级功能
+  description: string;  // 说明备注
+}
 /**
  * 资源评估报告 (软硬碰撞结果)
  * 用于驱动 UI 上的 "液压管" 进度条
@@ -80,4 +103,29 @@ export interface IFirmwareArtifact {
   size: number;             // Bytes
   type: 'debug' | 'release';
   downloadUrl: string;      // 模拟的下载链接
+}
+
+// ==========================================
+// 新增：引脚配置与固件上传相关
+// ==========================================
+
+export interface IPinDefinition {
+  pin: string;        // 物理引脚名, e.g. "GPIO 5", "ADC_1"
+  function: string;   // 绑定的功能, e.g. "switch_led", "PWM_Output"
+  direction: 'input' | 'output' | 'inout';
+  activeLevel: 'high' | 'low'; // 有效电平
+  isUsed: boolean;
+}
+
+
+export type FirmwareSourceType = 'generated' | 'uploaded';
+
+export interface IFirmwareArtifact {
+  id: string;
+  name: string;
+  source: FirmwareSourceType; // 区分是生成的还是上传的
+  version: string;
+  createdAt: number;
+  size: number;
+  downloadUrl: string;
 }
