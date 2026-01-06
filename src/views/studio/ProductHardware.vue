@@ -11,76 +11,56 @@
     </div>
 
     <div class="cards-container">
-
       <div class="dashboard-card module-card">
         <div class="card-header">
           <span class="title">计算核心模组</span>
           <div class="header-actions">
             <el-tooltip content="下载产品规格书" placement="top" v-if="store.currentModule?.datasheetUrl">
-              <a :href="store.currentModule.datasheetUrl" target="_blank" class="icon-btn">
-                <el-icon>
+              <a :href="store.currentModule.datasheetUrl" target="_blank" class="icon-btn"><el-icon>
                   <Document />
-                </el-icon>
-              </a>
+                </el-icon></a>
             </el-tooltip>
-            <el-button size="small" class="action-btn" @click="drawerState.module = true">
-              更换
-            </el-button>
+            <el-button size="small" class="action-btn" @click="drawerState.module = true">更换</el-button>
           </div>
         </div>
-
         <div class="card-body" v-if="store.currentModule">
           <div class="chip-image-placeholder">
             <div class="chip-silkscreen">{{ store.currentModule.name }}</div>
           </div>
           <div class="chip-details">
-            <div class="detail-row">
-              <span class="label">架构 (Arch)</span>
-              <span class="value">{{ store.currentModule.architecture }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">存储 (Memory)</span>
-              <span class="value">{{ store.currentModule.flashSize }}MB Flash / {{ store.currentModule.ramSize }}KB
-                RAM</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">主频 (Clock)</span>
-              <span class="value">{{ store.currentModule.clockSpeed }} MHz</span>
-            </div>
+            <div class="detail-row"><span class="label">架构 (Arch)</span><span class="value">{{
+              store.currentModule.architecture }}</span></div>
+            <div class="detail-row"><span class="label">存储 (Memory)</span><span class="value">{{
+              store.currentModule.flashSize }}MB Flash / {{ store.currentModule.ramSize }}KB RAM</span></div>
+            <div class="detail-row"><span class="label">主频 (Clock)</span><span class="value">{{
+              store.currentModule.clockSpeed }} MHz</span></div>
           </div>
         </div>
         <div class="empty-state" v-else @click="drawerState.module = true">
           <el-icon :size="32">
             <Plus />
-          </el-icon>
-          <span>选择模组</span>
+          </el-icon><span>选择模组</span>
         </div>
       </div>
 
       <div class="dashboard-card pin-card">
         <div class="card-header">
           <span class="title">I/O 引脚配置</span>
-          <el-button size="small" class="action-btn" @click="drawerState.pin = true">
-            配置
-          </el-button>
+          <el-button size="small" class="action-btn" @click="drawerState.pin = true">配置</el-button>
         </div>
-
         <div class="card-body no-padding">
           <div class="empty-state" v-if="store.pinConfiguration.length === 0" @click="drawerState.pin = true">
             <el-icon :size="32">
               <Setting />
-            </el-icon>
-            <span>配置引脚映射</span>
+            </el-icon><span>配置引脚映射</span>
           </div>
-
           <el-scrollbar v-else height="100%" class="pin-scroll-container">
             <div class="pin-grid-layout">
               <div v-for="item in store.pinConfiguration" :key="item.id" class="pin-grid-item">
                 <el-tooltip :content="item.description || '无备注'" placement="top" :show-after="600">
                   <div class="pin-tag-wrapper" :class="getPinType(item)">
-                    <span class="pin-num">{{ item.pin }}</span>
-                    <span class="pin-divider">|</span>
-                    <span class="pin-func">{{ item.peripheral }}</span>
+                    <span class="pin-num">{{ item.pin }}</span><span class="pin-divider">|</span><span
+                      class="pin-func">{{ item.peripheral }}</span>
                   </div>
                 </el-tooltip>
               </div>
@@ -92,74 +72,56 @@
       <div class="dashboard-card firmware-card">
         <div class="card-header">
           <span class="title">固件交付</span>
-          <el-button size="small" class="action-btn" @click="drawerState.firmware = true">
-            管理
-          </el-button>
+          <el-button size="small" class="action-btn" @click="drawerState.firmware = true">管理</el-button>
         </div>
-
         <div class="card-body">
-          <div class="fw-status" v-if="latestFirmware">
+          <div class="fw-status" v-if="store.latestFirmware">
             <div class="status-icon success"><el-icon>
                 <Check />
               </el-icon></div>
             <div class="fw-info">
-              <div class="fw-ver">{{ latestFirmware.version }}</div>
-              <div class="fw-date">生成于 {{ new Date(latestFirmware.createdAt).toLocaleDateString() }}</div>
+              <div class="fw-ver-row">
+                <span class="fw-ver">v{{ store.latestFirmware.version }}</span>
+                <el-tag size="small" effect="plain" class="source-tag">{{ getSourceLabel(store.latestFirmware.source)
+                  }}</el-tag>
+              </div>
+              <div class="fw-date">生成于 {{ new Date(store.latestFirmware.createdAt).toLocaleDateString() }}</div>
             </div>
-            <el-button link type="primary">下载</el-button>
+            <el-button link type="primary" @click="handleDownload(store.latestFirmware)">下载</el-button>
           </div>
           <div class="empty-state" v-else @click="drawerState.firmware = true">
             <el-icon :size="32">
               <Box />
-            </el-icon>
-            <span>暂无固件</span>
+            </el-icon><span>暂无固件</span>
           </div>
-
           <div class="resource-summary" v-if="store.currentModule">
-            <div class="bar-label">
-              <span>资源负载 (RAM)</span>
-              <span>{{ store.resourceAnalysis.ramPercentage }}%</span>
-            </div>
+            <div class="bar-label"><span>资源负载 (RAM)</span><span>{{ store.resourceAnalysis.ramPercentage }}%</span></div>
             <el-progress :percentage="store.resourceAnalysis.ramPercentage" :show-text="false"
               :color="store.resourceAnalysis.riskLevel === 'critical' ? '#f56c6c' : '#10b981'" />
           </div>
         </div>
       </div>
-
     </div>
 
     <ModuleSelectDrawer v-model="drawerState.module" />
     <FirmwareManageDrawer v-model="drawerState.firmware" />
     <PinConfigModal v-model="drawerState.pin" />
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from 'vue';
+import { reactive } from 'vue';
 import { useStudioStore } from '@/stores/studioStore';
 import { Plus, Setting, Box, Check, Document } from '@element-plus/icons-vue';
 import type { IPinDefinition } from '@/types/studio';
-
-// 引入子组件
+import { ElMessage } from 'element-plus';
 import ModuleSelectDrawer from './components/hardware/ModuleSelectDrawer.vue';
 import FirmwareManageDrawer from './components/hardware/FirmwareManageDrawer.vue';
 import PinConfigModal from './components/hardware/PinConfigModal.vue';
 
 const store = useStudioStore();
+const drawerState = reactive({ module: false, firmware: false, pin: false });
 
-// 控制所有抽屉/弹窗的状态
-const drawerState = reactive({
-  module: false,
-  firmware: false,
-  pin: false
-});
-
-const latestFirmware = computed(() => {
-  return store.firmwareArtifacts.length > 0 ? store.firmwareArtifacts[0] : null;
-});
-
-// 🔥 新增：根据功能类型返回样式类名
 const getPinType = (pin: IPinDefinition) => {
   const func = pin.peripheral?.toUpperCase() || '';
   if (func.includes('UART') || func.includes('LOG')) return 'type-warning';
@@ -168,9 +130,15 @@ const getPinType = (pin: IPinDefinition) => {
   if (func.includes('ADC')) return 'type-info';
   return 'type-default';
 };
+
+const getSourceLabel = (source: string) => ({ uploaded: '本地上传', linked: '官方库' }[source] || '在线构建');
+const handleDownload = (item: any) => { ElMessage.success(`开始下载固件: ${item.name}`); };
 </script>
 
 <style scoped lang="scss">
+/* 保持样式不变，这里从略以节省篇幅，重点是上面的 Template 和 Script */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
 .hardware-dashboard {
   height: 100%;
   padding: 32px;
@@ -287,7 +255,6 @@ const getPinType = (pin: IPinDefinition) => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* 防止溢出 */
 
     &.no-padding {
       padding: 0;
@@ -358,20 +325,16 @@ const getPinType = (pin: IPinDefinition) => {
   }
 }
 
-/* 🔥 新增：Pin Grid 样式，适配卡片内部 */
 .pin-scroll-container {
   padding: 16px 20px;
-  /* 上下左右留白 */
 }
 
 .pin-grid-layout {
   display: grid;
   grid-template-columns: 1fr;
-  /* 默认单列，防止拥挤 */
   gap: 10px;
 }
 
-/* 宽屏下两列显示 */
 @media (min-width: 1400px) {
   .pin-grid-layout {
     grid-template-columns: 1fr 1fr;
@@ -394,7 +357,6 @@ const getPinType = (pin: IPinDefinition) => {
     transform: translateX(2px);
   }
 
-  /* 颜色变体 */
   &.type-warning {
     border-left: 3px solid #e6a23c;
     background: #fdf6ec;
@@ -463,9 +425,21 @@ const getPinType = (pin: IPinDefinition) => {
   .fw-info {
     flex: 1;
 
-    .fw-ver {
-      font-weight: 700;
-      color: #303133;
+    .fw-ver-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .fw-ver {
+        font-weight: 700;
+        color: #303133;
+      }
+
+      .source-tag {
+        font-size: 10px;
+        height: 20px;
+        padding: 0 6px;
+      }
     }
 
     .fw-date {

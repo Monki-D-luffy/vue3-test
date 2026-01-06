@@ -1,9 +1,11 @@
 // src/types/studio.ts
 
+// ==========================================
+// 核心：功能点定义 (Data Point)
+// ==========================================
 export type DpDataType = 'Boolean' | 'Integer' | 'Enum' | 'String' | 'Json' | 'Raw';
 export type DpRwMode = 'rw' | 'ro';
 
-// 核心：功能点定义 (Data Point)
 export interface DataPoint {
   id: number | string;
   code: string;
@@ -20,14 +22,6 @@ export interface DataPoint {
     maxlen?: number;
   };
   isStandard?: boolean;
-}
-
-// Studio 全局状态
-export interface StudioState {
-  currentStep: number;
-  productInfo: any;
-  dps: DataPoint[];
-  isDirty: boolean;
 }
 
 // ==========================================
@@ -62,7 +56,6 @@ export interface IPinAttributes {
 
 /**
  * 引脚配置定义 (BSP Layer)
- * 修正：移除旧的 function/direction 字段，统一使用 peripheral
  */
 export interface IPinDefinition {
   id: string;           // 唯一标识 (UUID)
@@ -73,6 +66,10 @@ export interface IPinDefinition {
   description: string;
 }
 
+// ==========================================
+// 资源与固件交付 (Firmware Delivery)
+// ==========================================
+
 export interface IResourceAnalysis {
   ramUsageKB: number;
   ramPercentage: number;
@@ -82,15 +79,39 @@ export interface IResourceAnalysis {
   details: string[];
 }
 
-export type FirmwareSourceType = 'generated' | 'uploaded';
+/**
+ * 固件来源类型 - 对应 TS 报错的关键
+ */
+export type FirmwareSourceType = 'generated' | 'uploaded' | 'linked';
 
 export interface IFirmwareArtifact {
   id: string;
   name: string;
-  source: FirmwareSourceType;
+  source: FirmwareSourceType; // 必须匹配上面的类型
   version: string;
   createdAt: number;
   size: number;
-  type?: 'debug' | 'release';
+  description?: string;
   downloadUrl: string;
+  // 可选扩展字段
+  chip?: string;
+  sdk?: string;
+  type?: 'debug' | 'release';
+}
+
+// ==========================================
+// Studio 全局状态定义
+// ==========================================
+export interface StudioState {
+  currentStep: number;
+  productInfo: any;
+  dps: DataPoint[];
+  isDirty: boolean;
+
+  // 硬件相关状态
+  currentModule: IModule | null;
+  pinConfiguration: IPinDefinition[];
+  firmwareArtifacts: IFirmwareArtifact[]; // 确保这里也有定义
+  resourceAnalysis: IResourceAnalysis;
+  isGenerating: boolean;
 }
