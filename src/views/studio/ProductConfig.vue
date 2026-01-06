@@ -46,80 +46,19 @@
       </el-col>
     </el-row>
 
-    <el-drawer v-model="drawerVisible" :show-close="false" size="480px" append-to-body class="black-gold-drawer">
-      <template #header="{ close }">
-        <div class="drawer-header-custom">
-          <div class="drawer-title-area">
-            <el-icon :size="20" color="#ffd700" style="margin-right: 8px">
-              <component :is="currentConfig?.icon" />
-            </el-icon>
-            <span class="drawer-title">{{ currentConfig?.title || '配置详情' }}</span>
-          </div>
-          <el-button circle icon="Close" class="close-btn" @click="close" />
-        </div>
-      </template>
-
-      <div class="drawer-content">
-        <div class="info-block">
-          <h4 class="section-title">功能状态</h4>
-          <div class="status-panel" :class="{ 'is-active': currentConfig?.isActive }">
-            <div class="status-text">
-              <span class="label">当前状态</span>
-              <span class="value" :style="{ color: currentConfig?.isActive ? '#d4af37' : '#909399' }">
-                {{ currentConfig?.isActive ? '已启用 (Enabled)' : '未启用 (Disabled)' }}
-              </span>
-            </div>
-            <el-switch v-model="currentConfig!.isActive" class="gold-switch" />
-          </div>
-        </div>
-
-        <div class="info-block">
-          <h4 class="section-title">基础参数</h4>
-          <el-form label-position="top" class="custom-form">
-            <el-form-item label="配置别名 (Alias)">
-              <el-input v-model="mockFormData.name" placeholder="例如：客厅主网关" />
-            </el-form-item>
-            <el-form-item label="描述说明">
-              <el-input v-model="mockFormData.desc" type="textarea" :rows="3" resize="none" />
-            </el-form-item>
-          </el-form>
-        </div>
-
-        <div class="info-block">
-          <h4 class="section-title">高级设定</h4>
-          <div class="warning-box">
-            <el-icon>
-              <InfoFilled />
-            </el-icon>
-            <span>修改高级参数可能会导致设备重启。</span>
-          </div>
-
-          <div class="mock-param-row">
-            <span>同步策略</span>
-            <el-radio-group v-model="mockFormData.strategy" size="small" fill="#1f1f1f">
-              <el-radio-button label="instant">实时同步</el-radio-button>
-              <el-radio-button label="lazy">闲时同步</el-radio-button>
-            </el-radio-group>
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="drawer-footer">
-          <el-button @click="drawerVisible = false">取消</el-button>
-          <el-button type="primary" class="gold-btn-solid" @click="saveConfig">保存变更</el-button>
-        </div>
-      </template>
-    </el-drawer>
+    <ConfigDrawer v-model="drawerVisible" :module-key="currentModuleKey" :title="currentModuleTitle"
+      :icon="currentModuleIcon" @saved="handleConfigSaved" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, markRaw, reactive } from 'vue'
+// ✅ FIX: 引入 shallowRef
+import { ref, computed, markRaw, reactive, shallowRef } from 'vue'
 import {
-  Notebook, Connection, Timer, Share, Upload, Bell, Close, InfoFilled
+  Notebook, Connection, Timer, Share, Upload, Bell, InfoFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import ConfigDrawer from './components/config/ConfigDrawer.vue'
 
 // --- 1. 数据定义 ---
 interface ConfigItem {
@@ -144,14 +83,10 @@ const activeCount = computed(() => configCards.value.filter(c => c.isActive).len
 
 // --- 2. 交互逻辑 ---
 const drawerVisible = ref(false)
-const currentConfig = ref<ConfigItem | null>(null)
-
-// 模拟表单数据
-const mockFormData = reactive({
-  name: '',
-  desc: '',
-  strategy: 'instant'
-})
+const currentModuleKey = ref('')
+const currentModuleTitle = ref('')
+// ✅ 使用 shallowRef 避免 Vue 对图标组件进行深层响应式转换，提升性能
+const currentModuleIcon = shallowRef<any>(null)
 
 // 开关点击（不弹窗）
 const handleSwitchChange = (item: ConfigItem) => {
@@ -160,23 +95,31 @@ const handleSwitchChange = (item: ConfigItem) => {
 
 // 卡片点击（弹窗）
 const openDetail = (item: ConfigItem) => {
-  console.log('Open Detail Triggered for:', item.title) // 调试日志
-  currentConfig.value = item
+  // 映射 Item ID 或 Title 到具体的 moduleKey
+  const keyMap: Record<number, string> = {
+    2: 'provisioning', // 配网引导
+    1: 'i18n',         // 多语言
+    // 其他模块暂时未开发，可以留空或映射到 default
+  };
 
-  // 模拟数据回填
-  mockFormData.name = `${item.title} - 配置集`
-  mockFormData.desc = item.desc
+  const key = keyMap[item.id];
+  if (!key) {
+    ElMessage.warning(`【${item.title}】模块配置面板正在开发中...`);
+    return;
+  }
 
-  drawerVisible.value = true
+  currentModuleKey.value = key;
+  currentModuleTitle.value = item.title;
+  currentModuleIcon.value = item.icon;
+  drawerVisible.value = true;
 }
 
-const saveConfig = () => {
+const handleConfigSaved = () => {
   ElMessage.success({
-    message: '配置已保存',
+    message: '配置已保存并同步至云端',
     type: 'success',
     offset: 60,
   })
-  drawerVisible.value = false
 }
 </script>
 
@@ -320,152 +263,5 @@ const saveConfig = () => {
 :deep(.gold-switch.el-switch) {
   --el-switch-on-color: #d4af37;
   --el-switch-off-color: #dcdfe6;
-}
-
-/* --- 抽屉样式深度定制 (Drawer) --- */
-/* 头部 */
-:deep(.black-gold-drawer .el-drawer__header) {
-  margin-bottom: 0;
-  padding: 0;
-  background: #1f1f1f;
-  color: #fff;
-  height: 64px;
-}
-
-/* 身体 */
-:deep(.black-gold-drawer .el-drawer__body) {
-  padding: 0;
-  overflow-y: auto;
-}
-
-/* 底部 */
-:deep(.black-gold-drawer .el-drawer__footer) {
-  border-top: 1px solid #f0f0f0;
-  padding: 20px;
-}
-
-.drawer-header-custom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 24px;
-  height: 100%;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.drawer-title-area {
-  display: flex;
-  align-items: center;
-}
-
-.drawer-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: 0.5px;
-}
-
-.close-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #fff;
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffd700;
-}
-
-/* 内容区 */
-.drawer-content {
-  padding: 32px 24px;
-}
-
-.info-block {
-  margin-bottom: 40px;
-}
-
-.section-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #000;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-}
-
-.section-title::before {
-  content: '';
-  display: block;
-  width: 4px;
-  height: 16px;
-  background: #d4af37;
-  margin-right: 8px;
-  border-radius: 2px;
-}
-
-/* 状态面板 */
-.status-panel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-radius: 8px;
-  background: #f9f9f9;
-  border: 1px solid #e4e7ed;
-  transition: all 0.3s;
-}
-
-.status-panel.is-active {
-  background: #fffdf0;
-  border-color: #d4af37;
-}
-
-.status-text .label {
-  display: block;
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
-}
-
-.status-text .value {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* 警告框 */
-.warning-box {
-  background: #fdf6ec;
-  color: #e6a23c;
-  font-size: 12px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-/* 模拟参数 */
-.mock-param-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 8px;
-}
-
-/* 底部按钮 */
-.gold-btn-solid {
-  background-color: #1f1f1f !important;
-  border-color: #1f1f1f !important;
-  color: #d4af37 !important;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-.gold-btn-solid:hover {
-  background-color: #000 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 </style>

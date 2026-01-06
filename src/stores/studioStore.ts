@@ -7,6 +7,7 @@ import type {
     IFirmwareArtifact,
     IPinDefinition
 } from '@/types/studio';
+import { type ProductMetadata, DEFAULT_METADATA } from '@/types/product-config';
 
 // =============================================================================
 // MOCK DATA
@@ -273,7 +274,16 @@ export const useStudioStore = defineStore('studio', () => {
     const recalculateResources = () => analyzeResources();
 
     watch(dps, () => analyzeResources(), { deep: true });
+    // State
+    const productMetadata = ref<ProductMetadata>(JSON.parse(JSON.stringify(DEFAULT_METADATA)));
 
+    // Actions
+    const saveMetadata = async () => {
+        // 模拟保存
+        console.log('Saving Metadata to Backend:', JSON.stringify(productMetadata.value));
+        await new Promise(r => setTimeout(r, 800)); // Mock delay
+        return true;
+    };
     // ✅✅✅ CRITICAL FIX: 必须在这里 Return 才能被组件调用
     return {
         // State
@@ -285,7 +295,9 @@ export const useStudioStore = defineStore('studio', () => {
         // Actions
         initStudio, fetchDataPoints, upsertDp, removeDp, saveChanges,
         selectModule, analyzeResources, generateFirmware, uploadFirmware, deleteFirmware,
-        initPinConfiguration, applyPinPreset, importPinFile, recalculateResources
+        initPinConfiguration, applyPinPreset, importPinFile, recalculateResources,
+
+        productMetadata, saveMetadata
     };
 });
 
@@ -303,3 +315,5 @@ export interface ConfigModule {
     tags: string[];      // 标签 (e.g., ["云端", "交互"])
     componentName?: string; // 点击后加载的组件名
 }
+
+
