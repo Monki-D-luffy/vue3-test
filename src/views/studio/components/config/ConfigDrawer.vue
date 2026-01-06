@@ -51,9 +51,10 @@ import { Close, Loading } from '@element-plus/icons-vue';
 import { useStudioStore } from '@/stores/studioStore';
 
 import ProvisioningPanel from './modules/ProvisioningPanel.vue';
-
+import I18nPanel from './modules/I18nPanel.vue';
 const COMPONENT_MAP: Record<string, any> = {
     'provisioning': ProvisioningPanel,
+    'i18n': I18nPanel,
 };
 
 const props = defineProps<{
