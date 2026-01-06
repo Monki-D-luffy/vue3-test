@@ -65,25 +65,27 @@
           </el-button>
         </div>
 
-        <div class="card-body scrollable">
-          <div v-if="store.pinConfiguration.length > 0" class="mini-pin-list">
-            <div v-for="item in store.pinConfiguration.slice(0, 5)" :key="item.pin" class="pin-row">
-              <span class="pin-id">{{ item.pin }}</span>
-              <el-icon class="arrow">
-                <Right />
-              </el-icon>
-              <span class="pin-func">{{ item.function }}</span>
-            </div>
-            <div v-if="store.pinConfiguration.length > 5" class="more-indicator">
-              + 还有 {{ store.pinConfiguration.length - 5 }} 个配置
-            </div>
-          </div>
-          <div class="empty-state" v-else @click="drawerState.pin = true">
+        <div class="card-body no-padding">
+          <div class="empty-state" v-if="store.pinConfiguration.length === 0" @click="drawerState.pin = true">
             <el-icon :size="32">
               <Setting />
             </el-icon>
             <span>配置引脚映射</span>
           </div>
+
+          <el-scrollbar v-else height="100%" class="pin-scroll-container">
+            <div class="pin-grid-layout">
+              <div v-for="item in store.pinConfiguration" :key="item.id" class="pin-grid-item">
+                <el-tooltip :content="item.description || '无备注'" placement="top" :show-after="600">
+                  <div class="pin-tag-wrapper" :class="getPinType(item)">
+                    <span class="pin-num">{{ item.pin }}</span>
+                    <span class="pin-divider">|</span>
+                    <span class="pin-func">{{ item.peripheral }}</span>
+                  </div>
+                </el-tooltip>
+              </div>
+            </div>
+          </el-scrollbar>
         </div>
       </div>
 
@@ -136,7 +138,8 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
 import { useStudioStore } from '@/stores/studioStore';
-import { Plus, Setting, Box, Right, Check, Document } from '@element-plus/icons-vue';
+import { Plus, Setting, Box, Check, Document } from '@element-plus/icons-vue';
+import type { IPinDefinition } from '@/types/studio';
 
 // 引入子组件
 import ModuleSelectDrawer from './components/hardware/ModuleSelectDrawer.vue';
@@ -155,10 +158,19 @@ const drawerState = reactive({
 const latestFirmware = computed(() => {
   return store.firmwareArtifacts.length > 0 ? store.firmwareArtifacts[0] : null;
 });
+
+// 🔥 新增：根据功能类型返回样式类名
+const getPinType = (pin: IPinDefinition) => {
+  const func = pin.peripheral?.toUpperCase() || '';
+  if (func.includes('UART') || func.includes('LOG')) return 'type-warning';
+  if (func.includes('I2C') || func.includes('SPI')) return 'type-success';
+  if (func.includes('PWM')) return 'type-danger';
+  if (func.includes('ADC')) return 'type-info';
+  return 'type-default';
+};
 </script>
 
 <style scoped lang="scss">
-/* 保持原有样式 */
 .hardware-dashboard {
   height: 100%;
   padding: 32px;
@@ -254,7 +266,6 @@ const latestFirmware = computed(() => {
       align-items: center;
       gap: 12px;
 
-      // 文档图标按钮样式
       .icon-btn {
         color: #909399;
         font-size: 16px;
@@ -268,7 +279,6 @@ const latestFirmware = computed(() => {
         }
       }
     }
-
   }
 
   .card-body {
@@ -276,9 +286,11 @@ const latestFirmware = computed(() => {
     padding: 24px;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    /* 防止溢出 */
 
-    &.scrollable {
-      overflow-y: auto;
+    &.no-padding {
+      padding: 0;
     }
   }
 
@@ -346,37 +358,85 @@ const latestFirmware = computed(() => {
   }
 }
 
-.mini-pin-list {
-  .pin-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #f5f7fa;
-    font-size: 13px;
+/* 🔥 新增：Pin Grid 样式，适配卡片内部 */
+.pin-scroll-container {
+  padding: 16px 20px;
+  /* 上下左右留白 */
+}
 
-    .pin-id {
-      font-weight: 700;
-      color: #303133;
-    }
+.pin-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* 默认单列，防止拥挤 */
+  gap: 10px;
+}
 
-    .arrow {
-      color: #d4a72c;
-      font-size: 12px;
-    }
+/* 宽屏下两列显示 */
+@media (min-width: 1400px) {
+  .pin-grid-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 
-    .pin-func {
-      color: #606266;
-      font-family: 'JetBrains Mono', monospace;
-    }
+.pin-tag-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  transition: all 0.2s;
+  cursor: default;
+
+  &:hover {
+    transform: translateX(2px);
   }
 
-  .more-indicator {
-    text-align: center;
-    font-size: 11px;
-    color: #909399;
-    margin-top: 12px;
-    font-style: italic;
+  /* 颜色变体 */
+  &.type-warning {
+    border-left: 3px solid #e6a23c;
+    background: #fdf6ec;
+  }
+
+  &.type-success {
+    border-left: 3px solid #67c23a;
+    background: #f0f9eb;
+  }
+
+  &.type-danger {
+    border-left: 3px solid #f56c6c;
+    background: #fef0f0;
+  }
+
+  &.type-info {
+    border-left: 3px solid #909399;
+    background: #f4f4f5;
+  }
+
+  &.type-default {
+    border-left: 3px solid #3b82f6;
+    background: #ecf5ff;
+  }
+
+  .pin-num {
+    font-weight: 700;
+    color: #1e293b;
+    font-family: monospace;
+  }
+
+  .pin-divider {
+    color: #cbd5e1;
+    margin: 0 8px;
+  }
+
+  .pin-func {
+    color: #475569;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

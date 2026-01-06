@@ -60,7 +60,7 @@ const MOCK_MODULES: IModule[] = [
 
 export const useStudioStore = defineStore('studio', () => {
     // State
-    const activeStep = ref(3);
+    const activeStep = ref(1);
     const isLoading = ref(false);
     const isDirty = ref(false);
     const dps = ref<DataPoint[]>([]);
@@ -86,6 +86,70 @@ export const useStudioStore = defineStore('studio', () => {
     });
 
     // Actions
+
+    // ✅ 核心修复：实现初始化逻辑，防止 ProductPanel 报错
+    const initStudio = async (productId: string) => {
+        console.log('Initializing Studio for Product:', productId);
+        await fetchDataPoints(productId);
+    };
+
+    const fetchDataPoints = async (productId: string) => {
+        isLoading.value = true;
+        // 模拟网络请求延迟
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        // 仅在数据为空时加载默认 Mock 数据，防止覆盖用户操作
+        if (dps.value.length === 0) {
+            dps.value = [
+                {
+                    id: 1, code: 'switch_led', name: '智能开关', type: 'Boolean', mode: 'rw', isStandard: true, property: {}
+                },
+                {
+                    id: 2, code: 'work_mode', name: '工作模式', type: 'Enum', mode: 'rw', isStandard: true, property: { range: ['auto', 'sleep', 'strong'] }
+                }
+            ];
+        }
+
+        analyzeResources();
+        isLoading.value = false;
+        isDirty.value = false;
+    };
+
+    // ✅ 核心修复：实现 upsertDp 逻辑
+    const upsertDp = (dp: DataPoint) => {
+        // 使用深拷贝断开引用，防止表单修改影响 Store，直到保存
+        const newItem = JSON.parse(JSON.stringify(dp));
+
+        const index = dps.value.findIndex(item => item.id === newItem.id);
+        if (index > -1) {
+            // 更新现有
+            dps.value[index] = newItem;
+        } else {
+            // 新增
+            dps.value.push(newItem);
+        }
+        isDirty.value = true;
+        analyzeResources(); // 重新计算资源占用
+    };
+
+    // ✅ 核心修复：实现 removeDp 逻辑
+    const removeDp = (id: number | string) => {
+        const index = dps.value.findIndex(item => item.id === id);
+        if (index > -1) {
+            dps.value.splice(index, 1);
+            isDirty.value = true;
+            analyzeResources();
+        }
+    };
+
+    const saveChanges = async () => {
+        isLoading.value = true;
+        await new Promise(resolve => setTimeout(resolve, 800)); // Mock API
+        isLoading.value = false;
+        isDirty.value = false;
+        // 这里可以添加 ElMessage 提示，但通常由 UI 层处理
+    };
+
     const analyzeResources = () => {
         const module = currentModule.value;
         if (!module) return;
@@ -156,9 +220,10 @@ export const useStudioStore = defineStore('studio', () => {
             details: riskLogs
         };
     };
+
     /**
-       * 应用智能引脚模版 (Method C)
-       */
+     * 应用智能引脚模版 (Method C)
+     */
     const applyPinPreset = (type: 'minimal' | 'uart' | 'i2c') => {
         if (!currentModule.value) return;
 
@@ -189,15 +254,13 @@ export const useStudioStore = defineStore('studio', () => {
 
         pinConfiguration.value = newConfig;
     };
+
     /**
-       * 模拟解析 Excel/CSV 文件 (Method B)
-       */
+     * 模拟解析 Excel/CSV 文件 (Method B)
+     */
     const importPinFile = async (file: File) => {
-        // 真实场景会使用 xlsx 库解析
-        // 这里模拟解析过程
         return new Promise<void>((resolve) => {
             setTimeout(() => {
-                // 模拟生成几条数据
                 applyPinPreset('uart');
                 resolve();
             }, 800);
@@ -205,31 +268,16 @@ export const useStudioStore = defineStore('studio', () => {
     };
 
     const initPinConfiguration = () => {
-        if (!currentModule.value) return;
-
-        const newConfig: IPinDefinition[] = [];
-        const pins = currentModule.value.availablePins;
-
-        dps.value.forEach((dp, index) => {
-            if (index < pins.length) {
-                newConfig.push({
-                    pin: pins[index],
-                    function: dp.code,
-                    direction: dp.mode === 'ro' ? 'input' : 'output',
-                    activeLevel: 'high',
-                    isUsed: true
-                });
-            }
-        });
-
-        pinConfiguration.value = newConfig;
+        // 解耦：保持为空，不自动绑定 DP
+        if (pinConfiguration.value.length === 0) {
+            pinConfiguration.value = [];
+        }
     };
 
     const selectModule = (moduleId: string) => {
         selectedModuleId.value = moduleId;
+        pinConfiguration.value = []; // 切换模组清空配置
         analyzeResources();
-        initPinConfiguration();
-        pinConfiguration.value = []; // 切换模组时清空配置，避免引脚不匹配
     };
 
     const generateFirmware = async () => {
@@ -271,41 +319,20 @@ export const useStudioStore = defineStore('studio', () => {
         isGenerating.value = false;
     };
 
-    const fetchDataPoints = async (productId: string) => {
-        isLoading.value = true;
-        await new Promise(resolve => setTimeout(resolve, 600));
-        if (dps.value.length === 0) {
-            dps.value = [
-                {
-                    id: 1, code: 'switch_led', name: '智能开关', type: 'Boolean', mode: 'rw', isStandard: true, property: {}
-                },
-                {
-                    id: 2, code: 'work_mode', name: '工作模式', type: 'Enum', mode: 'rw', isStandard: true, property: { range: ['auto', 'sleep', 'strong'] }
-                }
-            ];
-        }
-        analyzeResources();
-        initPinConfiguration();
-        isLoading.value = false;
-        isDirty.value = false;
-    };
-
-    const upsertDp = (dp: DataPoint) => { /* ...略... */ };
-    const removeDp = (id: number | string) => { /* ...略... */ };
-    const saveChanges = async () => { /* ...略... */ };
-
     watch(dps, () => {
         analyzeResources();
-        if (pinConfiguration.value.length === 0) {
-            initPinConfiguration();
-        }
     }, { deep: true });
 
     return {
         activeStep, isLoading, isDirty, dps,
         availableModules, selectedModuleId, isGenerating, firmwareArtifacts, resourceAnalysis, pinConfiguration,
         currentModule, isHardwareReady,
-        fetchDataPoints, upsertDp, removeDp, saveChanges, selectModule, analyzeResources, generateFirmware, uploadFirmware, initPinConfiguration,
+        initStudio, // 导出 initStudio
+        fetchDataPoints,
+        upsertDp,   // 导出 upsertDp
+        removeDp,   // 导出 removeDp
+        saveChanges,
+        selectModule, analyzeResources, generateFirmware, uploadFirmware, initPinConfiguration,
         applyPinPreset, importPinFile
     };
 });
