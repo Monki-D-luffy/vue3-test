@@ -20,11 +20,28 @@ export interface I18nConfig {
     languages: string[]; // ['zh', 'en', 'jp']
     // 实际的翻译键值对通常太大，不放在这里，而是单独接口加载
 }
+// 3. 云端定时配置 (Cloud Timer)
+export interface TimerActionDef {
+    dpId: number;
+    code: string;
+    name: string;
+    type: string; // 'bool', 'enum', 'value'
+    selected: boolean; // 开发者是否勾选允许定时
+    alias?: string; // (可选) 在定时界面显示的别名，如 "switch" -> "自动开关"
+}
 
-// 3. 全局产品元数据 (Product Metadata) - 最终存入数据库的 JSON
+export interface TimerConfig {
+    enabled: boolean;
+    maxSchedules: number; // 限制用户最多创建多少个定时任务 (默认 30)
+    // 白名单机制：只有列表里的 DP 才会在 App 定时页面显示
+    actions: TimerActionDef[];
+}
+
+//  全局产品元数据 (Product Metadata) - 最终存入数据库的 JSON
 export interface ProductMetadata {
     provisioning: ProvisioningConfig;
     i18n: I18nConfig;
+    cloudTimer: TimerConfig;
     // ... 后续增加 OTA, Timer 等
 }
 
@@ -44,5 +61,14 @@ export const DEFAULT_METADATA: ProductMetadata = {
         enabled: false,
         defaultLang: 'zh',
         languages: ['zh', 'en']
+    },
+    cloudTimer: {
+        enabled: false,
+        maxSchedules: 30,
+        actions: []
     }
 };
+
+
+
+

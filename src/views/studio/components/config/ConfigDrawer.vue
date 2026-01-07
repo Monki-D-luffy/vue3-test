@@ -31,13 +31,17 @@
 import { ref, computed, watch } from 'vue';
 import { Loading } from '@element-plus/icons-vue';
 import { useStudioStore } from '@/stores/studioStore';
+import { ElMessage } from 'element-plus'; // 引入 Message
 
 import ProvisioningPanel from './modules/ProvisioningPanel.vue';
 import I18nPanel from './modules/I18nPanel.vue';
-
+// import TimerPanel from './modules/TimerPanel.vue';
+import TimerPanel from './modules/timer/index.vue';
+// 组件映射表
 const COMPONENT_MAP: Record<string, any> = {
     'provisioning': ProvisioningPanel,
     'i18n': I18nPanel,
+    'timer': TimerPanel,
 };
 
 const props = defineProps<{
@@ -62,12 +66,43 @@ const moduleComponent = computed(() => {
     return COMPONENT_MAP[props.moduleKey] || null;
 });
 
+// ✅ 核心修复 1：添加 Key 映射辅助函数
+const getDataKey = (moduleKey: string) => {
+    // 前端组件叫 'timer'，但数据存储叫 'cloudTimer'
+    if (moduleKey === 'timer') return 'cloudTimer';
+    // 其他保持一致 ('i18n' -> 'i18n', 'provisioning' -> 'provisioning')
+    return moduleKey;
+};
+
 watch([() => props.modelValue, () => props.moduleKey], ([isOpen, newKey]) => {
     if (isOpen && newKey) {
-        // 强制深拷贝，确保从 Store 获取最新数据
-        const rawData = store.productMetadata ? store.productMetadata[newKey as keyof typeof store.productMetadata] : null;
+        // 重置数据，显示 Loading
+        currentModuleData.value = null;
+
+        // 1. 获取正确的数据 Key
+        const dataKey = getDataKey(newKey);
+
+        // 2. 从 Store 获取原始数据
+        let rawData = store.productMetadata ? (store.productMetadata as any)[dataKey] : null;
+
+        // ✅ 核心修复 2：数据兜底 (Defensive Initialization)
+        // 如果 Store 里还没存这个模块的数据（比如新增的 Timer），手动给一个默认值
+        if (!rawData && newKey === 'timer') {
+            rawData = {
+                enabled: false,
+                maxSchedules: 30,
+                actions: []
+            };
+            console.log('自动初始化 cloudTimer 默认数据');
+        }
+
+        // 3. 赋值给本地状态 (深拷贝)
         if (rawData) {
             currentModuleData.value = JSON.parse(JSON.stringify(rawData));
+        } else {
+            // 如果实在找不到数据，给个空对象防止 Loading 卡死，并提示
+            console.warn(`未找到模块 ${newKey} (Key: ${dataKey}) 的数据`);
+            currentModuleData.value = {};
         }
     }
 });
@@ -76,13 +111,17 @@ const handleSave = async () => {
     saving.value = true;
     try {
         if (store.productMetadata) {
-            (store.productMetadata as any)[props.moduleKey] = currentModuleData.value;
+            // ✅ 核心修复 3：保存时也要用映射后的 Key
+            const dataKey = getDataKey(props.moduleKey);
+
+            (store.productMetadata as any)[dataKey] = currentModuleData.value;
             await store.saveMetadata();
         }
         emit('saved');
         close();
     } catch (e) {
         console.error(e);
+        ElMessage.error('保存失败');
     } finally {
         saving.value = false;
     }
@@ -90,6 +129,8 @@ const handleSave = async () => {
 
 const resetToDefault = () => {
     console.log('Reset triggered');
+    // TODO: 这里可以根据 getDataKey(props.moduleKey) 重置为初始值
+    ElMessage.info('重置功能开发中');
 };
 
 const close = () => {

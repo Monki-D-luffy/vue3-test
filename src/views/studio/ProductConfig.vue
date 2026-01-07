@@ -5,21 +5,20 @@
         <h2 class="page-title">产品智能配置</h2>
         <p class="page-desc">
           配置产品的云端逻辑与交互表现。已启用
-          <span class="highlight-num">{{ activeCount }}</span> / {{ configCards.length }} 个模块
+          <span class="highlight-num">{{ activeCount }}</span> / {{ staticCards.length }} 个模块
         </p>
       </div>
       <div class="header-actions">
-        <el-button round>重置默认</el-button>
-        <el-button type="primary" color="#1f1f1f" class="gold-btn">预览面板</el-button>
       </div>
     </div>
 
     <el-row :gutter="20">
-      <el-col v-for="item in configCards" :key="item.id" :xs="24" :sm="12" :md="12" :lg="8" :xl="8">
-        <div class="standard-card hover-effect" :class="{ 'is-selected': item.isActive }" @click="openDetail(item)">
+      <el-col v-for="item in staticCards" :key="item.id" :xs="24" :sm="12" :md="12" :lg="8" :xl="8">
+        <div class="standard-card hover-effect" :class="{ 'is-selected': getCardStatus(item.key) }"
+          @click="openDetail(item)">
           <div class="card-body">
             <div class="icon-wrapper">
-              <el-icon :size="24" :color="item.isActive ? '#ffd700' : '#fff'">
+              <el-icon :size="24" :color="getCardStatus(item.key) ? '#ffd700' : '#fff'">
                 <component :is="item.icon" />
               </el-icon>
             </div>
@@ -38,8 +37,8 @@
             </div>
 
             <div class="switch-wrapper" @click.stop>
-              <el-switch v-model="item.isActive" inline-prompt active-text="ON" inactive-text="OFF" class="gold-switch"
-                @change="handleSwitchChange(item)" />
+              <el-switch :model-value="getCardStatus(item.key)" inline-prompt active-text="ON" inactive-text="OFF"
+                class="gold-switch" @change="(val: any) => handleSwitchChange(item, val as boolean)" />
             </div>
           </div>
         </div>
@@ -52,77 +51,95 @@
 </template>
 
 <script setup lang="ts">
-// ✅ FIX: 引入 shallowRef
-import { ref, computed, markRaw, reactive, shallowRef } from 'vue'
+import { ref, computed, markRaw } from 'vue'
 import {
-  Notebook, Connection, Timer, Share, Upload, Bell, InfoFilled
+  Notebook, Connection, Timer, Share, Upload, Bell
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import ConfigDrawer from './components/config/ConfigDrawer.vue'
+import { useStudioStore } from '@/stores/studioStore' // ✅ 引入 Store
 
-// --- 1. 数据定义 ---
+const store = useStudioStore()
+
+// --- 静态卡片定义 (只存元数据，不存状态) ---
 interface ConfigItem {
   id: number
+  key: string       // ✅ 新增 key 字段，对应 Store 中的字段名
   title: string
   desc: string
   icon: any
   tags: string[]
-  isActive: boolean
 }
 
-const configCards = ref<ConfigItem[]>([
-  { id: 1, title: '多语言 (I18N)', desc: '托管 App 端的文案翻译，支持 AI 补全。', icon: markRaw(Notebook), tags: ['标准', '高级'], isActive: true },
-  { id: 2, title: '配网引导', desc: '自定义设备配网时的图文引导与排查。', icon: markRaw(Connection), tags: ['网关', 'App'], isActive: true },
-  { id: 3, title: '云端定时', desc: '无硬件 RTC，通过云端下发指令实现定时。', icon: markRaw(Timer), tags: ['云端', '低功耗'], isActive: false },
-  { id: 4, title: '场景联动', desc: '定义设备作为条件或动作时的自动化规则。', icon: markRaw(Share), tags: ['点对点', '群控'], isActive: false },
-  { id: 5, title: '固件升级 (OTA)', desc: '配置自动升级策略、升级文案及灰度推送。', icon: markRaw(Upload), tags: ['组件', '无感'], isActive: true },
-  { id: 6, title: '告警配置', desc: '设置设备离线、数值越界等异常推送通知。', icon: markRaw(Bell), tags: ['短信', '电话'], isActive: false }
-])
+const staticCards: ConfigItem[] = [
+  { id: 1, key: 'i18n', title: '多语言 (I18N)', desc: '托管 App 端的文案翻译，支持 AI 补全。', icon: markRaw(Notebook), tags: ['标准', '高级'] },
+  { id: 2, key: 'provisioning', title: '配网引导', desc: '自定义设备配网时的图文引导与排查。', icon: markRaw(Connection), tags: ['网关', 'App'] },
+  { id: 3, key: 'cloudTimer', title: '云端定时', desc: '无硬件 RTC，通过云端下发指令实现定时。', icon: markRaw(Timer), tags: ['云端', '低功耗'] }, // ✅ 修正 key 为 cloudTimer
+  { id: 4, key: 'scene', title: '场景联动', desc: '定义设备作为条件或动作时的自动化规则。', icon: markRaw(Share), tags: ['点对点', '群控'] },
+  { id: 5, key: 'ota', title: '固件升级 (OTA)', desc: '配置自动升级策略、升级文案及灰度推送。', icon: markRaw(Upload), tags: ['组件', '无感'] },
+  { id: 6, key: 'alert', title: '告警配置', desc: '设置设备离线、数值越界等异常推送通知。', icon: markRaw(Bell), tags: ['短信', '电话'] }
+]
 
-const activeCount = computed(() => configCards.value.filter(c => c.isActive).length)
+// --- 响应式状态获取 ---
+// 核心：直接从 Store 读取 enabled 状态
+const getCardStatus = (key: string) => {
+  if (!store.productMetadata) return false
+  const config = (store.productMetadata as any)[key]
+  return config ? config.enabled : false
+}
 
-// --- 2. 交互逻辑 ---
+// 自动计算激活数量
+const activeCount = computed(() => {
+  return staticCards.filter(c => getCardStatus(c.key)).length
+})
+
+// --- 交互逻辑 ---
 const drawerVisible = ref(false)
 const currentModuleKey = ref('')
 const currentModuleTitle = ref('')
-// ✅ 使用 shallowRef 避免 Vue 对图标组件进行深层响应式转换，提升性能
-const currentModuleIcon = shallowRef<any>(null)
+const currentModuleIcon = ref<any>(null)
 
-// 开关点击（不弹窗）
-const handleSwitchChange = (item: ConfigItem) => {
-  console.log('Switch toggled:', item.title, item.isActive)
-}
+// 开关切换
+const handleSwitchChange = async (item: ConfigItem, newVal: boolean) => {
+  if (!store.productMetadata) return
 
-// 卡片点击（弹窗）
-const openDetail = (item: ConfigItem) => {
-  // 映射 Item ID 或 Title 到具体的 moduleKey
-  const keyMap: Record<number, string> = {
-    2: 'provisioning', // 配网引导
-    1: 'i18n',         // 多语言
-    // 其他模块暂时未开发，可以留空或映射到 default
-  };
-
-  const key = keyMap[item.id];
-  if (!key) {
-    ElMessage.warning(`【${item.title}】模块配置面板正在开发中...`);
-    return;
+  // 确保对象存在
+  if (!(store.productMetadata as any)[item.key]) {
+    (store.productMetadata as any)[item.key] = { enabled: newVal }
+  } else {
+    (store.productMetadata as any)[item.key].enabled = newVal
   }
 
-  currentModuleKey.value = key;
-  currentModuleTitle.value = item.title;
-  currentModuleIcon.value = item.icon;
-  drawerVisible.value = true;
+  await store.saveMetadata() // 调用 Store 的保存方法
+  ElMessage.success({
+    message: `${item.title} 已${newVal ? '启用' : '禁用'}`,
+    type: 'success',
+    duration: 2000
+  })
+}
+
+// 打开抽屉
+const openDetail = (item: ConfigItem) => {
+  // 暂未开发的模块拦截
+  if (['scene', 'alert', 'ota'].includes(item.key)) {
+    ElMessage.warning('该模块正在开发中...')
+    return
+  }
+
+  // 映射 key (cloudTimer -> timer 以匹配 Drawer 里的组件映射)
+  let drawerKey = item.key
+  if (item.key === 'cloudTimer') drawerKey = 'timer'
+
+  currentModuleKey.value = drawerKey
+  currentModuleTitle.value = item.title
+  currentModuleIcon.value = item.icon
+  drawerVisible.value = true
 }
 
 const handleConfigSaved = () => {
-  ElMessage.success({
-    message: '配置已保存并同步至云端',
-    type: 'success',
-    offset: 60,
-  })
+  ElMessage.success('配置已保存')
 }
 </script>
-
 <style scoped>
 /* --- 全局容器 --- */
 .page-container {
