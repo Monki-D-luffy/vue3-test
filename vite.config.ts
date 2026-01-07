@@ -1,31 +1,42 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite' // 引入 loadEnv
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import mkcert from 'vite-plugin-mkcert' // 确保上面的安装成功，否则这里会报红
+import mkcert from 'vite-plugin-mkcert'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-    mkcert(), // 插件会自动处理证书，并填充到下面的 https 对象中
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+export default defineConfig(({ mode }) => {
+  // 加载环境变量 (.env.local)
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [
+      vue(),
+      vueDevTools(),
+      mkcert(),
+    ],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      },
     },
-  },
-  // 开发服务器配置
-  server: {
-    // 修复：使用 {} 代替 true，以符合 ServerOptions 类型定义
-    https: {},
-    host: '0.0.0.0', // 允许外部访问
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000', // 转发给我们的 Mock 服务器
-        changeOrigin: true,
-        // 根据你的注释：mock-server 已有 /api 前缀，无需 rewrite
+    server: {
+      https: {},
+      host: '0.0.0.0',
+      proxy: {
+        // 1. 常规后端 API 代理 (保持不变，指向 Mock Server)
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+        },
+        // 2. 新增：AI 服务代理 (指向硅基流动/DeepSeek)
+        // 遇到 /ai-proxy 开头的请求，转发到 VITE_AI_API_URL
+        '/ai-proxy': {
+          target: env.VITE_AI_API_URL, // 读取 .env.local 中的地址
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ai-proxy/, ''), // 去掉 /ai-proxy 前缀
+          secure: false, // 如果是 https 且证书有问题，允许忽略（通常不需要，但加了保险）
+        }
       }
     }
   }

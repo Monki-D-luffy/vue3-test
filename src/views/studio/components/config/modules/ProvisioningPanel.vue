@@ -26,16 +26,21 @@
 
             <div class="panel-section">
                 <h4 class="section-title">引导步骤 (Steps)</h4>
-                <div v-for="(step, index) in modelValue.steps" :key="index" class="step-item"
-                    :class="{ active: activeStep === index }" @click="activeStep = index">
-                    <div class="step-header">
-                        <span class="step-num">Step {{ index + 1 }}</span>
-                        <el-button v-if="modelValue.steps.length > 1" type="danger" link icon="Delete"
-                            @click.stop="removeStep(index)" />
+                <div v-if="modelValue.steps && modelValue.steps.length > 0">
+                    <div v-for="(step, index) in modelValue.steps" :key="index" class="step-item"
+                        :class="{ active: activeStep === index }" @click="activeStep = index">
+                        <div class="step-header">
+                            <span class="step-num">Step {{ index + 1 }}</span>
+                            <el-button v-if="modelValue.steps.length > 1" type="danger" link icon="Delete"
+                                @click.stop="removeStep(index)" />
+                        </div>
+                        <el-input v-model="step.title" placeholder="步骤标题" class="mb-2 font-bold tech-input" />
+                        <el-input v-model="step.desc" type="textarea" :rows="2" placeholder="详细操作说明..."
+                            class="tech-input" />
                     </div>
-                    <el-input v-model="step.title" placeholder="步骤标题" class="mb-2 font-bold tech-input" />
-                    <el-input v-model="step.desc" type="textarea" :rows="2" placeholder="详细操作说明..."
-                        class="tech-input" />
+                </div>
+                <div v-else class="empty-steps">
+                    暂无引导步骤，请添加
                 </div>
 
                 <el-button class="add-btn tech-dashed-btn" icon="Plus" @click="addStep">新增步骤</el-button>
@@ -62,10 +67,10 @@
                             </div>
                         </div>
 
-                        <h3 class="preview-title">{{ currentStep.title || '标题预览' }}</h3>
-                        <p class="preview-desc">{{ currentStep.desc || '说明文案预览...' }}</p>
+                        <h3 class="preview-title">{{ currentStep?.title || '标题预览' }}</h3>
+                        <p class="preview-desc">{{ currentStep?.desc || '说明文案预览...' }}</p>
 
-                        <div class="step-dots">
+                        <div class="step-dots" v-if="modelValue.steps && modelValue.steps.length > 0">
                             <span v-for="(_, i) in modelValue.steps" :key="i" class="dot"
                                 :class="{ active: i === activeStep }"></span>
                         </div>
@@ -93,34 +98,61 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 
 const activeStep = ref(0);
-const currentStep = computed(() => props.modelValue.steps[activeStep.value] || props.modelValue.steps[0]);
+
+// 核心修复：增强 currentStep 的鲁棒性，防止 undefined
+const currentStep = computed(() => {
+    const steps = props.modelValue.steps;
+
+    // 1. 检查 steps 是否存在且非空
+    if (!steps || steps.length === 0) {
+        return {
+            title: '暂无步骤',
+            desc: '请在左侧点击“新增步骤”添加配网引导内容'
+        };
+    }
+
+    // 2. 检查索引是否越界（例如删除了最后一个元素后）
+    if (activeStep.value >= steps.length) {
+        return steps[0];
+    }
+
+    return steps[activeStep.value];
+});
 
 const addStep = () => {
+    // 确保 steps 数组存在
+    if (!props.modelValue.steps) {
+        props.modelValue.steps = [];
+    }
+
     props.modelValue.steps.push({ title: '新步骤', desc: '', imageUrl: '' });
     activeStep.value = props.modelValue.steps.length - 1;
 };
 
 const removeStep = (index: number) => {
+    if (!props.modelValue.steps) return;
+
     props.modelValue.steps.splice(index, 1);
-    if (activeStep.value >= props.modelValue.steps.length) {
+
+    // 删除后自动调整激活的步骤索引
+    if (props.modelValue.steps.length === 0) {
+        activeStep.value = 0;
+    } else if (activeStep.value >= props.modelValue.steps.length) {
         activeStep.value = Math.max(0, props.modelValue.steps.length - 1);
     }
 };
 </script>
 
 <style scoped lang="scss">
-/* --- Tech-Noir 样式覆盖 (关键修复) --- */
+/* --- Tech-Noir 样式覆盖 (保持不变) --- */
 .noir-skin {
-    /* 劫持 Element Plus 主色变量 */
     --el-color-primary: #000000;
-    /* 主色变黑 */
     --el-color-primary-light-3: #333333;
     --el-color-primary-light-5: #666666;
     --el-color-primary-light-7: #999999;
     --el-color-primary-light-9: #f0f0f0;
 }
 
-/* Radio Button 选中态：黑底金字 */
 :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
     background-color: #000000;
     border-color: #000000;
@@ -128,24 +160,20 @@ const removeStep = (index: number) => {
     box-shadow: -1px 0 0 0 #000000;
 }
 
-/* Radio Button 悬浮态 */
 :deep(.el-radio-button__inner:hover) {
     color: #d4af37;
 }
 
-/* Input / Select 聚焦态：金边 */
 :deep(.el-input.is-focus .el-input__wrapper),
 :deep(.el-input__wrapper.is-focus) {
     box-shadow: 0 0 0 1px #d4af37 inset !important;
 }
 
-/* Select 下拉项选中态 */
 :deep(.el-select-dropdown__item.selected) {
     color: #d4af37;
     font-weight: 600;
 }
 
-/* 按钮虚线框 hover */
 .tech-dashed-btn {
     border: 1px dashed #dcdfe6;
     transition: all 0.3s;
@@ -157,7 +185,6 @@ const removeStep = (index: number) => {
     }
 }
 
-/* --- 原有布局保持不变 --- */
 .provisioning-container {
     display: flex;
     height: 100%;
@@ -225,6 +252,16 @@ const removeStep = (index: number) => {
     margin-bottom: 8px;
     font-size: 12px;
     color: #909399;
+}
+
+.empty-steps {
+    padding: 20px;
+    text-align: center;
+    color: #909399;
+    font-size: 13px;
+    border: 1px dashed #e4e7ed;
+    border-radius: 8px;
+    margin-bottom: 12px;
 }
 
 .add-btn {

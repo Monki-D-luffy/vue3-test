@@ -1,24 +1,6 @@
 <template>
-    <el-drawer v-model="visible" :show-close="false" size="800px" append-to-body class="tech-noir-drawer"
-        @closed="handleClosed">
-        <template #header>
-            <div class="drawer-header">
-                <div class="header-left">
-                    <div class="icon-box">
-                        <el-icon :size="20" color="#ffd700">
-                            <component :is="icon" />
-                        </el-icon>
-                    </div>
-                    <div class="header-titles">
-                        <h3 class="title">{{ title }}</h3>
-                        <span class="subtitle">模块配置 (Module Configuration)</span>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <el-button circle icon="Close" class="close-btn" @click="close" />
-                </div>
-            </div>
-        </template>
+    <el-drawer v-model="visible" :show-close="false" :with-header="false" size="800px" append-to-body
+        class="tech-noir-drawer" @closed="handleClosed">
 
         <div class="drawer-body">
             <component v-if="currentModuleData" :is="moduleComponent" v-model="currentModuleData" />
@@ -46,12 +28,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, shallowRef } from 'vue';
-import { Close, Loading } from '@element-plus/icons-vue';
+import { ref, computed, watch } from 'vue';
+import { Loading } from '@element-plus/icons-vue';
 import { useStudioStore } from '@/stores/studioStore';
 
 import ProvisioningPanel from './modules/ProvisioningPanel.vue';
 import I18nPanel from './modules/I18nPanel.vue';
+
 const COMPONENT_MAP: Record<string, any> = {
     'provisioning': ProvisioningPanel,
     'i18n': I18nPanel,
@@ -79,9 +62,10 @@ const moduleComponent = computed(() => {
     return COMPONENT_MAP[props.moduleKey] || null;
 });
 
-watch(() => props.modelValue, (isOpen) => {
-    if (isOpen && props.moduleKey) {
-        const rawData = store.productMetadata ? store.productMetadata[props.moduleKey as keyof typeof store.productMetadata] : null;
+watch([() => props.modelValue, () => props.moduleKey], ([isOpen, newKey]) => {
+    if (isOpen && newKey) {
+        // 强制深拷贝，确保从 Store 获取最新数据
+        const rawData = store.productMetadata ? store.productMetadata[newKey as keyof typeof store.productMetadata] : null;
         if (rawData) {
             currentModuleData.value = JSON.parse(JSON.stringify(rawData));
         }
@@ -118,19 +102,16 @@ const handleClosed = () => {
 </script>
 
 <style scoped lang="scss">
+/* 既然彻底移除了 header，这里的 :deep 覆盖就不再需要那么复杂了，
+  保留这些为了确保 body 布局正常 
+*/
 :deep(.tech-noir-drawer) {
-
-    /* 这里的样式会影响整个抽屉 */
-    .el-drawer__header {
-        margin: 0;
-        padding: 0;
-        height: 64px;
-        background: #1f1f1f;
-    }
-
     .el-drawer__body {
         padding: 0;
+        /* 确保无边距 */
         background: #f5f7fa;
+        display: flex;
+        flex-direction: column;
     }
 
     .el-drawer__footer {
@@ -140,65 +121,12 @@ const handleClosed = () => {
     }
 }
 
-.drawer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 24px;
+.drawer-body {
+    padding: 0;
     height: 100%;
-    color: #fff;
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.icon-box {
-    width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.header-titles {
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-
-    .title {
-        font-size: 16px;
-        font-weight: 600;
-        line-height: 1.2;
-        margin: 0;
-    }
-
-    .subtitle {
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.6);
-    }
-}
-
-.close-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    transition: all 0.3s;
-
-    &:hover {
-        background: #fff;
-        color: #000;
-        border-color: #fff;
-    }
-}
-
-.drawer-body {
-    padding: 24px;
-    height: 100%;
-    overflow-y: auto;
 }
 
 .drawer-footer {
@@ -207,7 +135,6 @@ const handleClosed = () => {
     align-items: center;
 }
 
-/* 底部主按钮样式覆盖 */
 .gold-btn-solid {
     background-color: #1f1f1f !important;
     border-color: #1f1f1f !important;
