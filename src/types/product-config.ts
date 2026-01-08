@@ -42,6 +42,7 @@ export interface ProductMetadata {
     provisioning: ProvisioningConfig;
     i18n: I18nConfig;
     cloudTimer: TimerConfig;
+    ota: OtaConfig;
     // ... 后续增加 OTA, Timer 等
 }
 
@@ -66,8 +67,44 @@ export const DEFAULT_METADATA: ProductMetadata = {
         enabled: false,
         maxSchedules: 30,
         actions: []
+    },
+    ota: {
+        enabled: false,
+        policy: {
+            autoCheck: true,
+            upgradeMode: 'remind',
+            checkInterval: 24,
+            retryCount: 3
+        },
+        releases: []
     }
 };
+
+// --- 新增：OTA 固件升级配置 ---
+
+export interface OtaPolicy {
+    autoCheck: boolean;          // 是否自动检查更新
+    upgradeMode: 'force' | 'remind' | 'silent'; // 升级模式：强制/提醒/静默
+    checkInterval: number;       // 检查周期 (小时)
+    retryCount: number;          // 失败重试次数
+}
+
+export interface FirmwareRelease {
+    id: string;
+    version: string;             // 版本号 e.g., "1.0.2"
+    type: 'prod' | 'gray' | 'dev'; // 正式/灰度/开发
+    description: string;         // 更新文案
+    size: number;                // 字节大小
+    createdAt: number;           // 时间戳
+    status: 'active' | 'suspended'; // 状态
+    grayScale?: number;          // 灰度比例 (1-100)
+}
+
+export interface OtaConfig {
+    enabled: boolean;
+    policy: OtaPolicy;
+    releases: FirmwareRelease[];
+}
 
 
 

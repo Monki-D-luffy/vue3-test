@@ -35,13 +35,14 @@ import { ElMessage } from 'element-plus'; // 引入 Message
 
 import ProvisioningPanel from './modules/ProvisioningPanel.vue';
 import I18nPanel from './modules/I18nPanel.vue';
-// import TimerPanel from './modules/TimerPanel.vue';
 import TimerPanel from './modules/timer/index.vue';
+import OtaPanel from './modules/OtaPanel.vue';
 // 组件映射表
 const COMPONENT_MAP: Record<string, any> = {
     'provisioning': ProvisioningPanel,
     'i18n': I18nPanel,
     'timer': TimerPanel,
+    'ota': OtaPanel,
 };
 
 const props = defineProps<{

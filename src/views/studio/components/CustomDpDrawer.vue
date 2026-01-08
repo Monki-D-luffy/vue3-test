@@ -120,7 +120,8 @@
                                             <span class="index-badge">{{ index }}</span>
                                             <el-input v-model="formData.property.range[index]" placeholder="e.g. smart"
                                                 size="small" class="tech-input" />
-                                            <el-button link class="btn-icon-danger" @click="removeEnumItem(index)"
+                                            <el-button link class="btn-icon-danger"
+                                                @click="removeEnumItem(Number(index))"
                                                 :disabled="formData.property.range.length <= 1">
                                                 <el-icon>
                                                     <Delete />
@@ -194,7 +195,7 @@ const loading = ref(false);
 const formRef = ref<FormInstance>();
 
 const initialForm = (): Partial<DataPoint> => ({
-    id: store.dps.length > 0 ? Math.max(...store.dps.map(d => d.id)) + 1 : 101,
+    id: store.dps.length > 0 ? Math.max(...store.dps.map(d => Number(d.id) || 0)) + 1 : 101,
     name: '',
     code: '',
     type: 'Boolean',
