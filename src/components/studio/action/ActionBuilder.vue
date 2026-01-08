@@ -1,31 +1,30 @@
 <template>
     <div class="action-builder">
-        <div class="builder-header">
-            <span class="label">执行以下动作 (按顺序)</span>
-        </div>
-
         <div class="action-list">
-            <SmartActionItem v-for="(action, index) in modelValue" :key="action.id" v-model="modelValue[index]"
-                @remove="handleRemove(index)" />
+            <div v-for="(action, index) in modelValue" :key="action.id" class="action-wrapper">
+                <div class="step-connector" v-if="index > 0"></div>
 
-            <div v-if="modelValue.length === 0" class="empty-action">
-                <el-icon :size="24" color="#67c23a">
-                    <VideoPlay />
-                </el-icon>
-                <p>暂无执行动作</p>
+                <SmartActionItem v-model="modelValue[index]" :index="index" @remove="handleRemove(index)" />
+            </div>
+
+            <div v-if="modelValue.length === 0" class="empty-state">
+                <span class="text">暂无执行动作，场景触发后将无事发生</span>
             </div>
         </div>
 
-        <div class="builder-footer">
-            <el-button type="success" plain style="width: 100%" icon="Plus" @click="handleAdd">
-                添加执行动作
+        <div class="footer-add">
+            <el-button class="add-btn-dashed" @click="handleAdd">
+                <el-icon>
+                    <Plus />
+                </el-icon>
+                <span>添加执行动作</span>
             </el-button>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { Plus, VideoPlay } from '@element-plus/icons-vue';
+import { Plus } from '@element-plus/icons-vue';
 import type { SceneAction } from '@/types/automation';
 import SmartActionItem from './SmartActionItem.vue';
 
@@ -33,9 +32,7 @@ const props = defineProps<{
     modelValue: SceneAction[];
 }>();
 
-const emit = defineEmits<{
-    (e: 'update:modelValue', val: SceneAction[]): void;
-}>();
+const emit = defineEmits(['update:modelValue']);
 
 const handleAdd = () => {
     const newAction: SceneAction = {
@@ -44,8 +41,7 @@ const handleAdd = () => {
         displayText: '新动作',
         params: {}
     };
-    const newList = [...props.modelValue, newAction];
-    emit('update:modelValue', newList);
+    emit('update:modelValue', [...props.modelValue, newAction]);
 };
 
 const handleRemove = (index: number) => {
@@ -55,38 +51,63 @@ const handleRemove = (index: number) => {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .action-builder {
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
 
-.builder-header {
-    margin-bottom: 4px;
-}
-
-.label {
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-}
-
 .action-list {
     display: flex;
     flex-direction: column;
-    min-height: 60px;
+    gap: 0;
+    /* Wrapper 处理间距 */
 }
 
-.empty-action {
-    border: 1px dashed var(--el-border-color);
-    border-radius: 8px;
-    padding: 24px;
+.action-wrapper {
+    position: relative;
+    padding-bottom: 12px;
+
+    &:last-child {
+        padding-bottom: 0;
+    }
+}
+
+.step-connector {
+    position: absolute;
+    top: -12px;
+    /* 向上延伸 */
+    left: 24px;
+    /* 对齐图标中心 */
+    height: 12px;
+    width: 2px;
+    background: var(--el-border-color-lighter);
+    z-index: 0;
+}
+
+.empty-state {
     text-align: center;
+    padding: 20px;
+    color: var(--el-text-color-placeholder);
+    font-size: 13px;
+    border: 1px dashed var(--el-border-color-lighter);
+    border-radius: 8px;
+}
+
+.footer-add {
+    margin-top: 4px;
+}
+
+.add-btn-dashed {
+    width: 100%;
+    border-style: dashed;
     color: var(--el-text-color-secondary);
-    background: var(--el-fill-color-extra-light);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+
+    &:hover {
+        color: var(--gold-primary, #d4af37);
+        border-color: var(--gold-primary, #d4af37);
+        background: var(--el-fill-color-light);
+    }
 }
 </style>

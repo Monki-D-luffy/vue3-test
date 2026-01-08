@@ -1,206 +1,206 @@
 <template>
-    <div class="smart-trigger-item">
-        <el-select v-model="modelValue.type" class="trigger-type-select" @change="handleTypeChange"
-            :disabled="readonly">
-            <template #prefix>
+    <div class="trigger-card">
+        <div class="card-left">
+            <div class="drag-dots">⋮⋮</div>
+            <div class="type-icon">
                 <el-icon>
-                    <component :is="getTypeIcon(modelValue.type)" />
+                    <Cpu />
                 </el-icon>
-            </template>
-            <el-option label="设备状态" value="device_dp" />
-            <el-option label="定时任务" value="timer" />
-            <el-option label="手动触发" value="manual" />
-        </el-select>
-
-        <div class="trigger-content">
-
-            <template v-if="modelValue.type === 'device_dp'">
-                <el-select v-model="modelValue.params.deviceId" placeholder="选择设备" class="device-select" filterable>
-                    <el-option v-for="dev in deviceOptions" :key="dev.id" :label="dev.name" :value="dev.id" />
-                </el-select>
-
-                <el-select v-model="modelValue.params.dpId" placeholder="功能点" class="dp-select"
-                    :disabled="!modelValue.params.deviceId">
-                    <el-option label="开关 (Switch)" value="1" />
-                    <el-option label="温度 (Temp)" value="2" />
-                    <el-option label="模式 (Mode)" value="3" />
-                </el-select>
-
-                <div class="value-logic" v-if="modelValue.params.dpId">
-                    <template v-if="modelValue.params.dpId === '1'">
-                        <span class="operator">==</span>
-                        <el-switch v-model="modelValue.params.value" inline-prompt active-text="ON"
-                            inactive-text="OFF" />
-                    </template>
-
-                    <template v-else-if="modelValue.params.dpId === '2'">
-                        <el-select v-model="modelValue.params.operator" style="width: 80px">
-                            <el-option label=">" value=">" />
-                            <el-option label="<" value="<" />
-                            <el-option label="=" value="==" />
-                        </el-select>
-                        <el-input-number v-model="modelValue.params.value" :min="0" :max="100" controls-position="right"
-                            style="width: 100px" />
-                        <span class="unit">℃</span>
-                    </template>
-                </div>
-            </template>
-
-            <template v-else-if="modelValue.type === 'timer'">
-                <el-time-picker v-model="tempTime" format="HH:mm" placeholder="选择时间" style="width: 140px"
-                    @change="handleTimeChange" />
-                <div class="repeat-tag">每天</div>
-            </template>
-
-            <template v-else-if="modelValue.type === 'manual'">
-                <el-tag type="info" class="manual-tag">
-                    <el-icon>
-                        <Pointer />
-                    </el-icon> 点击卡片以运行
-                </el-tag>
-            </template>
+            </div>
         </div>
 
-        <el-button v-if="!readonly" type="danger" link icon="Delete" class="delete-btn" @click="$emit('remove')" />
+        <div class="card-main">
+            <div class="row-top">
+                <span class="label">设备</span>
+                <el-input v-model="modelValue.params.deviceId" placeholder="选择设备..." class="inline-input bold-input" />
+            </div>
+
+            <div class="row-bottom">
+                <div class="condition-chip">
+                    <span class="chip-label">属性</span>
+                    <el-input v-model="modelValue.params.dpId" placeholder="如: Switch" class="chip-input" />
+                </div>
+
+                <span class="operator">==</span>
+
+                <div class="condition-chip value-chip">
+                    <el-input v-model="modelValue.params.value" placeholder="值" class="chip-input" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card-right">
+            <el-button link class="del-btn" @click="$emit('remove')">
+                <el-icon>
+                    <Close />
+                </el-icon>
+            </el-button>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Timer, Connection, Pointer, Delete } from '@element-plus/icons-vue';
-import type { SceneTrigger, TriggerType } from '@/types/automation';
+import { Cpu, Close } from '@element-plus/icons-vue';
+import type { SceneTrigger } from '@/types/automation';
 
 const props = defineProps<{
     modelValue: SceneTrigger;
-    readonly?: boolean;
+    index: number;
 }>();
 
-const emit = defineEmits<{
-    (e: 'update:modelValue', val: SceneTrigger): void;
-    (e: 'remove'): void;
-}>();
-
-// --- Mock Data (实际项目应从 Store 获取) ---
-const deviceOptions = [
-    { id: 'dev_1', name: '客厅主灯' },
-    { id: 'dev_2', name: '温湿度传感器' },
-    { id: 'dev_3', name: '智能空调' }
-];
-
-// --- Helpers ---
-const tempTime = ref<Date>();
-
-const getTypeIcon = (type: TriggerType) => {
-    const map: Record<string, any> = {
-        device_dp: Connection,
-        timer: Timer,
-        manual: Pointer
-    };
-    return map[type] || Connection;
-};
-
-// --- Handlers ---
-const handleTypeChange = (newType: string) => {
-    // 重置 params 以防止数据污染
-    props.modelValue.params = {};
-    if (newType === 'timer') {
-        props.modelValue.displayText = '每天 00:00';
-    } else if (newType === 'manual') {
-        props.modelValue.displayText = '手动触发';
-    }
-};
-
-const handleTimeChange = (val: Date) => {
-    if (!val) return;
-    const timeStr = `${val.getHours().toString().padStart(2, '0')}:${val.getMinutes().toString().padStart(2, '0')}`;
-    props.modelValue.params.cron = `0 ${val.getMinutes()} ${val.getHours()} * * ?`; // 简易Cron
-    props.modelValue.displayText = `每天 ${timeStr}`;
-};
+const emit = defineEmits(['remove']);
 </script>
 
-<style scoped>
-.smart-trigger-item {
+<style scoped lang="scss">
+.trigger-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--el-fill-color-blank);
-    border: 1px solid var(--el-border-color);
-    border-radius: 8px;
-    padding: 12px;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+
+        .del-btn {
+            opacity: 1;
+        }
+    }
 }
 
-.smart-trigger-item:hover {
-    border-color: var(--el-color-primary-light-5);
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+.card-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .drag-dots {
+        color: #d1d5db;
+        cursor: grab;
+        font-size: 12px;
+        letter-spacing: -1px;
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    .type-icon {
+        width: 32px;
+        height: 32px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+    }
 }
 
-.trigger-type-select {
-    width: 140px;
-    flex-shrink: 0;
-}
-
-.trigger-content {
+.card-main {
     flex: 1;
     display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.device-select {
-    width: 160px;
-}
-
-.dp-select {
-    width: 140px;
-}
-
-.value-logic {
+.row-top {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--el-fill-color-lighter);
-    padding: 4px 8px;
-    border-radius: 4px;
+    font-size: 13px;
+    color: #6b7280;
+
+    .label {
+        font-weight: 500;
+    }
+}
+
+.row-bottom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 胶囊式输入框 */
+.condition-chip {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 2px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    transition: border 0.2s;
+
+    &:focus-within {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .chip-label {
+        font-size: 11px;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+}
+
+.value-chip {
+    background: #ecfdf5;
+    /* 绿色背景暗示 Value */
+    border-color: #d1fae5;
+
+    &:focus-within {
+        border-color: #10b981;
+        background: #d1fae5;
+    }
 }
 
 .operator {
-    font-family: monospace;
-    font-weight: bold;
-    color: var(--el-color-primary);
-}
-
-.unit {
+    font-weight: 700;
+    color: #d1d5db;
     font-size: 12px;
-    color: var(--el-text-color-secondary);
 }
 
-.delete-btn {
-    opacity: 0;
-    transition: opacity 0.2s;
+.card-right {
+    .del-btn {
+        opacity: 0;
+        transition: opacity 0.2s;
+        color: #9ca3af;
+
+        &:hover {
+            color: #ef4444;
+        }
+    }
 }
 
-.smart-trigger-item:hover .delete-btn {
-    opacity: 1;
+/* Element Plus Input Overrides */
+:deep(.inline-input .el-input__wrapper) {
+    box-shadow: none !important;
+    padding: 0;
+    background: transparent;
 }
 
-/* 移动端适配 */
-@media (max-width: 768px) {
-    .smart-trigger-item {
-        flex-direction: column;
-        align-items: stretch;
-    }
+:deep(.bold-input input) {
+    font-weight: 600;
+    color: #1f2937;
+}
 
-    .trigger-type-select,
-    .device-select,
-    .dp-select {
-        width: 100% !important;
-    }
+:deep(.chip-input .el-input__wrapper) {
+    box-shadow: none !important;
+    padding: 0;
+    background: transparent;
+    width: 80px;
+    /* 紧凑宽度 */
+}
 
-    .delete-btn {
-        opacity: 1;
-        align-self: flex-end;
-    }
+:deep(.chip-input input) {
+    font-size: 12px;
+    height: 24px;
 }
 </style>

@@ -1,23 +1,41 @@
 <template>
     <div class="trigger-builder">
-        <div class="builder-header">
-            <span class="label">当</span>
-            <el-radio-group v-model="internalLogic" size="small" @change="emitChange">
-                <el-radio-button value="AND">满足所有条件</el-radio-button>
-                <el-radio-button value="OR">满足任一条件</el-radio-button>
-            </el-radio-group>
+        <div class="logic-sentence-bar">
+            <span class="prefix">当</span>
+
+            <div class="toggle-group">
+                <div class="toggle-item" :class="{ active: logic === 'AND' }" @click="emitLogic('AND')">
+                    <span class="text">满足所有条件 (AND)</span>
+                    <div class="active-indicator"></div>
+                </div>
+
+                <span class="divider">/</span>
+
+                <div class="toggle-item" :class="{ active: logic === 'OR' }" @click="emitLogic('OR')">
+                    <span class="text">满足任一条件 (OR)</span>
+                    <div class="active-indicator"></div>
+                </div>
+            </div>
+
+            <span class="suffix">时 :</span>
         </div>
 
-        <div class="trigger-list">
+        <div class="item-list">
             <SmartTriggerItem v-for="(trigger, index) in modelValue" :key="trigger.id" v-model="modelValue[index]"
-                @remove="handleRemove(index)" />
+                :index="index" @remove="handleRemove(index)" />
         </div>
+
+        <button class="add-btn-minimal" @click="handleAdd">
+            <el-icon>
+                <Plus />
+            </el-icon>
+            <span>添加条件</span>
+        </button>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { Plus, Warning } from '@element-plus/icons-vue';
+import { Plus } from '@element-plus/icons-vue';
 import type { SceneTrigger, LogicType } from '@/types/automation';
 import SmartTriggerItem from './SmartTriggerItem.vue';
 
@@ -31,14 +49,8 @@ const emit = defineEmits<{
     (e: 'update:logic', val: LogicType): void;
 }>();
 
-const internalLogic = ref<LogicType>(props.logic);
-
-watch(() => props.logic, (val) => {
-    internalLogic.value = val;
-});
-
-const emitChange = () => {
-    emit('update:logic', internalLogic.value);
+const emitLogic = (val: LogicType) => {
+    emit('update:logic', val);
 };
 
 const handleAdd = () => {
@@ -48,8 +60,7 @@ const handleAdd = () => {
         displayText: '新条件',
         params: {}
     };
-    const newList = [...props.modelValue, newTrigger];
-    emit('update:modelValue', newList);
+    emit('update:modelValue', [...props.modelValue, newTrigger]);
 };
 
 const handleRemove = (index: number) => {
@@ -59,40 +70,119 @@ const handleRemove = (index: number) => {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .trigger-builder {
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
 
-.builder-header {
+/* 语义化逻辑栏 */
+.logic-sentence-bar {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 0 4px;
+    height: 32px;
+    font-size: 14px;
+    color: #6b7280;
+    /* Neutral gray */
+    user-select: none;
 }
 
-.label {
-    font-weight: 600;
-    color: var(--el-text-color-primary);
+.prefix,
+.suffix {
+    font-weight: 500;
+    color: #9ca3af;
+    /* Lighter gray for static words */
 }
 
-.trigger-list {
+.toggle-group {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 60px;
-}
-
-.empty-trigger {
-    border: 1px dashed var(--el-border-color);
-    border-radius: 8px;
-    padding: 24px;
-    text-align: center;
-    color: var(--el-text-color-secondary);
-    display: flex;
-    flex-direction: column;
     align-items: center;
     gap: 8px;
+    background: #f3f4f6;
+    /* Subtle background */
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+
+    &:hover {
+        background: #e5e7eb;
+    }
+}
+
+.divider {
+    color: #d1d5db;
+    font-size: 12px;
+}
+
+.toggle-item {
+    position: relative;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: all 0.2s;
+
+    .text {
+        font-weight: 600;
+        color: #6b7280;
+        font-size: 13px;
+        transition: color 0.2s;
+    }
+
+    .active-indicator {
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #3b82f6;
+        transition: width 0.2s ease;
+        border-radius: 2px;
+    }
+
+    &:hover .text {
+        color: #374151;
+    }
+
+    /* 激活状态 */
+    &.active {
+        .text {
+            color: #3b82f6;
+            /* Active Blue */
+        }
+
+        .active-indicator {
+            width: 100%;
+        }
+    }
+}
+
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 极简添加按钮 */
+.add-btn-minimal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+
+    &:hover {
+        background: #f9fafb;
+        color: #3b82f6;
+    }
 }
 </style>

@@ -1,55 +1,71 @@
 <template>
     <el-drawer :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)"
-        :title="isEdit ? '编辑场景' : '创建新场景'" size="640px" class="scene-drawer tech-noir-drawer" destroy-on-close
-        append-to-body>
-        <div class="drawer-content">
-            <div class="panel-block">
-                <h3 class="panel-title">基础信息</h3>
-                <el-form ref="formRef" :model="formData" :rules="rules" label-position="top">
-                    <el-row :gutter="16">
-                        <el-col :span="16">
-                            <el-form-item label="场景名称" prop="name">
-                                <el-input v-model="formData.name" placeholder="例如：回家模式、高温报警" maxlength="20"
-                                    show-word-limit />
-                            </el-form-item>
-                        </el-col>
-                        <el-col :span="8">
-                            <el-form-item label="启用状态">
-                                <el-switch v-model="formData.enabled" active-text="启用" inactive-text="禁用" inline-prompt
-                                    style="--el-switch-on-color: var(--el-color-success);" />
-                            </el-form-item>
-                        </el-col>
-                    </el-row>
-
-                    <el-form-item label="描述" prop="description">
-                        <el-input v-model="formData.description" type="textarea" :rows="2"
-                            placeholder="简要描述该场景的功能..." />
-                    </el-form-item>
-                </el-form>
+        :title="isEdit ? '编辑场景' : '创建场景'" size="680px" class="modern-drawer" destroy-on-close append-to-body>
+        <div class="drawer-canvas">
+            <div class="canvas-section">
+                <div class="section-card basic-card">
+                    <div class="card-row">
+                        <div class="icon-placeholder">
+                            <el-icon>
+                                <Operation />
+                            </el-icon>
+                        </div>
+                        <div class="form-area">
+                            <el-form ref="formRef" :model="formData" :rules="rules" hide-required-asterisk>
+                                <el-form-item prop="name" class="mb-2">
+                                    <el-input v-model="formData.name" placeholder="未命名场景" class="title-input" />
+                                </el-form-item>
+                                <el-form-item prop="description" class="mb-0">
+                                    <el-input v-model="formData.description" placeholder="添加描述..." class="desc-input" />
+                                </el-form-item>
+                            </el-form>
+                        </div>
+                        <div class="status-area">
+                            <el-switch v-model="formData.enabled" active-text="启用" inline-prompt
+                                style="--el-switch-on-color: #10b981;" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="logic-section if-section">
-                <div class="section-badge">IF (触发)</div>
-                <TriggerBuilder v-model="formData.triggers" v-model:logic="formData.matchType" />
-            </div>
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
 
-            <div class="flow-connector-vertical">
-                <el-icon>
-                    <ArrowDown />
-                </el-icon>
-            </div>
+                <div class="timeline-node if-node">
+                    <div class="node-badge">IF</div>
+                    <div class="node-content">
+                        <div class="node-header">
+                            <span class="label">触发条件</span>
+                        </div>
+                        <TriggerBuilder v-model="formData.triggers" v-model:logic="formData.matchType" />
+                    </div>
+                </div>
 
-            <div class="logic-section then-section">
-                <div class="section-badge">THEN (执行)</div>
-                <ActionBuilder v-model="formData.actions" />
-            </div>
+                <div class="timeline-connector">
+                    <el-icon>
+                        <ArrowDown />
+                    </el-icon>
+                </div>
 
+                <div class="timeline-node then-node">
+                    <div class="node-badge">THEN</div>
+                    <div class="node-content">
+                        <div class="node-header">
+                            <span class="label">执行动作</span>
+                            <span class="sub-label">将会执行...</span>
+                        </div>
+                        <ActionBuilder v-model="formData.actions" />
+                    </div>
+                </div>
+            </div>
         </div>
 
         <template #footer>
-            <div class="drawer-footer">
-                <el-button @click="$emit('update:modelValue', false)">取消</el-button>
-                <el-button type="primary" class="gold-btn-solid" @click="handleSubmit">保存场景</el-button>
+            <div class="modern-footer">
+                <el-button class="cancel-btn" @click="$emit('update:modelValue', false)">取消</el-button>
+                <el-button type="primary" class="save-btn" @click="handleSubmit">
+                    保存配置
+                </el-button>
             </div>
         </template>
     </el-drawer>
@@ -57,16 +73,13 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive } from 'vue';
-import { ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown, Operation } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
-import { ElMessage } from 'element-plus';
 import type { SceneRule } from '@/types/automation';
 
-// 引入 Phase 2 & 3 的组件
 import TriggerBuilder from '@/components/studio/trigger/TriggerBuilder.vue';
 import ActionBuilder from '@/components/studio/action/ActionBuilder.vue';
 
-// --- Props & Emits ---
 const props = defineProps<{
     modelValue: boolean;
     sceneData?: SceneRule;
@@ -77,7 +90,6 @@ const emit = defineEmits<{
     (e: 'save', scene: SceneRule): void;
 }>();
 
-// --- State ---
 const formRef = ref<FormInstance>();
 const isEdit = ref(false);
 
@@ -91,175 +103,232 @@ const defaultScene: SceneRule = {
     actions: []
 };
 
-// 使用 reactive 或 ref 均可，这里使用 ref 以方便整体重置
 const formData = ref<SceneRule>({ ...defaultScene });
 
 const rules = reactive<FormRules>({
-    name: [{ required: true, message: '请输入场景名称', trigger: 'blur' }]
+    name: [{ required: true, message: '请输入名称', trigger: 'blur' }]
 });
 
-// --- Watchers ---
 watch(() => props.modelValue, (val) => {
     if (val) {
         if (props.sceneData) {
             isEdit.value = true;
-            // 深拷贝防止直接修改 Props
             formData.value = JSON.parse(JSON.stringify(props.sceneData));
         } else {
             isEdit.value = false;
-            // 初始化新数据，生成临时 ID
             formData.value = { ...defaultScene, id: Date.now().toString() };
         }
     }
 });
 
-// --- Handlers ---
 const handleSubmit = async () => {
     if (!formRef.value) return;
-
     await formRef.value.validate((valid) => {
-        if (valid) {
-            // 简单校验：至少需要一个触发条件和动作 (可选)
-            // if (formData.value.triggers.length === 0) {
-            //   return ElMessage.warning('请至少添加一个触发条件');
-            // }
-
-            emit('save', formData.value);
-        }
+        if (valid) emit('save', formData.value);
     });
 };
 </script>
 
-<style scoped>
-.scene-drawer :deep(.el-drawer__body) {
-    padding: 0;
-    background-color: var(--bg-canvas, #f5f7fa);
+<style scoped lang="scss">
+/* 全局变量覆盖 */
+.modern-drawer {
+    :deep(.el-drawer__header) {
+        margin-bottom: 0;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f0f0f0;
+        font-weight: 600;
+    }
+
+    :deep(.el-drawer__body) {
+        padding: 0;
+        background-color: #F5F7FA;
+        /* 浅灰背景 */
+    }
 }
 
-.drawer-content {
+.drawer-canvas {
     padding: 24px;
-    height: 100%;
-    overflow-y: auto;
+    min-height: 100%;
 }
 
-/* 面板样式 */
-.panel-block {
+/* 通用卡片样式 */
+.section-card {
     background: #fff;
+    border-radius: 16px;
     padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 24px;
-    border: 1px solid var(--el-border-color-lighter);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.panel-title {
-    margin: 0 0 20px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    border-left: 3px solid var(--el-color-primary);
-    padding-left: 10px;
-    line-height: 1.2;
+/* 基础信息卡片 */
+.basic-card {
+    margin-bottom: 32px;
+
+    .card-row {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .icon-placeholder {
+        width: 48px;
+        height: 48px;
+        background: #eff6ff;
+        color: #3b82f6;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .form-area {
+        flex: 1;
+    }
+
+    /* 标题输入框样式定制 */
+    :deep(.title-input .el-input__wrapper) {
+        box-shadow: none !important;
+        padding-left: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    :deep(.desc-input .el-input__wrapper) {
+        box-shadow: none !important;
+        padding-left: 0;
+        font-size: 14px;
+    }
 }
 
-/* 逻辑区块通用样式 */
-.logic-section {
+/* 时间轴布局系统 */
+.timeline-container {
     position: relative;
-    background: #fff;
-    border-radius: 12px;
-    padding: 32px 20px 24px 20px;
-    border: 1px solid var(--el-border-color-lighter);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-    transition: all 0.3s;
-}
-
-.logic-section:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-/* IF 区块特异性 */
-.if-section {
-    border-left: 4px solid var(--el-color-primary);
-}
-
-/* THEN 区块特异性 */
-.then-section {
-    border-left: 4px solid var(--el-color-success);
-}
-
-/* 标签 Badge */
-.section-badge {
-    position: absolute;
-    top: -12px;
-    left: 20px;
-    background: #fff;
-    padding: 2px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    border: 1px solid var(--el-border-color-lighter);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    z-index: 1;
-}
-
-.if-section .section-badge {
-    color: var(--el-color-primary);
-    border-color: var(--el-color-primary-light-8);
-}
-
-.then-section .section-badge {
-    color: var(--el-color-success);
-    border-color: var(--el-color-success-light-8);
-}
-
-/* 垂直连接线 */
-.flow-connector-vertical {
-    height: 40px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--el-text-color-placeholder);
-    position: relative;
+    flex-direction: column;
+    gap: 0;
 }
 
-.flow-connector-vertical::before {
-    content: '';
+/* 贯穿线 */
+.timeline-line {
     position: absolute;
-    height: 100%;
+    top: 20px;
+    bottom: 20px;
+    left: 24px;
+    /* 这里对应 Badge 的中心 */
     width: 2px;
-    background: var(--el-border-color-lighter);
+    background: #e5e7eb;
     z-index: 0;
 }
 
-.flow-connector-vertical .el-icon {
-    background: var(--bg-canvas, #f5f7fa);
+.timeline-node {
+    position: relative;
+    display: flex;
+    gap: 24px;
     z-index: 1;
-    padding: 4px;
-    border-radius: 50%;
-    color: var(--el-text-color-secondary);
+    margin-bottom: 12px;
 }
 
-/* 底部 */
-.drawer-footer {
-    padding: 16px 24px;
-    border-top: 1px solid var(--el-border-color-lighter);
+.node-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 12px;
     background: #fff;
+    border: 4px solid #F5F7FA;
+    /* 模拟间距 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+}
+
+.if-node .node-badge {
+    color: #3b82f6;
+    /* 蓝色 */
+}
+
+.then-node .node-badge {
+    color: #10b981;
+    /* 绿色 */
+}
+
+.node-content {
+    flex: 1;
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f3f4f6;
+}
+
+.node-header {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+
+    .label {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .sub-label {
+        font-size: 13px;
+        color: #9ca3af;
+        margin-top: 4px;
+    }
+}
+
+/* 连接器 */
+.timeline-connector {
+    margin-left: 12px;
+    /* 调整对齐 */
+    width: 24px;
+    height: 24px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+    border: 2px solid #fff;
+}
+
+/* 底部按钮 */
+.modern-footer {
+    padding: 16px 24px;
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-}
 
-/* 按钮样式复用 */
-.gold-btn-solid {
-    background: #1f1f1f;
-    color: #d4af37;
-    border: 1px solid #1f1f1f;
-}
+    .cancel-btn {
+        border: none;
+        background: #f3f4f6;
+        color: #6b7280;
+        border-radius: 8px;
 
-.gold-btn-solid:hover {
-    background: #000;
-    color: #f0c752;
-    border-color: #000;
+        &:hover {
+            background: #e5e7eb;
+        }
+    }
+
+    .save-btn {
+        border-radius: 8px;
+        padding: 8px 24px;
+        font-weight: 600;
+        background: #1f2937;
+        /* 深色主按钮 */
+        border: none;
+
+        &:hover {
+            background: #000;
+        }
+    }
 }
 </style>
