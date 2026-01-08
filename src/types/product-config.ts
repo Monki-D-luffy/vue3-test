@@ -1,5 +1,5 @@
 // src/types/product-config.ts
-
+import type { SceneRule } from './automation';
 // 1. 配网引导配置 (Provisioning)
 export interface ProvisioningConfig {
     enabled: boolean;
@@ -40,6 +40,12 @@ export interface AlertConfig {
     enabled: boolean;   // 总服务开关
     rules: AlertRule[]; // 规则列表
 }
+
+// ✅ 6. 新增：场景联动配置 (Scene)
+export interface SceneConfig {
+    enabled: boolean;
+    rules: SceneRule[]; // 引用 Automation 中的规则定义
+}
 //  全局产品元数据 (Product Metadata) - 最终存入数据库的 JSON
 export interface ProductMetadata {
     provisioning: ProvisioningConfig;
@@ -47,7 +53,7 @@ export interface ProductMetadata {
     cloudTimer: TimerConfig;
     ota: OtaConfig;
     alert: AlertConfig;
-    // ... 后续增加 OTA, Timer 等
+    scene: SceneConfig;
 }
 
 // 默认初始值
@@ -85,6 +91,10 @@ export const DEFAULT_METADATA: ProductMetadata = {
     alert: {
         enabled: false,
         rules: []
+    },
+    scene: {
+        enabled: false,
+        rules: [] // 预置空数组
     }
 };
 

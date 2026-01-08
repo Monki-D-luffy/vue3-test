@@ -38,7 +38,7 @@ import I18nPanel from './modules/I18nPanel.vue';
 import TimerPanel from './modules/timer/index.vue';
 import OtaPanel from './modules/OtaPanel.vue';
 import AlertPanel from './modules/AlertPanel.vue';
-
+import ScenePanel from './modules/ScenePanel.vue';
 // 组件映射表
 const COMPONENT_MAP: Record<string, any> = {
     'provisioning': ProvisioningPanel,
@@ -46,6 +46,7 @@ const COMPONENT_MAP: Record<string, any> = {
     'timer': TimerPanel,
     'ota': OtaPanel,
     'alert': AlertPanel,
+    'scene': ScenePanel,
 };
 
 const props = defineProps<{

@@ -308,6 +308,7 @@ export const useStudioStore = defineStore('studio', () => {
         await new Promise(r => setTimeout(r, 800)); // Mock delay
         return true;
     };
+
     // ✅✅✅ CRITICAL FIX: 必须在这里 Return 才能被组件调用
     return {
         // State
