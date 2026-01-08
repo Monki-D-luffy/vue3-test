@@ -14,11 +14,13 @@ import * as device from './modules/device'
 import * as firmware from './modules/firmware'
 import * as campaign from './modules/campaign'
 import * as dashboard from './modules/dashboard'
+import * as scene from './modules/scene';
 
 export default {
   ...auth,
   ...device,
   ...firmware,
   ...campaign,
-  ...dashboard
+  ...dashboard,
+  scene,
 }

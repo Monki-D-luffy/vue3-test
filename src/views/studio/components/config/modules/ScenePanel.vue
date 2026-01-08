@@ -86,80 +86,47 @@
         </el-row>
 
         <SceneDrawer v-model="drawerVisible" :scene-data="currentScene" @save="handleSave" />
+
+        <ExecutionLogModal v-model="logVisible" :logs="executionLogs" :loading="isExecuting" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { Search, Plus, Check, Close, Bottom, VideoPlay, Timer, cloudy, Pointer } from '@element-plus/icons-vue';
+import { Search, Plus, Check, Close, Bottom, VideoPlay, Timer, Pointer, Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import type { SceneRule } from '@/types/automation';
+import { useStudioStore } from '@/stores/studioStore';
+
+// ✅ 这里的路径必须指向上面新建的文件
 import SceneDrawer from '@/views/studio/components/scene/SceneDrawer.vue';
+import ExecutionLogModal from '@/views/studio/components/scene/ExecutionLogModal.vue';
+
+const store = useStudioStore();
+
 // --- State ---
 const searchQuery = ref('');
 const drawerVisible = ref(false);
 const currentScene = ref<SceneRule | undefined>(undefined);
-const scenes = ref<SceneRule[]>([]);
 
-// --- Mock Data Generator (Self-Healing) ---
-const initMockData = () => {
-    scenes.value = [
-        {
-            id: '1',
-            name: '回家模式',
-            description: '打开客厅灯光和空调',
-            enabled: true,
-            matchType: 'OR',
-            lastTriggered: '2023-10-27T18:30:00Z',
-            triggers: [
-                { id: 't1', type: 'manual', displayText: '手动点击', params: {} }
-            ],
-            actions: [
-                { id: 'a1', type: 'device_write', displayText: '打开 客厅主灯', params: {} },
-                { id: 'a2', type: 'delay', displayText: '延时 5秒', params: { delaySeconds: 5 } },
-                { id: 'a3', type: 'device_write', displayText: '空调设为 26℃', params: {} }
-            ]
-        },
-        {
-            id: '2',
-            name: '高温预警',
-            description: '温度超过30度自动关闭窗帘',
-            enabled: true,
-            matchType: 'AND',
-            triggers: [
-                { id: 't2', type: 'device_dp', displayText: '温度传感器 > 30℃', params: {} },
-                { id: 't3', type: 'timer', displayText: '每天 12:00 - 14:00', params: {} }
-            ],
-            actions: [
-                { id: 'a4', type: 'device_write', displayText: '关闭 智能窗帘', params: {} },
-                { id: 'a5', type: 'notify', displayText: '发送手机通知', params: {} }
-            ]
-        },
-        {
-            id: '3',
-            name: '离家安防',
-            description: '暂未配置动作',
-            enabled: false,
-            matchType: 'AND',
-            triggers: [
-                { id: 't4', type: 'device_dp', displayText: '门磁感应器 = 打开', params: {} }
-            ],
-            actions: []
-        }
-    ];
-};
+// Log Modal State
+const logVisible = ref(false);
+const executionLogs = ref<any[]>([]);
+const isExecuting = ref(false);
 
-onMounted(() => {
-    initMockData();
-});
-
-// --- Computed ---
+// ✅ 使用 Store 数据，增加防御性检查
 const filteredScenes = computed(() => {
-    if (!searchQuery.value) return scenes.value;
-    return scenes.value.filter(s =>
+    const scenes = store.scenes || [];
+    if (!searchQuery.value) return scenes;
+    return scenes.filter(s =>
         s.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
         (s.description && s.description.toLowerCase().includes(searchQuery.value.toLowerCase()))
     );
+});
+
+// --- Init ---
+onMounted(() => {
+    store.fetchScenes();
 });
 
 // --- Helpers ---
@@ -170,13 +137,13 @@ const isManualScene = (scene: SceneRule) => {
 const getSceneIcon = (scene: SceneRule) => {
     if (isManualScene(scene)) return 'Pointer';
     if (scene.triggers.some(t => t.type === 'timer')) return 'Timer';
-    return 'Connection'; // 默认图标
+    return 'Connection';
 };
 
 const formatTime = (isoStr: string) => {
-    // 简易格式化，实际项目中建议使用 dayjs
+    if (!isoStr) return '从未';
     const d = new Date(isoStr);
-    return `${d.getMonth() + 1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`;
+    return `${d.getMonth() + 1}-${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
 // --- Handlers ---
@@ -186,27 +153,36 @@ const handleCreate = () => {
 };
 
 const handleEdit = (scene: SceneRule) => {
-    // Deep copy to prevent direct mutation during editing
     currentScene.value = JSON.parse(JSON.stringify(scene));
     drawerVisible.value = true;
 };
 
-const handleSave = (scene: SceneRule) => {
-    const idx = scenes.value.findIndex(s => s.id === scene.id);
-    if (idx > -1) {
-        scenes.value[idx] = scene;
-        ElMessage.success('场景已更新');
+const handleSave = async (scene: SceneRule) => {
+    const success = await store.saveScene(scene);
+    if (success) {
+        ElMessage.success('场景已保存');
+        drawerVisible.value = false;
     } else {
-        scenes.value.push({ ...scene, id: Date.now().toString() });
-        ElMessage.success('场景已创建');
+        ElMessage.error('保存失败');
     }
-    drawerVisible.value = false;
 };
 
-const handleRun = (scene: SceneRule) => {
-    ElMessage.success(`正在执行场景：${scene.name}`);
-    // Mock Update Trigger Time
-    scene.lastTriggered = new Date().toISOString();
+const handleRun = async (scene: SceneRule) => {
+    logVisible.value = true;
+    isExecuting.value = true;
+    executionLogs.value = [];
+
+    try {
+        const result = await store.runScene(scene.id);
+        if (result && result.logs) {
+            executionLogs.value = result.logs;
+        }
+    } catch (e) {
+        console.error(e);
+        ElMessage.error('执行失败，请检查后端服务是否启动');
+    } finally {
+        isExecuting.value = false;
+    }
 };
 </script>
 
@@ -258,7 +234,6 @@ const handleRun = (scene: SceneRule) => {
     border: 1px solid var(--el-border-color-lighter);
     background: var(--el-bg-color);
     overflow: hidden;
-    /* 保证左侧状态条不溢出 */
     display: flex;
     flex-direction: column;
 }
@@ -308,7 +283,6 @@ const handleRun = (scene: SceneRule) => {
 .scene-info {
     flex: 1;
     min-width: 0;
-    /* Fix flex ellipsis */
 }
 
 .scene-name {
@@ -328,7 +302,6 @@ const handleRun = (scene: SceneRule) => {
 .logic-flow {
     padding: 16px 20px;
     flex: 1;
-    /* 撑开中间部分 */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -354,7 +327,6 @@ const handleRun = (scene: SceneRule) => {
     gap: 6px;
 }
 
-/* 标签样式微调 */
 .flow-tag {
     border: none;
     font-weight: 500;

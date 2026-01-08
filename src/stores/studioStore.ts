@@ -1,3 +1,4 @@
+// src/stores/studioStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import type {
@@ -8,9 +9,10 @@ import type {
     IPinDefinition
 } from '@/types/studio';
 import { type ProductMetadata, DEFAULT_METADATA } from '@/types/product-config';
-
+import api from '@/api';
+import type { SceneRule } from '@/types/automation';
 // =============================================================================
-// MOCK DATA
+// MOCK DATA (保持不变)
 // =============================================================================
 const MOCK_MODULES: IModule[] = [
     {
@@ -72,6 +74,7 @@ export const useStudioStore = defineStore('studio', () => {
     const availableModules = ref<IModule[]>(MOCK_MODULES);
     const selectedModuleId = ref<string | null>('mod_c3_mini');
     const pinConfiguration = ref<IPinDefinition[]>([]);
+    const scenes = ref<SceneRule[]>([]);
 
     // 固件列表 (State)
     const firmwareArtifacts = ref<IFirmwareArtifact[]>([
@@ -104,7 +107,6 @@ export const useStudioStore = defineStore('studio', () => {
         return !!selectedModuleId.value && resourceAnalysis.value.riskLevel !== 'critical';
     });
 
-    // ✅ FIX: 最新固件 Getter
     const latestFirmware = computed(() => {
         return firmwareArtifacts.value.length > 0 ? firmwareArtifacts.value[0] : null;
     });
@@ -123,33 +125,31 @@ export const useStudioStore = defineStore('studio', () => {
 
         if (dps.value.length === 0) {
             dps.value = [
-                // 原有的 Bool (只显示 == 和 ON/OFF)
+                // 原有的 Bool
                 {
                     id: 1, code: 'switch_led', name: '智能开关', type: 'Boolean', mode: 'rw', isStandard: true, property: {}
                 },
-                // 原有的 Enum (只显示 == 和 选项)
+                // 原有的 Enum
                 {
                     id: 2, code: 'work_mode', name: '工作模式', type: 'Enum', mode: 'rw', isStandard: true, property: { range: ['auto', 'sleep', 'strong'] }
                 },
-
-                // ✅ 新增：数值型 DP (只有这个类型，才会显示 > < 和 数字框)
+                // 数值型 DP
                 {
                     id: 3,
                     code: 'temp_current',
                     name: '当前温度',
-                    type: 'Integer', // 关键：类型是 Integer 或 Value
-                    mode: 'ro',      // 只读，作为触发条件
+                    type: 'Integer',
+                    mode: 'ro',
                     isStandard: true,
                     property: { unit: '℃', min: -20, max: 100, step: 1 }
                 },
-
-                // ✅ 新增：可写的数值型 DP (用于演示“设备端同步”)
+                // 可写的数值型 DP
                 {
                     id: 4,
                     code: 'temp_limit',
                     name: '温度报警阈值',
                     type: 'Integer',
-                    mode: 'rw',      // 读写，作为同步目标
+                    mode: 'rw',
                     isStandard: true,
                     property: { unit: '℃', min: 0, max: 100, step: 1 }
                 }
@@ -286,7 +286,6 @@ export const useStudioStore = defineStore('studio', () => {
         firmwareArtifacts.value.unshift(newArtifact);
     };
 
-    // ✅ FIX: 删除 Action
     const deleteFirmware = (id: string) => {
         const index = firmwareArtifacts.value.findIndex(item => item.id === id);
         if (index > -1) {
@@ -298,18 +297,80 @@ export const useStudioStore = defineStore('studio', () => {
     const recalculateResources = () => analyzeResources();
 
     watch(dps, () => analyzeResources(), { deep: true });
-    // State
+
+    // ============================
+    // Product Config Metadata
+    // ============================
     const productMetadata = ref<ProductMetadata>(JSON.parse(JSON.stringify(DEFAULT_METADATA)));
 
-    // Actions
     const saveMetadata = async () => {
         // 模拟保存
         console.log('Saving Metadata to Backend:', JSON.stringify(productMetadata.value));
         await new Promise(r => setTimeout(r, 800)); // Mock delay
         return true;
     };
+    // ✅ 新增：获取场景列表
+    const fetchScenes = async () => {
+        try {
+            const res = await api.scene.getScenes();
+            scenes.value = res.data.data || [];
+        } catch (e) {
+            console.error('Fetch scenes failed', e);
+        }
+    };
 
-    // ✅✅✅ CRITICAL FIX: 必须在这里 Return 才能被组件调用
+    // ✅ 新增：保存场景 (自动判断 Create/Update)
+    const saveScene = async (scene: SceneRule) => {
+        isLoading.value = true;
+        try {
+            if (scene.id && scenes.value.some(s => s.id === scene.id)) {
+                await api.scene.updateScene(scene.id, scene);
+            } else {
+                await api.scene.createScene(scene);
+            }
+            await fetchScenes(); // 重新拉取
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        } finally {
+            isLoading.value = false;
+        }
+    };
+
+    // ✅ 新增：删除场景
+    const deleteScene = async (id: string) => {
+        await api.scene.deleteScene(id);
+        await fetchScenes();
+    };
+
+    // ✅ 新增：执行场景 (返回执行结果供 UI 展示)
+    const runScene = async (id: string) => {
+        const res = await api.scene.executeScene(id);
+        await fetchScenes(); // 更新 lastTriggered 时间
+        return res.data; // 返回日志数据
+    };
+
+    // ✅✅✅ NEW: 新增 fetchMetadata Action
+    const fetchMetadata = async () => {
+        isLoading.value = true;
+        // 从后端获取数据
+        await fetchScenes();
+        // 模拟数据校验和补全：防止后端数据缺失导致前端报错
+        // 尤其是 scene 和 cloudTimer 这类新加的模块
+        if (!productMetadata.value.scene) {
+            productMetadata.value.scene = { enabled: false, rules: [] };
+        }
+        if (!productMetadata.value.cloudTimer) {
+            productMetadata.value.cloudTimer = { enabled: false, maxSchedules: 30, actions: [] };
+        }
+
+        isLoading.value = false;
+    };
+
+    // ============================
+    // Return (Exports)
+    // ============================
     return {
         // State
         activeStep, isLoading, isDirty, dps,
@@ -321,24 +382,10 @@ export const useStudioStore = defineStore('studio', () => {
         initStudio, fetchDataPoints, upsertDp, removeDp, saveChanges,
         selectModule, analyzeResources, generateFirmware, uploadFirmware, deleteFirmware,
         initPinConfiguration, applyPinPreset, importPinFile, recalculateResources,
-
-        productMetadata, saveMetadata
+        scenes, // State
+        fetchScenes, saveScene, deleteScene, runScene, // Actions
+        productMetadata,
+        saveMetadata,
+        fetchMetadata // ✅ 必须导出
     };
 });
-
-/**
- * 产品配置模块元数据接口
- * 用于生成配置页面的卡片矩阵
- */
-export interface ConfigModule {
-    id: string;
-    title: string;       // 模块标题 (e.g., "多语言配置")
-    description: string; // 功能描述
-    icon: string;        // 图标名称 (ElIcon)
-    isEnabled: boolean;  // 开关状态
-    isPremium?: boolean; // 是否为高级功能 (用于显示金色角标)
-    tags: string[];      // 标签 (e.g., ["云端", "交互"])
-    componentName?: string; // 点击后加载的组件名
-}
-
-
