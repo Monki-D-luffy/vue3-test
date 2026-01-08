@@ -123,11 +123,35 @@ export const useStudioStore = defineStore('studio', () => {
 
         if (dps.value.length === 0) {
             dps.value = [
+                // 原有的 Bool (只显示 == 和 ON/OFF)
                 {
                     id: 1, code: 'switch_led', name: '智能开关', type: 'Boolean', mode: 'rw', isStandard: true, property: {}
                 },
+                // 原有的 Enum (只显示 == 和 选项)
                 {
                     id: 2, code: 'work_mode', name: '工作模式', type: 'Enum', mode: 'rw', isStandard: true, property: { range: ['auto', 'sleep', 'strong'] }
+                },
+
+                // ✅ 新增：数值型 DP (只有这个类型，才会显示 > < 和 数字框)
+                {
+                    id: 3,
+                    code: 'temp_current',
+                    name: '当前温度',
+                    type: 'Integer', // 关键：类型是 Integer 或 Value
+                    mode: 'ro',      // 只读，作为触发条件
+                    isStandard: true,
+                    property: { unit: '℃', min: -20, max: 100, step: 1 }
+                },
+
+                // ✅ 新增：可写的数值型 DP (用于演示“设备端同步”)
+                {
+                    id: 4,
+                    code: 'temp_limit',
+                    name: '温度报警阈值',
+                    type: 'Integer',
+                    mode: 'rw',      // 读写，作为同步目标
+                    isStandard: true,
+                    property: { unit: '℃', min: 0, max: 100, step: 1 }
                 }
             ];
         }

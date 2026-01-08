@@ -121,7 +121,7 @@ const handleSwitchChange = async (item: ConfigItem, newVal: boolean) => {
 // 打开抽屉
 const openDetail = (item: ConfigItem) => {
   // 暂未开发的模块拦截
-  if (['scene', 'alert'].includes(item.key)) {
+  if (['scene'].includes(item.key)) {
     ElMessage.warning('该模块正在开发中...')
     return
   }

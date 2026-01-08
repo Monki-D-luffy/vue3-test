@@ -36,13 +36,17 @@ export interface TimerConfig {
     // 白名单机制：只有列表里的 DP 才会在 App 定时页面显示
     actions: TimerActionDef[];
 }
-
+export interface AlertConfig {
+    enabled: boolean;   // 总服务开关
+    rules: AlertRule[]; // 规则列表
+}
 //  全局产品元数据 (Product Metadata) - 最终存入数据库的 JSON
 export interface ProductMetadata {
     provisioning: ProvisioningConfig;
     i18n: I18nConfig;
     cloudTimer: TimerConfig;
     ota: OtaConfig;
+    alert: AlertConfig;
     // ... 后续增加 OTA, Timer 等
 }
 
@@ -77,6 +81,10 @@ export const DEFAULT_METADATA: ProductMetadata = {
             retryCount: 3
         },
         releases: []
+    },
+    alert: {
+        enabled: false,
+        rules: []
     }
 };
 
@@ -106,6 +114,23 @@ export interface OtaConfig {
     releases: FirmwareRelease[];
 }
 
+export interface AlertRule {
+    id: string;
+    name: string;       // 告警名称，如 "温度过高报警"
+    enabled: boolean;   // 启停状态
 
+    // 1. 触发条件 (Trigger)
+    dpId: number;       // 关联的 DP ID
+    dpName: string;     // 冗余存一个名字，方便显示
+    dpType: string;     // 'bool' | 'value' | 'enum'
+    operator: '>' | '<' | '==' | '!='; // 比较符
+    threshold: any;     // 阈值 (根据类型可能是 true, 80, 'high')
+    // 如果设置了此 ID，保存时会将 threshold 的值自动下发给这个 DP
+    bindTargetDpId?: number | null;
 
+    // 2. 告警行为 (Action)
+    message: string;    // 推送文案 "检测到设备温度过高！"
+    notifyType: 'app_push' | 'sms'; // 推送方式
+    cooldown: number;   // 静默期 (秒)，防止一分钟推100条
+}
 
