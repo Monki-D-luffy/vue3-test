@@ -3,32 +3,38 @@
         <div class="panel-header row-between">
             <div>
                 <h4 class="title">2. 交互验证 (Simulation)</h4>
-                <p class="desc">使用右上角按钮添加测试任务。</p>
+                <div class="desc-row">
+                    <transition name="fade" mode="out-in">
+                        <span v-if="currentDpInfo" :key="currentDpInfo.dpId" class="filter-badge">
+                            当前功能: <b>{{ currentDpInfo.name }}</b>
+                        </span>
+                        <span v-else class="desc">请在左侧选择要验证的功能</span>
+                    </transition>
+                </div>
             </div>
-            <el-button type="primary" size="small" icon="Plus" class="gold-btn-ghost"
-                :disabled="availableDps.length === 0" @click="addNewTask">
+            <el-button type="primary" size="small" icon="Plus" class="gold-btn-ghost" :disabled="!filterDpId"
+                @click="addNewTask">
                 新增任务
             </el-button>
         </div>
 
         <div class="sandbox-content custom-scrollbar" ref="listContainerRef">
-            <div v-if="availableDps.length === 0" class="empty-guide">
-                <el-alert title="请先在左侧绑定功能" type="warning" :closable="false" show-icon />
+            <div v-if="!filterDpId" class="empty-guide-wrapper">
+                <el-empty description="← 请先点击左侧的功能卡片" :image-size="100" />
             </div>
-            <el-empty v-else-if="tasks.length === 0" description="暂无测试任务" :image-size="80" />
 
-            <transition-group name="list" tag="div" class="task-list">
-                <div v-for="(task, idx) in tasks" :key="task.id" class="timer-card"
+            <el-empty v-else-if="displayTasks.length === 0" description="该功能暂无定时任务" :image-size="80" />
+
+            <transition-group name="list" tag="div" class="task-list" v-else>
+                <div v-for="(task, idx) in displayTasks" :key="task.id" class="timer-card"
                     :class="{ 'highlight-anim': task.isNew }">
-
                     <div class="card-header" @click="task.isExpanded = !task.isExpanded">
                         <div class="header-left">
-                            <span class="time-text">
-                                {{ String(task.target.hour).padStart(2, '0') }}:{{
-                                    String(task.target.minute).padStart(2,'0') }}
+                            <span class="time-text-preview">
+                                {{ formatTimeNum(task.target.hour) }}:{{ formatTimeNum(task.target.minute) }}
                             </span>
-                            <span class="task-summary text-ellipsis">
-                                {{ getTaskSummary(task) }}
+                            <span class="repeat-tag-preview" v-if="!task.isExpanded">
+                                {{ getRepeatLabel(task.target.repeat) }}
                             </span>
                         </div>
                         <div class="header-right">
@@ -41,130 +47,111 @@
                     </div>
 
                     <div v-show="task.isExpanded" class="card-body">
-                        <div class="time-edit-row" @click="openTimePicker(task)">
-                            <div class="info-group">
-                                <span class="label">触发时间:</span>
-                                <span class="value">{{ String(task.target.hour).padStart(2, '0') }}:{{
-                                    String(task.target.minute).padStart(2,'0') }}</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="label">重复:</span>
-                                <el-tag size="small" effect="plain" class="noir-tag">{{
-                                    getRepeatLabel(task.target.repeat) }}</el-tag>
-                            </div>
-                            <el-button link size="small" icon="Edit" class="edit-btn">修改</el-button>
-                        </div>
 
-                        <el-divider style="margin: 12px 0;" />
+                        <TaskTimeEditor v-model="task.target" />
+
+                        <el-divider style="margin: 16px 0;" border-style="dashed" />
 
                         <div class="action-header">执行动作 (Actions):</div>
+
                         <div v-for="(act, actIdx) in task.actions" :key="actIdx" class="action-row">
-                            <el-select v-model="act.code" size="small" class="noir-select action-select"
-                                @change="(val: any) => handleActionCodeChange(act, val)">
-                                <el-option v-for="dp in availableDps" :key="dp.dpId" :label="dp.alias || dp.name"
-                                    :value="dp.code" />
-                            </el-select>
-
+                            <div class="target-dp-info">
+                                <span class="dp-name">{{ getDpName(act.code) }}</span>
+                            </div>
                             <span class="arrow">→</span>
-
                             <div class="value-control">
                                 <el-switch v-if="getDpType(act.code) === 'bool'" v-model="act.value" size="small"
                                     style="--el-switch-on-color: #d4af37" />
                                 <el-input-number v-else-if="getDpType(act.code) === 'value'" v-model="act.value"
                                     size="small" controls-position="right" style="width: 100px" />
                                 <el-select v-else-if="getDpType(act.code) === 'enum'" v-model="act.value" size="small"
-                                    placeholder="Select" style="width: 100px">
+                                    style="width: 100px">
                                     <el-option label="Mode A" value="0" />
                                     <el-option label="Mode B" value="1" />
                                 </el-select>
-
-                                <span v-else class="invalid-text">请选择功能</span>
                             </div>
-
-                            <el-icon class="del-action-btn" @click="removeAction(task, actIdx)">
-                                <Close />
-                            </el-icon>
                         </div>
 
                         <div class="card-footer-actions">
-                            <el-button link size="small" icon="Plus" @click="addActionToTask(task)">加动作</el-button>
-                            <el-button link type="danger" size="small" icon="Delete"
-                                @click="tasks.splice(idx, 1)">删除任务</el-button>
+                            <el-button link type="danger" size="small" icon="Delete" @click="removeTask(task.id)">
+                                删除任务
+                            </el-button>
                         </div>
                     </div>
                 </div>
             </transition-group>
         </div>
-
-        <TimePickerModal v-model="pickerVisible" :initial-data="currentEditingTask?.target"
-            @confirm="handleTimeConfirm" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue';
-import { Edit, Close, Plus, Delete, ArrowRight } from '@element-plus/icons-vue';
+import { ref, computed, nextTick, watch } from 'vue';
+import { Plus, Delete, ArrowRight } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import type { TimerActionDef, MockTimerTask, MockAction, TimeTarget } from '@/types/timer';
-import TimePickerModal from './components/TimePickerModal.vue';
+import type { TimerActionDef, MockTimerTask } from '@/types/timer';
+// 引入新组件
+import TaskTimeEditor from './components/TaskTimeEditor.vue';
+
 
 const props = defineProps<{
-    availableDps: TimerActionDef[]
+    availableDps: TimerActionDef[],
+    filterDpId: number | null
 }>();
 
-const tasks = ref<(MockTimerTask & { isNew?: boolean })[]>([]);
-const pickerVisible = ref(false);
-const currentEditingTask = ref<MockTimerTask | null>(null);
+const allTasks = ref<(MockTimerTask & { isNew?: boolean })[]>([]);
 const listContainerRef = ref<HTMLElement | null>(null);
 
-// --- Helpers ---
+watch(() => props.filterDpId, () => {
+    if (listContainerRef.value) listContainerRef.value.scrollTop = 0;
+});
+
+const displayTasks = computed(() => {
+    if (!props.filterDpId) return [];
+    return allTasks.value.filter(task =>
+        task.actions.some(act => act.dpId === props.filterDpId)
+    );
+});
+
+const currentDpInfo = computed(() => {
+    return props.availableDps.find(d => d.dpId === props.filterDpId);
+});
+
+const formatTimeNum = (num: number) => String(num).padStart(2, '0');
+
 const getDpType = (code: string) => props.availableDps.find(d => d.code === code)?.type || '';
+const getDpName = (code: string) => {
+    const dp = props.availableDps.find(d => d.code === code);
+    return dp ? (dp.alias || dp.name) : code;
+};
 
 const getRepeatLabel = (type: string) => {
     const map: Record<string, string> = { once: '仅一次', daily: '每天', workday: '工作日', weekend: '周末', custom: '自定义' };
     return map[type] || type;
 };
 
-const getTaskSummary = (task: MockTimerTask) => {
-    if (!task.actions || task.actions.length === 0) return '无动作';
-    return task.actions.map(act => {
-        const dp = props.availableDps.find(d => d.code === act.code);
-        const name = dp ? (dp.alias || dp.name) : '未知功能';
-        let valStr = String(act.value);
-        if (typeof act.value === 'boolean') valStr = act.value ? 'ON' : 'OFF';
-        return `${name}: ${valStr}`;
-    }).join(', ');
-};
-
-// --- Operations ---
 const addNewTask = () => {
-    if (!props.availableDps || props.availableDps.length === 0) {
-        ElMessage.warning("请先在左侧绑定功能");
+    if (!props.filterDpId || !currentDpInfo.value) {
+        ElMessage.warning("请先在左侧选择一个功能");
         return;
     }
 
-    // 默认使用第一个可用功能
-    const defaultDp = props.availableDps[0];
-    if (!defaultDp) return;
+    const dp = currentDpInfo.value;
+    const defaultValue = dp.type === 'bool' ? false : 0;
 
-    const defaultValue = defaultDp.type === 'bool' ? false : 0;
-
-    // 创建全新独立对象
     const newTask: MockTimerTask = {
         id: Date.now(),
         enabled: true,
         isExpanded: true,
-        // 默认给个动画标记
         isNew: true,
-        target: { hour: 8, minute: 0, repeat: 'daily' as const, weeks: [1, 2, 3, 4, 5, 6, 0] },
+        target: { hour: 8, minute: 0, repeat: 'daily', weeks: [1, 2, 3, 4, 5, 6, 0] },
         actions: [{
-            dpId: 0,
-            code: defaultDp.code,
+            dpId: dp.dpId,
+            code: dp.code,
             value: defaultValue
         }]
-    } as any; // 强转一下避免 MockTimerTask 和 isNew 的类型冲突
+    } as any;
 
-    tasks.value.unshift(newTask);
+    allTasks.value.unshift(newTask);
 
     nextTick(() => {
         if (listContainerRef.value) listContainerRef.value.scrollTop = 0;
@@ -172,43 +159,14 @@ const addNewTask = () => {
     });
 };
 
-const addActionToTask = (task: MockTimerTask) => {
-    if (props.availableDps.length > 0) {
-        const defaultDp = props.availableDps[0];
-        if (!defaultDp) return;
-
-        const defaultValue = defaultDp.type === 'bool' ? false : 0;
-        // 确保是新对象
-        task.actions.push({ dpId: 0, code: defaultDp.code, value: defaultValue });
-    }
-};
-
-const removeAction = (task: MockTimerTask, idx: number) => {
-    task.actions.splice(idx, 1);
-};
-
-const handleActionCodeChange = (act: MockAction, newCode: string) => {
-    const type = getDpType(newCode);
-    if (type === 'bool') act.value = false;
-    else if (type === 'value') act.value = 0;
-    else act.value = '';
-};
-
-// --- Picker ---
-const openTimePicker = (task: MockTimerTask) => {
-    currentEditingTask.value = task;
-    pickerVisible.value = true;
-};
-
-const handleTimeConfirm = (newTarget: TimeTarget) => {
-    if (currentEditingTask.value) {
-        currentEditingTask.value.target = { ...newTarget };
-    }
+const removeTask = (taskId: number) => {
+    const idx = allTasks.value.findIndex(t => t.id === taskId);
+    if (idx > -1) allTasks.value.splice(idx, 1);
 };
 </script>
 
 <style scoped lang="scss">
-/* 保持样式不变 */
+/* 保持原有样式不变，移除已被提取的样式（如 .week-selector-area 等） */
 .sandbox-panel {
     display: flex;
     flex-direction: column;
@@ -221,20 +179,39 @@ const handleTimeConfirm = (newTarget: TimeTarget) => {
     margin-bottom: 16px;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .title {
     font-size: 14px;
     font-weight: 700;
     color: #1a1a1a;
-    margin: 0 0 4px 0;
+    margin: 0;
+}
+
+.desc-row {
+    margin-top: 4px;
+    height: 24px;
+    display: flex;
+    align-items: center;
 }
 
 .desc {
     font-size: 12px;
     color: #909399;
-    margin: 0;
+}
+
+.filter-badge {
+    font-size: 12px;
+    color: #d4af37;
+    background: #fffdf5;
+    padding: 2px 8px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 12px;
+
+    b {
+        font-weight: 600;
+    }
 }
 
 .sandbox-content {
@@ -243,10 +220,15 @@ const handleTimeConfirm = (newTarget: TimeTarget) => {
     min-height: 0;
     padding-right: 4px;
     scroll-behavior: smooth;
+    position: relative;
 }
 
-.empty-guide {
-    margin-bottom: 20px;
+.empty-guide-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80%;
+    opacity: 0.6;
 }
 
 .timer-card {
@@ -256,6 +238,7 @@ const handleTimeConfirm = (newTarget: TimeTarget) => {
     margin-bottom: 12px;
     overflow: hidden;
     transition: all 0.3s;
+    width: 100%;
 
     &:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
@@ -301,18 +284,19 @@ const handleTimeConfirm = (newTarget: TimeTarget) => {
     overflow: hidden;
 }
 
-.time-text {
+.time-text-preview {
     font-size: 18px;
     font-weight: 600;
     color: #1a1a1a;
     font-family: 'Inter', monospace;
 }
 
-.task-summary {
-    font-size: 13px;
-    color: #606266;
-    flex: 1;
-    opacity: 0.8;
+.repeat-tag-preview {
+    font-size: 12px;
+    color: #909399;
+    background: #f4f4f5;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .header-right {
@@ -335,39 +319,6 @@ const handleTimeConfirm = (newTarget: TimeTarget) => {
     animation: slideDown 0.2s ease-out;
 }
 
-.time-edit-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 8px 12px;
-    background: #f9f9f9;
-    border-radius: 8px;
-    cursor: pointer;
-
-    &:hover .edit-btn {
-        opacity: 1;
-    }
-}
-
-.info-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #606266;
-}
-
-.value {
-    font-weight: 600;
-    color: #1a1a1a;
-}
-
-.edit-btn {
-    opacity: 0;
-    transition: opacity 0.2s;
-    color: #d4af37;
-}
-
 .action-header {
     font-size: 12px;
     color: #909399;
@@ -377,40 +328,29 @@ const handleTimeConfirm = (newTarget: TimeTarget) => {
 .action-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     margin-bottom: 8px;
-    flex-wrap: wrap;
 }
 
-.action-select {
-    width: 120px;
+.target-dp-info {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+    width: 100px;
+    text-align: right;
+}
+
+.arrow {
+    color: #dcdfe6;
 }
 
 .value-control {
     flex: 1;
-    min-width: 80px;
-}
-
-.del-action-btn {
-    cursor: pointer;
-    color: #dcdfe6;
-
-    &:hover {
-        color: #f56c6c;
-    }
-}
-
-.invalid-text {
-    font-size: 12px;
-    color: #f56c6c;
-    background: #fef0f0;
-    padding: 2px 6px;
-    border-radius: 4px;
 }
 
 .card-footer-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     margin-top: 12px;
     padding-top: 8px;
     border-top: 1px dashed #ebeef5;
@@ -428,9 +368,36 @@ const handleTimeConfirm = (newTarget: TimeTarget) => {
     }
 }
 
-:deep(.noir-tag) {
-    border-color: #e4e7ed;
-    color: #606266;
+/* 列表动画 */
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
+}
+
+.list-enter-from {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.list-leave-to {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.list-leave-active {
+    position: absolute;
+    width: 100%;
+    z-index: 0;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 
 :deep(.gold-btn-ghost) {

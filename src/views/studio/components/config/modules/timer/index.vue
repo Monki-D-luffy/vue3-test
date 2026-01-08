@@ -2,7 +2,7 @@
     <div class="timer-module-root noir-skin">
         <div class="module-header-bar">
             <div class="header-status">
-                <span class="module-name">云端定时服务</span>
+                <span class="module-name">云端定时服务 (Cloud Timer)</span>
                 <span class="status-dot" :class="{ active: modelValue.enabled }"></span>
                 <span class="status-text">{{ modelValue.enabled ? 'Running' : 'Disabled' }}</span>
             </div>
@@ -12,10 +12,11 @@
             </div>
         </div>
 
-        <div class="module-content" :class="{ disabled: !modelValue.enabled }">
-            <TimerStrategy v-model="mergedActionList" :all-source-dps="allAvailableDps" class="left-pane" />
+        <div class="module-content" :class="{ 'is-disabled-visual': !modelValue.enabled }">
+            <TimerStrategy v-model="mergedActionList" :all-source-dps="allAvailableDps" :active-id="currentSelectedDpId"
+                class="left-pane" @select="handleDpSelect" />
 
-            <TimerSandbox :available-dps="mergedActionList" class="right-pane" />
+            <TimerSandbox :available-dps="mergedActionList" :filter-dp-id="currentSelectedDpId" class="right-pane" />
         </div>
     </div>
 </template>
@@ -27,12 +28,17 @@ import { useStudioStore } from '@/stores/studioStore';
 import TimerStrategy from './TimerStrategy.vue';
 import TimerSandbox from './TimerSandbox.vue';
 
-const props = defineProps<{ modelValue: TimerConfig }>();
-const emit = defineEmits(['update:modelValue']);
+const props = withDefaults(defineProps<{
+    modelValue: TimerConfig
+}>(), {
+    modelValue: () => ({ enabled: false, actions: [] })
+}); const emit = defineEmits(['update:modelValue']);
 const store = useStudioStore();
 
 const mergedActionList = ref<TimerActionDef[]>([]);
+const currentSelectedDpId = ref<number | null>(null);
 
+// 模拟数据兜底
 const mockStandardDps = [
     { id: 101, code: 'switch_led', name: '主灯开关', type: 'bool', mode: 'rw' },
     { id: 102, code: 'work_mode', name: '工作模式', type: 'enum', mode: 'rw' },
@@ -53,25 +59,42 @@ const toggleModule = () => {
 
 const initData = () => {
     if (props.modelValue.actions) {
-        mergedActionList.value = props.modelValue.actions.map(a => ({ ...a }));
+        mergedActionList.value = props.modelValue?.actions?.map(a => ({ ...a })) ?? [];
+        // 默认选中第一个功能，提升体验
+        if (mergedActionList.value.length > 0) {
+            // 使用可选链与空合并以防 dpId 为 undefined
+            currentSelectedDpId.value = mergedActionList.value[0]?.dpId ?? null;
+        }
     }
 };
 
+const handleDpSelect = (dpId: number) => {
+    currentSelectedDpId.value = dpId;
+};
+
 watch(mergedActionList, (newVal) => {
-    const actionsToSave = newVal.map(item => ({ ...item }));
+    const list = newVal || [];
+    const actionsToSave = list.map(item => ({ ...item }));
     emit('update:modelValue', { ...props.modelValue, actions: actionsToSave });
+
+    // 如果当前选中的被删除了，重置选中状态
+    if (currentSelectedDpId.value && !list.find(d => d.dpId === currentSelectedDpId.value)) {
+        // 保护性读取首项 dpId，若为 undefined 则使用 null
+        currentSelectedDpId.value = list.length > 0 ? (list[0]?.dpId ?? null) : null;
+    }
 }, { deep: true });
 
 onMounted(initData);
 </script>
 
 <style scoped lang="scss">
-/* 样式复用上文，无需变动 */
 .timer-module-root {
     display: flex;
     flex-direction: column;
     height: 100%;
     background: #fff;
+    /* 确保容器占满父级 */
+    position: relative;
 }
 
 .module-header-bar {
@@ -117,6 +140,7 @@ onMounted(initData);
     font-family: monospace;
 }
 
+/* iOS 风格开关 */
 .ios-toggle {
     width: 44px;
     height: 24px;
@@ -156,20 +180,23 @@ onMounted(initData);
     overflow: hidden;
     transition: opacity 0.3s;
 
-    &.disabled {
-        opacity: 0.6;
-        pointer-events: none;
-        filter: grayscale(1);
+    &.is-disabled-visual {
+        opacity: 0.7;
+        /* 关键修改：不再完全禁用点击，而是通过视觉置灰 */
+        /* pointer-events: none; */
     }
 }
 
 .left-pane {
-    width: 40%;
-    min-width: 300px;
+    width: 35%;
+    min-width: 280px;
+    max-width: 400px;
+    border-right: 1px solid #e4e7ed;
 }
 
 .right-pane {
     flex: 1;
-    min-width: 360px;
+    min-width: 0;
+    /* Flex 溢出保护 */
 }
 </style>

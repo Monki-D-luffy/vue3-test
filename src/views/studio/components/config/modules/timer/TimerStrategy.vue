@@ -1,25 +1,29 @@
 <template>
     <div class="strategy-panel">
         <div class="panel-header">
-            <h4 class="title">1. 功能绑定 (Bound Features)</h4>
-            <p class="desc">管理允许被定时触发的功能。</p>
+            <h4 class="title">1. 功能绑定 (Features)</h4>
+            <p class="desc">点击下方卡片，在右侧管理其定时任务。</p>
         </div>
 
         <div class="list-container custom-scrollbar">
             <transition-group name="list-anim">
-                <div v-for="(dp, index) in modelValue" :key="dp.dpId" class="strategy-card">
+                <div v-for="(dp, index) in modelValue" :key="dp.dpId" class="strategy-card"
+                    :class="{ 'is-active': activeId === dp.dpId }" @click="handleCardClick(dp.dpId)">
                     <div class="card-row top">
                         <div class="info-block">
                             <span class="dp-name">{{ dp.name }}</span>
                             <span class="dp-tag">DP{{ dp.dpId }}</span>
                         </div>
                         <el-button type="danger" link icon="Delete" size="small" class="del-btn"
-                            @click="removeDp(index)" />
+                            @click.stop="removeDp(index)" />
                     </div>
                     <div class="card-row bottom">
-                        <span class="label">App 显示名称:</span>
-                        <el-input v-model="dp.alias" size="small" placeholder="默认名称" class="noir-input-ghost" />
+                        <span class="label">App别名:</span>
+                        <el-input v-model="dp.alias" size="small" placeholder="默认名称" class="noir-input-ghost"
+                            @click.stop />
                     </div>
+
+                    <div class="active-indicator" v-if="activeId === dp.dpId"></div>
                 </div>
             </transition-group>
 
@@ -43,13 +47,18 @@ import DpSelectModal from './components/DpSelectModal.vue';
 
 const props = defineProps<{
     modelValue: TimerActionDef[],
-    allSourceDps: any[]
+    allSourceDps: any[],
+    activeId: number | null // 新增：接收当前选中的ID
 }>();
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'select']);
 const showModal = ref(false);
 
 const currentIds = computed(() => props.modelValue.map(d => d.dpId));
+
+const handleCardClick = (id: number) => {
+    emit('select', id);
+};
 
 const handleAddDp = (rawDp: any) => {
     const newDp: TimerActionDef = {
@@ -62,6 +71,8 @@ const handleAddDp = (rawDp: any) => {
         alias: ''
     };
     emit('update:modelValue', [...props.modelValue, newDp]);
+    // 自动选中新添加的功能
+    emit('select', newDp.dpId);
 };
 
 const removeDp = (index: number) => {
@@ -77,8 +88,7 @@ const removeDp = (index: number) => {
     flex-direction: column;
     height: 100%;
     padding: 20px;
-    background: #f9f9f9;
-    border-right: 1px solid #e4e7ed;
+    background: #fcfcfc;
 }
 
 .panel-header {
@@ -103,7 +113,8 @@ const removeDp = (index: number) => {
     flex: 1;
     overflow-y: auto;
     min-height: 0;
-    padding-right: 4px;
+    padding-right: 6px;
+    padding-bottom: 20px;
 }
 
 .strategy-card {
@@ -113,15 +124,35 @@ const removeDp = (index: number) => {
     padding: 12px;
     margin-bottom: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     position: relative;
-    /* 移除 pointer，表示不可点击生成任务 */
-    cursor: default;
+    cursor: pointer;
+    overflow: hidden;
 
     &:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        border-color: #dcdfe6;
+        border-color: #c0c4cc;
+        transform: translateY(-1px);
     }
+
+    &.is-active {
+        border-color: #d4af37;
+        background: #fffcf5;
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.08);
+
+        .dp-name {
+            color: #d4af37;
+        }
+    }
+}
+
+.active-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #d4af37;
 }
 
 .card-row {
@@ -148,6 +179,7 @@ const removeDp = (index: number) => {
     font-size: 13px;
     font-weight: 600;
     color: #333;
+    transition: color 0.2s;
 }
 
 .dp-tag {
@@ -169,15 +201,15 @@ const removeDp = (index: number) => {
     margin-top: 8px;
     border: 1px dashed #dcdfe6;
     border-radius: 8px;
-    height: 40px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #909399;
+    color: #606266;
     cursor: pointer;
     transition: all 0.2s;
     font-size: 13px;
-    background: rgba(255, 255, 255, 0.5);
+    background: #fff;
     gap: 6px;
 
     &:hover {
@@ -190,13 +222,13 @@ const removeDp = (index: number) => {
 .del-btn {
     opacity: 0;
     transition: opacity 0.2s;
-    cursor: pointer;
 }
 
 .strategy-card:hover .del-btn {
     opacity: 1;
 }
 
+/* 列表动画 */
 .list-anim-enter-active,
 .list-anim-leave-active {
     transition: all 0.3s ease;
@@ -212,6 +244,7 @@ const removeDp = (index: number) => {
     box-shadow: none;
     padding: 0 4px;
     border-bottom: 1px solid #eee;
+    background: transparent;
     border-radius: 0;
 
     &.is-focus {

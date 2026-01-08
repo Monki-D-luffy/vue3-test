@@ -1,58 +1,67 @@
 <template>
-    <el-dialog v-model="visible" title="添加可定时功能 (Add Capability)" width="480px" append-to-body class="noir-dialog"
-        destroy-on-close>
-        <div class="dp-selector-body">
+    <el-dialog :model-value="modelValue" title="选择功能点 (Select DP)" width="880px" :close-on-click-modal="false"
+        class="dp-select-modal noir-skin" append-to-body @update:model-value="handleClose">
+        <div class="modal-body">
             <div class="search-bar">
-                <el-input v-model="searchQuery" placeholder="搜索功能名称或 DP ID" prefix-icon="Search"
-                    class="noir-input-ghost" clearable />
+                <el-input v-model="searchText" placeholder="搜索功能名称或标识..." prefix-icon="Search" clearable
+                    class="noir-input" />
             </div>
 
-            <div class="dp-grid-list custom-scrollbar">
-                <el-empty v-if="filteredDps.length === 0" description="暂无符合条件的 DP 或已全部添加" :image-size="60" />
+            <div class="cards-container custom-scrollbar">
+                <el-empty v-if="filteredDps.length === 0" :description="getEmptyText" :image-size="120" />
 
-                <div v-for="dp in filteredDps" :key="dp.id" class="dp-card-item"
-                    :class="{ active: selectedDpId === dp.id }" @click="selectedDpId = dp.id">
-                    <div class="card-icon">
-                        <span class="dp-id">DP{{ dp.id }}</span>
-                    </div>
-                    <div class="card-info">
-                        <span class="dp-name">{{ dp.name }}</span>
-                        <span class="dp-code">{{ dp.code }}</span>
-                    </div>
-                    <div class="card-meta">
-                        <el-tag size="small" type="info" effect="light">{{ dp.type }}</el-tag>
-                    </div>
-                    <div class="check-mark" v-if="selectedDpId === dp.id">
-                        <el-icon>
-                            <Check />
-                        </el-icon>
+                <div v-else class="cards-grid">
+                    <div v-for="dp in filteredDps" :key="dp.id" class="dp-card hover-gold" @click="handleSelect(dp)">
+                        <div class="card-header">
+                            <span class="dp-name text-ellipsis" :title="dp.name">{{ dp.name }}</span>
+                            <el-tag type="info" size="small" effect="plain" class="dp-id-tag">
+                                DP {{ dp.id }}
+                            </el-tag>
+                        </div>
+
+                        <div class="card-content">
+                            <div class="info-row">
+                                <el-icon class="icon">
+                                    <Key />
+                                </el-icon>
+                                <span class="label">标识:</span>
+                                <span class="value text-ellipsis" :title="dp.code">{{ dp.code }}</span>
+                            </div>
+                            <div class="info-row">
+                                <el-icon class="icon">
+                                    <Connection />
+                                </el-icon>
+                                <span class="label">类型:</span>
+                                <span class="value">{{ dp.type }}</span>
+                            </div>
+                            <div class="info-row">
+                                <el-icon class="icon">
+                                    <Setting />
+                                </el-icon>
+                                <span class="label">模式:</span>
+                                <span class="value">{{ dp.mode.toUpperCase() }}</span>
+                            </div>
+                        </div>
+
+                        <div class="card-action-area">
+                            <el-icon class="plus-icon">
+                                <Plus />
+                            </el-icon>
+                            <span class="select-text">选择</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <template #footer>
-            <div class="dialog-footer">
-                <span class="footer-tip" v-if="selectedDpId">
-                    已选择: <span class="highlight">{{ getSelectedName }}</span>
-                </span>
-                <div class="footer-btns">
-                    <el-button @click="visible = false">取消</el-button>
-                    <el-button type="primary" class="gold-btn-solid" :disabled="!selectedDpId" @click="handleConfirm">
-                        确认添加
-                    </el-button>
-                </div>
-            </div>
-        </template>
     </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { Search, Check } from '@element-plus/icons-vue';
+import { ref, computed } from 'vue';
+import { Search, Key, Connection, Setting, Plus } from '@element-plus/icons-vue';
 
-// 定义传入的原始 DP 类型
-interface RawDp {
+// 定义 Props, Emits 和 Interfaces
+interface DpDef {
     id: number;
     code: string;
     name: string;
@@ -61,212 +70,216 @@ interface RawDp {
 }
 
 const props = defineProps<{
-    modelValue: boolean;
-    allDps: RawDp[];      // Store 里的所有 DP
-    excludeIds: number[]; // 已经添加过的 DP ID
+    modelValue: boolean,
+    allDps: DpDef[],
+    excludeIds: number[]
 }>();
 
 const emit = defineEmits(['update:modelValue', 'select']);
 
-const visible = computed({
-    get: () => props.modelValue,
-    set: (val) => emit('update:modelValue', val)
-});
+const searchText = ref('');
 
-const searchQuery = ref('');
-const selectedDpId = ref<number | null>(null);
-
-// 过滤逻辑：排除只读(ro)、已添加的、不符合搜索词的
+// 核心逻辑修改：先剔除已选的，再过滤搜索词
 const filteredDps = computed(() => {
-    return props.allDps.filter(dp => {
-        // 1. 必须是可写的 (rw)
-        if (dp.mode === 'ro') return false;
-        // 2. 不能是已添加的
-        if (props.excludeIds.includes(dp.id)) return false;
-        // 3. 搜索匹配
-        if (searchQuery.value) {
-            const q = searchQuery.value.toLowerCase();
-            return (
-                dp.name.toLowerCase().includes(q) ||
-                dp.code.toLowerCase().includes(q) ||
-                String(dp.id).includes(q)
-            );
-        }
-        return true;
-    });
-});
+    // 1. 第一步：物理剔除已存在于 excludeIds 中的功能
+    let candidates = props.allDps.filter(dp => !props.excludeIds.includes(dp.id));
 
-const getSelectedName = computed(() => {
-    const dp = props.allDps.find(d => d.id === selectedDpId.value);
-    return dp ? dp.name : '';
-});
-
-const handleConfirm = () => {
-    if (selectedDpId.value !== null) {
-        const dp = props.allDps.find(d => d.id === selectedDpId.value);
-        if (dp) {
-            emit('select', dp);
-            visible.value = false;
-            selectedDpId.value = null; // 重置
-        }
+    // 2. 第二步：如果有搜索词，进行模糊匹配
+    if (searchText.value) {
+        const text = searchText.value.toLowerCase();
+        candidates = candidates.filter(dp =>
+            dp.name.toLowerCase().includes(text) ||
+            dp.code.toLowerCase().includes(text)
+        );
     }
+    return candidates;
+});
+
+// 动态显示空状态文案
+const getEmptyText = computed(() => {
+    if (searchText.value) return '未找到匹配的功能点';
+    // 如果没有搜索词却为空，说明所有功能都绑定完了
+    return '所有可用功能已全部添加';
+});
+
+const handleClose = (val: boolean) => {
+    emit('update:modelValue', val);
+    // 关闭时清空搜索，体验更好
+    if (!val) searchText.value = '';
 };
 
-// 每次打开重置状态
-watch(() => props.modelValue, (val) => {
-    if (val) {
-        searchQuery.value = '';
-        selectedDpId.value = null;
-    }
-});
+const handleSelect = (dp: DpDef) => {
+    emit('select', dp);
+    handleClose(false);
+};
 </script>
 
+<style lang="scss">
+/* 定义局部 CSS 变量 */
+.dp-select-modal {
+    --card-bg: #ffffff;
+    --card-border: #e4e7ed;
+    --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    --text-primary: #303133;
+    --text-secondary: #909399;
+    --accent-gold: #d4af37;
+    --accent-gold-hover-bg: #fffdf5;
+    --accent-gold-shadow: rgba(212, 175, 55, 0.2);
+    --action-bg: #f5f7fa;
+}
+
+/* 暗黑模式适配 */
+html.dark .dp-select-modal {
+    --card-bg: #252525;
+    --card-border: #363637;
+    --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --accent-gold-hover-bg: #2a2822;
+    --action-bg: #1f1f1f;
+}
+
+.dp-select-modal .el-dialog__body {
+    padding: 20px !important;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+</style>
+
 <style scoped lang="scss">
-.dp-selector-body {
-    padding: 10px 0;
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 .search-bar {
-    margin-bottom: 16px;
-    padding: 0 4px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
-.dp-grid-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
-    max-height: 320px;
+.cards-container {
+    flex: 1;
     overflow-y: auto;
     padding: 4px;
 }
 
-.dp-card-item {
+.cards-grid {
+    display: grid;
+    /* 响应式网格：最小宽度 240px，自动填充 */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    padding-bottom: 16px;
+}
+
+.dp-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 12px;
-    border: 1px solid #e4e7ed;
-    border-radius: 8px;
+    box-shadow: var(--card-shadow);
     cursor: pointer;
-    transition: all 0.2s;
-    background: #fff;
 
-    &:hover {
-        border-color: #c0c4cc;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
+    /* 悬浮金光效果 */
+    &.hover-gold:hover {
+        border-color: var(--accent-gold);
+        background: var(--accent-gold-hover-bg);
+        box-shadow: 0 8px 20px var(--accent-gold-shadow);
+        transform: translateY(-4px);
 
-    &.active {
-        border-color: #d4af37;
-        background: #fffcf5;
-        box-shadow: 0 0 0 1px #d4af37 inset;
-    }
-}
+        .card-action-area {
+            color: var(--accent-gold);
+            background: transparent;
+            border-top-color: rgba(212, 175, 55, 0.1);
 
-.card-icon {
-    margin-bottom: 8px;
-
-    .dp-id {
-        font-size: 12px;
-        font-weight: 700;
-        color: #909399;
-        background: #f4f4f5;
-        padding: 2px 6px;
-        border-radius: 4px;
+            .plus-icon {
+                transform: scale(1.1);
+            }
+        }
     }
 }
 
-.card-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 8px;
-}
-
-.dp-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #303133;
-    line-height: 1.3;
-}
-
-.dp-code {
-    font-size: 12px;
-    color: #909399;
-    font-family: monospace;
-}
-
-.card-meta {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.check-mark {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 20px;
-    height: 20px;
-    background: #d4af37;
-    border-radius: 50%;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    animation: zoomIn 0.2s;
-}
-
-@keyframes zoomIn {
-    from {
-        transform: scale(0);
-    }
-
-    to {
-        transform: scale(1);
-    }
-}
-
-.dialog-footer {
+.card-header {
+    padding: 16px 16px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.footer-tip {
+.dp-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-right: 8px;
+}
+
+.dp-id-tag {
+    font-family: 'Inter', monospace;
+    background: transparent !important;
+    border-color: var(--card-border) !important;
+    color: var(--text-secondary) !important;
+}
+
+.card-content {
+    padding: 0 16px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
     font-size: 13px;
-    color: #606266;
+    color: var(--text-secondary);
+    line-height: 1.4;
 
-    .highlight {
-        color: #d4af37;
-        font-weight: 600;
+    .icon {
+        margin-right: 6px;
+        font-size: 14px;
+        opacity: 0.8;
+    }
+
+    .label {
+        margin-right: 6px;
+    }
+
+    .value {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-family: 'Inter', monospace;
     }
 }
 
-/* 覆盖输入框样式 */
-:deep(.noir-input-ghost .el-input__wrapper) {
-    box-shadow: 0 0 0 1px #dcdfe6 inset;
+/* 卡片底部动作区 */
+.card-action-area {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--action-bg);
+    border-top: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    font-size: 14px;
+    transition: all 0.3s ease;
 
-    &:hover {
-        box-shadow: 0 0 0 1px #c0c4cc inset;
-    }
-
-    &.is-focus {
-        box-shadow: 0 0 0 1px #d4af37 inset !important;
+    .plus-icon {
+        font-size: 16px;
+        transition: transform 0.3s ease;
     }
 }
 
-:deep(.gold-btn-solid) {
-    background: #1a1a1a;
-    border-color: #1a1a1a;
-    color: #d4af37;
-
-    &:disabled {
-        background: #f4f4f5;
-        border-color: #e4e7ed;
-        color: #c0c4cc;
-    }
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>

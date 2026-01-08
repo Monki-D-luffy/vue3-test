@@ -36,6 +36,7 @@ export interface MockTimerTask {
     isExpanded: boolean;
     target: TimeTarget;
     actions: MockAction[]; // 一个定时器可以触发多个动作
+    isNew?: boolean;
 }
 
 // --- 最终存入 Store 的配置结构 ---
