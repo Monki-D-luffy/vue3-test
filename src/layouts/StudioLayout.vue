@@ -100,18 +100,29 @@ const steps = [
   { key: 'panel', label: '面板设计', route: 'ProductPanel' },
   { key: 'hardware', label: '硬件开发', route: 'ProductHardware' },
   { key: 'config', label: '产品配置', route: 'ProductConfig' },
-  { key: 'test', label: '测试发布', route: 'ProductTest' }
+  { key: 'release', label: '产品发布', route: 'ProductRelease' },
 ];
 
 const activeIndex = computed(() => (route.meta.step as number) || 0);
 
 const goBack = () => router.push('/products');
 const handlePrev = () => {
-  if (activeIndex.value > 0) router.push({ name: steps[activeIndex.value - 1].route });
+  if (activeIndex.value > 0) {
+    const prev = steps[activeIndex.value - 1];
+    if (prev && prev.route) {
+      router.push({ name: prev.route as string });
+    }
+  }
 };
 const handleNext = () => {
-  if (activeIndex.value < steps.length - 1) router.push({ name: steps[activeIndex.value + 1].route });
-  else ElMessage.success('发布成功');
+  if (activeIndex.value < steps.length - 1) {
+    const next = steps[activeIndex.value + 1];
+    if (next && next.route) {
+      router.push({ name: next.route as string });
+    }
+  } else {
+    ElMessage.success('发布成功');
+  }
 };
 </script>
 

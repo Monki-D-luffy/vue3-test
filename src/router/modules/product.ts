@@ -55,11 +55,17 @@ const productRoutes: RouteRecordRaw = {
                     meta: { title: '4. 产品配置', step: 3 }
                 },
                 {
+                    path: 'release',
+                    name: 'ProductRelease',
+                    component: () => import('@/views/studio/ProductRelease.vue'),
+                    meta: { title: '5. 产品发布', step: 4 }
+                },
+                {
                     path: 'test',
                     name: 'ProductTest',
                     component: () => import('@/views/studio/ProductTest.vue'),
-                    meta: { title: '5. 测试发布', step: 4 }
-                }
+                    meta: { title: '6. 测试发布', step: 5 }
+                },
             ]
         },
         // 4. 产品详情工作台 (原有架构，保持兼容)

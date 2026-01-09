@@ -6,7 +6,9 @@
         <div class="sidebar-header">
           <div class="header-content">
             <div class="header-icon">
-              <el-icon size="24"><DocumentChecked /></el-icon>
+              <el-icon size="24">
+                <DocumentChecked />
+              </el-icon>
             </div>
             <div class="header-text">
               <h3>测试管理</h3>
@@ -16,15 +18,12 @@
         </div>
 
         <div class="test-categories">
-          <div
-            v-for="category in testCategories"
-            :key="category.id"
-            class="category-item"
-            :class="{ active: activeTestCategory === category.id }"
-            @click="activeTestCategory = category.id"
-          >
+          <div v-for="category in testCategories" :key="category.id" class="category-item"
+            :class="{ active: activeTestCategory === category.id }" @click="activeTestCategory = category.id">
             <div class="category-icon">
-              <el-icon :size="20"><component :is="category.icon" /></el-icon>
+              <el-icon :size="20">
+                <component :is="category.icon" />
+              </el-icon>
             </div>
             <div class="category-info">
               <div class="category-name">{{ category.name }}</div>
@@ -43,11 +42,8 @@
             <span class="progress-title">测试进度</span>
             <span class="progress-value">{{ overallProgress }}%</span>
           </div>
-          <el-progress
-            :percentage="overallProgress"
-            :status="overallProgress === 100 ? 'success' : 'warning'"
-            :stroke-width="8"
-          />
+          <el-progress :percentage="overallProgress" :status="overallProgress === 100 ? 'success' : 'warning'"
+            :stroke-width="8" />
         </div>
       </div>
 
@@ -56,7 +52,9 @@
         <div class="content-header">
           <div class="header-content">
             <div class="header-icon">
-              <el-icon :size="24"><component :is="activeTestCategoryData?.icon || DocumentChecked" /></el-icon>
+              <el-icon :size="24">
+                <component :is="activeTestCategoryData?.icon || DocumentChecked" />
+              </el-icon>
             </div>
             <div class="header-text">
               <h3>{{ activeTestCategoryData?.name || '测试内容' }}</h3>
@@ -64,23 +62,17 @@
             </div>
           </div>
           <div class="header-actions">
-            <el-button
-              v-if="activeTestCategory !== 'publish'"
-              type="primary"
-              @click="runTests"
-              :loading="runningTests"
-            >
-              <el-icon><VideoPlay /></el-icon>
+            <el-button v-if="activeTestCategory !== 'publish'" type="primary" @click="runTests" :loading="runningTests">
+              <el-icon>
+                <VideoPlay />
+              </el-icon>
               {{ runningTests ? '测试中...' : '运行测试' }}
             </el-button>
-            <el-button
-              v-if="activeTestCategory === 'publish'"
-              type="success"
-              @click="publishProduct"
-              :loading="publishing"
-              :disabled="!canPublish"
-            >
-              <el-icon><Upload /></el-icon>
+            <el-button v-if="activeTestCategory === 'publish'" type="success" @click="publishProduct"
+              :loading="publishing" :disabled="!canPublish">
+              <el-icon>
+                <Upload />
+              </el-icon>
               发布产品
             </el-button>
           </div>
@@ -92,11 +84,7 @@
             <div class="test-section">
               <h4>功能点测试</h4>
               <div class="function-tests">
-                <div
-                  v-for="test in functionTests"
-                  :key="test.id"
-                  class="test-item"
-                >
+                <div v-for="test in functionTests" :key="test.id" class="test-item">
                   <div class="test-header">
                     <div class="test-info">
                       <div class="test-name">{{ test.name }}</div>
@@ -106,12 +94,7 @@
                       <el-tag :type="getResultType(test.result)" size="small">
                         {{ getResultText(test.result) }}
                       </el-tag>
-                      <el-button
-                        v-if="test.result === 'failed'"
-                        type="primary"
-                        size="small"
-                        @click="retryTest(test)"
-                      >
+                      <el-button v-if="test.result === 'failed'" type="primary" size="small" @click="retryTest(test)">
                         重试
                       </el-button>
                     </div>
@@ -132,7 +115,9 @@
                 <div class="test-grid">
                   <div class="test-card">
                     <div class="card-icon">
-                      <el-icon size="32"><Cpu /></el-icon>
+                      <el-icon size="32">
+                        <Cpu />
+                      </el-icon>
                     </div>
                     <div class="card-info">
                       <div class="card-title">模组连接测试</div>
@@ -143,7 +128,9 @@
 
                   <div class="test-card">
                     <div class="card-icon">
-                      <el-icon size="32"><Lightning /></el-icon>
+                      <el-icon size="32">
+                        <Lightning />
+                      </el-icon>
                     </div>
                     <div class="card-info">
                       <div class="card-title">电源稳定性测试</div>
@@ -154,7 +141,9 @@
 
                   <div class="test-card">
                     <div class="card-icon">
-                      <el-icon size="32"><WindPower /></el-icon>
+                      <el-icon size="32">
+                        <WindPower />
+                      </el-icon>
                     </div>
                     <div class="card-info">
                       <div class="card-title">引脚功能测试</div>
@@ -165,7 +154,9 @@
 
                   <div class="test-card">
                     <div class="card-icon">
-                      <el-icon size="32"><Monitor /></el-icon>
+                      <el-icon size="32">
+                        <Monitor />
+                      </el-icon>
                     </div>
                     <div class="card-info">
                       <div class="card-title">固件烧录测试</div>
@@ -187,13 +178,15 @@
                   <div class="metric-card">
                     <div class="metric-value">{{ performanceData.cpuUsage }}%</div>
                     <div class="metric-label">CPU使用率</div>
-                    <el-progress :percentage="performanceData.cpuUsage" :status="performanceData.cpuUsage > 80 ? 'warning' : 'success'" />
+                    <el-progress :percentage="performanceData.cpuUsage"
+                      :status="performanceData.cpuUsage > 80 ? 'warning' : 'success'" />
                   </div>
 
                   <div class="metric-card">
                     <div class="metric-value">{{ performanceData.memoryUsage }}%</div>
                     <div class="metric-label">内存使用率</div>
-                    <el-progress :percentage="performanceData.memoryUsage" :status="performanceData.memoryUsage > 80 ? 'warning' : 'success'" />
+                    <el-progress :percentage="performanceData.memoryUsage"
+                      :status="performanceData.memoryUsage > 80 ? 'warning' : 'success'" />
                   </div>
 
                   <div class="metric-card">
@@ -201,8 +194,7 @@
                     <div class="metric-label">功耗 (mA)</div>
                     <div class="metric-status">
                       <el-tag :type="performanceData.powerConsumption < 100 ? 'success' : 'warning'" size="small">
-                        {{ performanceData.powerConsumption < 100 ? '优秀' : '一般' }}
-                      </el-tag>
+                        {{ performanceData.powerConsumption < 100 ? '优秀' : '一般' }} </el-tag>
                     </div>
                   </div>
 
@@ -211,8 +203,7 @@
                     <div class="metric-label">响应时间 (ms)</div>
                     <div class="metric-status">
                       <el-tag :type="performanceData.responseTime < 200 ? 'success' : 'warning'" size="small">
-                        {{ performanceData.responseTime < 200 ? '良好' : '需优化' }}
-                      </el-tag>
+                        {{ performanceData.responseTime < 200 ? '良好' : '需优化' }} </el-tag>
                     </div>
                   </div>
                 </div>
@@ -225,11 +216,7 @@
             <div class="test-section">
               <h4>安全测试检查</h4>
               <div class="security-checks">
-                <div
-                  v-for="check in securityChecks"
-                  :key="check.id"
-                  class="check-item"
-                >
+                <div v-for="check in securityChecks" :key="check.id" class="check-item">
                   <div class="check-header">
                     <div class="check-icon">
                       <el-icon :size="20" :class="check.passed ? 'success' : 'warning'">
@@ -264,17 +251,10 @@
               </div>
 
               <div class="checklist-items">
-                <div
-                  v-for="item in publishChecklist"
-                  :key="item.id"
-                  class="checklist-item"
-                  :class="{ completed: item.completed }"
-                >
+                <div v-for="item in publishChecklist" :key="item.id" class="checklist-item"
+                  :class="{ completed: item.completed }">
                   <div class="item-header">
-                    <el-checkbox
-                      v-model="item.completed"
-                      @change="updateChecklistStatus"
-                    />
+                    <el-checkbox v-model="item.completed" @change="updateChecklistStatus" />
                     <div class="item-info">
                       <div class="item-title">{{ item.title }}</div>
                       <div class="item-desc">{{ item.description }}</div>
