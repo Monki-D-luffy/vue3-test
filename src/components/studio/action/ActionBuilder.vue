@@ -4,7 +4,7 @@
             <div v-for="(action, index) in modelValue" :key="action.id" class="action-wrapper">
                 <div class="step-connector" v-if="index > 0"></div>
 
-                <SmartActionItem v-model="modelValue[index]" :index="index" @remove="handleRemove(index)" />
+                <SmartActionItem v-model="modelValue[index]!" :index="index" @remove="handleRemove(index)" />
             </div>
 
             <div v-if="modelValue.length === 0" class="empty-state">

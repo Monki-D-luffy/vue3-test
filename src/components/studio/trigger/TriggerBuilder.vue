@@ -21,7 +21,7 @@
         </div>
 
         <div class="item-list">
-            <SmartTriggerItem v-for="(trigger, index) in modelValue" :key="trigger.id" v-model="modelValue[index]"
+            <SmartTriggerItem v-for="(trigger, index) in modelValue" :key="trigger.id" v-model="modelValue[index]!"
                 :index="index" @remove="handleRemove(index)" />
         </div>
 

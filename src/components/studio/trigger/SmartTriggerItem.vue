@@ -10,12 +10,12 @@
         </div>
 
         <div class="card-main">
-            <div class="row-top">
+            <div class="logic-group">
                 <span class="label">设备</span>
                 <el-input v-model="modelValue.params.deviceId" placeholder="选择设备..." class="inline-input bold-input" />
             </div>
 
-            <div class="row-bottom">
+            <div class="logic-group">
                 <div class="condition-chip">
                     <span class="chip-label">属性</span>
                     <el-input v-model="modelValue.params.dpId" placeholder="如: Switch" class="chip-input" />
@@ -101,14 +101,22 @@ const emit = defineEmits(['remove']);
     }
 }
 
+/* 核心修改区域：改为横向布局 */
 .card-main {
     flex: 1;
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row;
+    /* 改为 Row */
+    align-items: center;
+    /* 垂直居中 */
+    flex-wrap: wrap;
+    /* 允许换行，防止窄屏溢出 */
+    gap: 16px;
+    /* 增加组间距 */
 }
 
-.row-top {
+/* 原 row-top 和 row-bottom 统一样式 */
+.logic-group {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -117,13 +125,9 @@ const emit = defineEmits(['remove']);
 
     .label {
         font-weight: 500;
+        white-space: nowrap;
+        /* 防止“设备”二字竖排 */
     }
-}
-
-.row-bottom {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 /* 胶囊式输入框 */
@@ -138,21 +142,22 @@ const emit = defineEmits(['remove']);
     height: 28px;
     transition: border 0.2s;
 
-    &:focus-within {
-        border-color: #3b82f6;
-        background: #eff6ff;
-    }
-
     .chip-label {
         font-size: 11px;
         color: #9ca3af;
         font-weight: 600;
+        white-space: nowrap;
+        /* 防止“属性”二字竖排 */
+    }
+
+    &:focus-within {
+        border-color: #3b82f6;
+        background: #eff6ff;
     }
 }
 
 .value-chip {
     background: #ecfdf5;
-    /* 绿色背景暗示 Value */
     border-color: #d1fae5;
 
     &:focus-within {
@@ -186,6 +191,12 @@ const emit = defineEmits(['remove']);
     background: transparent;
 }
 
+/* 给设备输入框一个最大宽度，避免撑满一行导致属性掉下去 */
+:deep(.inline-input) {
+    width: 120px;
+    max-width: 150px;
+}
+
 :deep(.bold-input input) {
     font-weight: 600;
     color: #1f2937;
@@ -196,7 +207,6 @@ const emit = defineEmits(['remove']);
     padding: 0;
     background: transparent;
     width: 80px;
-    /* 紧凑宽度 */
 }
 
 :deep(.chip-input input) {
