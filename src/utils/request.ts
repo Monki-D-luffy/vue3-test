@@ -3,33 +3,45 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types'
 
-// 扩展 AxiosRequestConfig 以支持自定义属性
-declare module 'axios' {
-    export interface AxiosRequestConfig {
-        _silent?: boolean; // 如果为 true，请求出错时不弹出全局 ElMessage
-    }
-}
+// 1. 动态决定 Base URL
+// 读取 DebugMockSwitch 组件设置的开关状态
+const STORAGE_KEY = 'USE_MOCK_DATA'
+const isMockMode = localStorage.getItem(STORAGE_KEY) === 'true'
 
-// 1. 创建 axios 实例
+const baseURL = isMockMode
+    ? (import.meta.env.VITE_API_URL_MOCK || 'http://localhost:3000')
+    : (import.meta.env.VITE_API_URL_REAL || '/api')
+
+// 打印当前模式，方便调试
+console.log(`%c[Network] Current Mode: ${isMockMode ? 'MOCK 🚧' : 'REAL 🌍'}`, 'color: #fff; background: #409EFF; padding: 4px 8px; border-radius: 4px;', baseURL)
+
+// 2. 创建 axios 实例
 const service: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+    baseURL,
     timeout: 10000,
     headers: { 'Content-Type': 'application/json;charset=utf-8' }
 })
 
-// 2. 请求拦截器
+// 扩展 AxiosRequestConfig
+declare module 'axios' {
+    export interface AxiosRequestConfig {
+        _silent?: boolean;
+    }
+}
+
+// 3. 请求拦截器
 service.interceptors.request.use(
     (config) => {
-        // 登录和注册接口不需要 Token
         const url = config.url || '';
+        // 适配多种后端认证路径风格
         const isAuthRequest =
             url.includes('/auth/login') ||
-            url.includes('/api/Login/') ||  // 匹配 C# 后端路径
-            url.includes('/api/Register/');
+            url.includes('/api/Login/') ||
+            url.includes('/identity/api/Login');
 
-        // 如果不是认证接口，则尝试注入 Token
         if (!isAuthRequest) {
-            const token = localStorage.getItem('authToken') // 统一使用 'authToken' 这个 key
+            // 统一使用 'authToken'，与 authStore 保持一致
+            const token = localStorage.getItem('authToken')
             if (token && config.headers) {
                 config.headers.Authorization = `Bearer ${token}`
             }
@@ -42,15 +54,12 @@ service.interceptors.request.use(
     }
 )
 
-// 响应拦截器
+// 4. 响应拦截器
 service.interceptors.response.use(
     (response: AxiosResponse) => {
         const { data, headers } = response
 
-        // ============================================================
-        // 适配场景 A: JSON Server (Mock) 列表响应
-        // 特征: data 是数组，total 在 x-total-count header 中
-        // ============================================================
+        // 场景 A: Json-server 分页列表 (Array + x-total-count)
         if (Array.isArray(data) && headers['x-total-count']) {
             return {
                 items: data,
@@ -58,46 +67,32 @@ service.interceptors.response.use(
             } as any
         }
 
-        // ============================================================
-        // 适配场景 B: JSON Server (Mock) 单个对象响应 (无 code 包装)
-        // 特征: data 是对象但没有 code 字段 (通常是直接返回资源)
-        // ============================================================
-        if (data && typeof data === 'object' && !('code' in data) && !Array.isArray(data)) {
-            // 假设这是直接返回的数据实体
-            return data
-        }
-
-        // ============================================================
-        // 适配场景 C: 标准后端响应 (Standard API)
-        // 结构: { code: 200, data: ..., message: ... }
-        // ============================================================
-        // 某些接口可能直接返回 ApiResponse 结构，我们需要解包
+        // 场景 B: 标准后端/Mock 包装响应 { code: 200, data: ... }
         if (data && typeof data === 'object' && 'code' in data) {
             const apiRes = data as ApiResponse<any>
+            // 兼容 code === 200 或 success === true
             if (apiRes.code === 200 || apiRes.success) {
-                // 如果 data 字段里已经是分页结构 { items, total }，直接返回
-                // 否则返回 data 本身
                 return apiRes.data
             } else {
-                ElMessage.error(apiRes.message || '请求失败')
+                if (!response.config._silent) {
+                    ElMessage.error(apiRes.message || '请求失败')
+                }
                 return Promise.reject(new Error(apiRes.message || 'Error'))
             }
         }
 
-        // 其他情况，直接返回 data (兜底)
+        // 场景 C: 直接返回数据实体 (无 code 包装)
         return data
     },
     (error) => {
         const msg = error.response?.data?.message || error.message || '网络请求错误'
-        ElMessage.error(msg)
+        if (!error.config?._silent) {
+            ElMessage.error(msg)
+        }
         return Promise.reject(error)
     }
 )
 
-/**
- * 封装后的请求方法，自动推断返回类型
- * 这里的 T 通常是 data 的类型 (如 User, Device[], PaginatedResponse<Device>)
- */
 const request = {
     get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
         return service.get(url, config) as Promise<T>

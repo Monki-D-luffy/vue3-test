@@ -66,24 +66,32 @@ const router = createRouter({
         },
       ]
     },
+    // 404 页面
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/'
+    },
   ],
 })
 
 // --- 导航守卫 ---
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token');
-  const isAuthRoute = to.matched.some(record => record.meta.requiresAuth)
+  // 关键点：Key 必须与 authStore/request.ts 中的保持一致！
+  const token = localStorage.getItem('authToken')
 
-  if (isAuthRoute && !token) {
-    console.log('导航守卫：未登录，跳转到 /login');
-    // 最佳实践：使用 name 跳转，比硬编码 path 更稳健
-    next({ name: 'Login' });
-  } else if (token && to.name === 'Login') {
-    console.log('导航守卫：已登录，跳转到 /overview');
-    next({ name: 'Overview' });
-  } else {
-    next();
+  // 如果去往 "非登录页" 且 "没有 Token"
+  if (to.path !== '/login' && !token) {
+    console.warn(`[Router] 🛑 拦截跳转: ${to.path} (未检测到 authToken)`)
+    next('/login')
   }
-});
+  // 如果去往 "登录页" 且 "已有 Token" -> 自动跳回首页
+  else if (to.path === '/login' && token) {
+    console.log(`[Router] 🔄 已登录，重定向到首页`)
+    next('/')
+  }
+  else {
+    next()
+  }
+})
 
 export default router

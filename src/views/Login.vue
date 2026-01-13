@@ -104,8 +104,8 @@ const registerFormRef = ref<FormInstance>()
 
 // ✨ 已添加默认值，方便开发
 const loginForm = reactive({
-    account: '2891608692@qq.com',
-    password: '123456789'
+    account: 'admin',
+    password: '123456'
 })
 
 const registerForm = reactive({

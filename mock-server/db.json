@@ -27094,6 +27094,18 @@
         "status": ""
       },
       "startedAt": "2025-12-18 07:03:30"
+    },
+    {
+      "name": "升级 v3",
+      "productId": "prod_light_01",
+      "firmwareId": "fw_2bF4Eb12-49dc-8b29-5Bc6-F161CA4c8b7A",
+      "firmwareVersion": "v3",
+      "targetScope": "all",
+      "filters": {
+        "dataCenter": "",
+        "status": ""
+      },
+      "id": "1PmSAGZ"
     }
   ]
 }

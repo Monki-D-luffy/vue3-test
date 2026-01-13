@@ -6,7 +6,7 @@ import { login as apiLogin, register as apiRegister } from '@/api/modules/auth' 
 import type { UserInfo } from '@/types' // 假设你有这个类型定义，如果没有可暂时用 any
 
 const STORAGE_KEYS = {
-  TOKEN: 'token' // 对应你在 request.ts 里用的 key，如果那里用 authToken，这里也要改
+  TOKEN: 'authToken' // 对应你在 request.ts 里用的 key，如果那里用 authToken，这里也要改
 }
 
 export const useAuthStore = defineStore('auth', () => {
