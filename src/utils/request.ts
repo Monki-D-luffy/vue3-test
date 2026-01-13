@@ -21,7 +21,11 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
     (config) => {
         // 登录和注册接口不需要 Token
-        const isAuthRequest = config.url && (config.url.endsWith('/auth/login') || config.url.endsWith('/auth/register'));
+        const url = config.url || '';
+        const isAuthRequest =
+            url.includes('/auth/login') ||
+            url.includes('/api/Login/') ||  // 匹配 C# 后端路径
+            url.includes('/api/Register/');
 
         // 如果不是认证接口，则尝试注入 Token
         if (!isAuthRequest) {

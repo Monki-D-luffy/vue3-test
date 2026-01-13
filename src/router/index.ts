@@ -71,7 +71,7 @@ const router = createRouter({
 
 // --- 导航守卫 ---
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem('token');
   const isAuthRoute = to.matched.some(record => record.meta.requiresAuth)
 
   if (isAuthRoute && !token) {

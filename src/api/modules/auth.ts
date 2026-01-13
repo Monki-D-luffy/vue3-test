@@ -1,11 +1,40 @@
 import request from '@/utils/request'
-import type { UserRegisterData, UserInfo, ApiResponse } from '@/types'
 
-export const login = (data: any) => {
-    return request.post('/auth/login', data)
+// --- 类型定义 ---
+export interface LoginRequest {
+    userName: string;
+    password: string;
+    productName?: string;
 }
 
-export const register = async (data: UserRegisterData): Promise<UserInfo> => {
-    const res = await request.post<any>('/auth/register', data)
-    return res.data // 根据 request.ts 的拦截器，这里其实返回的就是 response.data
+export interface LoginResponseData {
+    accessToken: string;
+    refreshToken: string;
+    accessExpired: number;
+    userId: string;
+    email: string;
+    role?: string;
+    nickname?: string;
+    iconUrl?: string;
+    isEnabled: boolean;
+}
+
+// --- 接口方法 ---
+export const login = (data: LoginRequest) => {
+    // 🔍【排错日志 API】确认 API 层收到的数据是否正确
+    console.log('📡 [API Layer] 发起请求, 数据:', data);
+
+    // 注意：这里不需要再加 /api 前缀，因为 request.ts 或 vite 代理会处理
+    // 最终路径由 vite 代理 /api/identity -> https://iotserver.../manager-identity/
+    return request.post('/identity/api/Login/LoginByPwd', data)
+}
+
+export const refreshToken = (token: string) => {
+    return request.post<any>('/identity/api/Login/Refresh', {
+        refreshToken: token // 修正: RefreshToken -> refreshToken
+    })
+}
+
+export const register = async (data: any) => {
+    return Promise.resolve({})
 }
