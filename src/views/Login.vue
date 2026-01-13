@@ -77,7 +77,7 @@
 
             </Transition>
         </div>
-
+        <DebugMockSwitch />
         <div class="footer-copyright">
             © 2025 IoT Manager. All Rights Reserved.
         </div>
@@ -90,6 +90,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { User, Lock, Message, Check } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
+import DebugMockSwitch from '@/components/DebugMockSwitch.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
