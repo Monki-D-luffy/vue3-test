@@ -1,15 +1,11 @@
 // mock-server/routes/product.js
 import Mock from 'mockjs';
-import { getNowString } from '../utils.js';
 
 export default function (server, db) {
     // --- 0. 自动播种 (Auto Seeding) ---
-    // 如果 db.json 中没有 products 数据，自动生成一批
     const existingProducts = db.get('products').value();
-
     if (!existingProducts || existingProducts.length === 0) {
         console.log('🌱 Seeding Mock Products...');
-
         const randomProducts = Mock.mock({
             'items|16-24': [{
                 'id|+1': 1001,
@@ -25,36 +21,56 @@ export default function (server, db) {
                 'latestFirmware': /v[1-3]\.[0-9]\.[0-9]/
             }]
         });
-
-        // 修正 ID 格式并写入 DB
-        const finalProducts = randomProducts.items.map(p => ({
-            ...p,
-            id: `PID-${p.id}`
-        }));
-
+        const finalProducts = randomProducts.items.map(p => ({ ...p, id: `PID-${p.id}` }));
         db.set('products', finalProducts).write();
     }
 
     // --- 1. 自定义路由 (Custom Routes) ---
 
-    // 获取产品详情（支持通过 PID 查找）
+    // GET: 获取产品详情
     server.get('/api/products/:id', (req, res, next) => {
         const { id } = req.params;
         const product = db.get('products').find({ id }).value();
-
         if (product) {
-            res.json({
-                code: 200,
-                message: 'Success',
-                success: true,
-                data: product
-            });
+            res.json({ code: 200, message: 'Success', success: true, data: product });
         } else {
-            next(); // 交给 json-server 默认处理
+            next();
         }
     });
 
-    // 高级统计接口 (Dashboard Metrics)
+    // ✅ 新增 PATCH: 更新产品详情 (解决 404 问题)
+    server.patch('/api/products/:id', (req, res) => {
+        const { id } = req.params;
+        const updates = req.body; // 获取前端传来的部分数据
+
+        // 1. 查找是否存在
+        const product = db.get('products').find({ id }).value();
+
+        if (product) {
+            // 2. 合并数据
+            const updatedProduct = { ...product, ...updates, updateTime: Date.now() };
+
+            // 3. 写入数据库
+            db.get('products').find({ id }).assign(updatedProduct).write();
+
+            console.log(`[Mock] Product ${id} updated.`);
+
+            res.json({
+                code: 200,
+                message: 'Update Success',
+                success: true,
+                data: updatedProduct
+            });
+        } else {
+            res.status(404).json({
+                code: 404,
+                message: 'Product Not Found',
+                success: false
+            });
+        }
+    });
+
+    // 高级统计接口
     server.get('/api/products/stats/summary', (req, res) => {
         const products = db.get('products').value();
         const summary = {
@@ -64,11 +80,6 @@ export default function (server, db) {
             alert: products.filter(p => p.alertCount > 0 || p.status === 'ALERT').length,
             totalActiveDevices: products.reduce((acc, p) => acc + (p.activeDeviceCount || 0), 0)
         };
-
-        res.json({
-            code: 200,
-            success: true,
-            data: summary
-        });
+        res.json({ code: 200, success: true, data: summary });
     });
 }

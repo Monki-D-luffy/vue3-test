@@ -10,7 +10,11 @@ import type {
 } from '@/types/studio';
 import { type ProductMetadata, DEFAULT_METADATA } from '@/types/product-config';
 import api from '@/api';
+import { updateProduct } from '@/api/modules/product';
 import type { SceneRule } from '@/types/automation';
+import { ElMessage } from 'element-plus';
+import dayjs from 'dayjs';
+
 // =============================================================================
 // MOCK DATA (保持不变)
 // =============================================================================
@@ -69,7 +73,8 @@ export const useStudioStore = defineStore('studio', () => {
     const isLoading = ref(false);
     const isDirty = ref(false);
     const dps = ref<DataPoint[]>([]);
-
+    const currentProductId = ref<string>('');
+    const lastSavedTime = ref<string>('');
     // Hardware State
     const availableModules = ref<IModule[]>(MOCK_MODULES);
     const selectedModuleId = ref<string | null>('mod_c3_mini');
@@ -115,8 +120,11 @@ export const useStudioStore = defineStore('studio', () => {
     // Actions
     // ============================
     const initStudio = async (productId: string) => {
-        console.log('Init:', productId);
+        console.log('Init Studio for:', productId);
+        currentProductId.value = productId; // ✅ 保存 ID
         await fetchDataPoints(productId);
+        // 初始化上次保存时间
+        lastSavedTime.value = dayjs().format('HH:mm');
     };
 
     const fetchDataPoints = async (productId: string) => {
@@ -367,7 +375,70 @@ export const useStudioStore = defineStore('studio', () => {
 
         isLoading.value = false;
     };
+    // ✅ 修复：保存草稿
+    const saveDraft = async () => {
+        if (!currentProductId.value) {
+            ElMessage.error('无法保存：未找到产品 ID');
+            return;
+        }
 
+        isLoading.value = true;
+        try {
+            // 构造符合 ProductDetail 接口的 Payload
+            // 此时 dps, hardware, metadata 已经是 ProductDetail 的一部分了（见 types/product.ts）
+            const payload = {
+                dps: dps.value,
+                metadata: productMetadata.value,
+                hardware: {
+                    module: selectedModuleId.value,
+                    pins: pinConfiguration.value,
+                    resourceAnalysis: resourceAnalysis.value
+                },
+                // status: 'DEVELOPMENT' // 保持状态不变
+            };
+
+            console.log('正在保存草稿...', payload);
+
+            // 调用 API
+            // 注意：TS 可能会提示 updateProduct 的第二个参数类型不匹配，
+            // 只要 api/modules/product.ts 定义的是 (id, data: Partial<ProductDetail> & Record<string, any>) 即可兼容
+            await updateProduct(currentProductId.value, payload);
+
+            lastSavedTime.value = dayjs().format('HH:mm');
+            isDirty.value = false;
+            ElMessage.success('草稿保存成功');
+        } catch (error) {
+            console.error('Save Draft Error:', error);
+            ElMessage.error('保存失败，请检查网络或后端服务');
+        } finally {
+            isLoading.value = false;
+        }
+    };
+
+    // ✅ 修复：发布产品
+    const publishProduct = async (version: string, note: string) => {
+        if (!currentProductId.value) return false;
+
+        isLoading.value = true;
+        try {
+            const payload = {
+                status: 'RELEASED' as const,
+                releaseVersion: version,
+                releaseNote: note,
+                releaseTime: Date.now()
+            };
+
+            await updateProduct(currentProductId.value, payload);
+            ElMessage.success(`产品 V${version} 发布成功！`);
+            return true;
+        } catch (error) {
+            console.error(error);
+            ElMessage.error('发布失败');
+            return false;
+        } finally {
+            isLoading.value = false;
+        }
+    };
     // ============================
     // Return (Exports)
     // ============================
@@ -386,6 +457,6 @@ export const useStudioStore = defineStore('studio', () => {
         fetchScenes, saveScene, deleteScene, runScene, // Actions
         productMetadata,
         saveMetadata,
-        fetchMetadata // ✅ 必须导出
+        fetchMetadata, saveDraft, publishProduct
     };
 });

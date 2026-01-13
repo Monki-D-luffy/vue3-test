@@ -2,7 +2,6 @@
   <div class="studio-layout">
 
     <div class="studio-scroll-area">
-
       <div class="studio-header-group">
         <div class="header-level-1">
           <div class="left-anchor">
@@ -13,13 +12,13 @@
             </el-button>
             <div class="divider-vertical"></div>
             <div class="product-meta">
-
               <div class="meta-text">
                 <span class="product-name" title="智能空气净化器 Pro Max">
                   智能空气净化器 Pro Max
                 </span>
                 <div class="meta-sub">
-                  <el-tag size="small" type="info" effect="plain" class="pid-tag">PID: 8f92k0</el-tag>
+                  <el-tag size="small" type="info" effect="plain" class="pid-tag">PID: {{ route.params.id || 'Unknown'
+                    }}</el-tag>
                   <span class="protocol-badge">Wi-Fi + BLE</span>
                 </div>
               </div>
@@ -62,12 +61,12 @@
 
     <footer class="studio-footer">
       <div class="footer-left">
-        <el-button link>
+        <el-button link @click="handleSaveDraft" :loading="store.isLoading">
           <el-icon class="mr-1">
             <Document />
           </el-icon>
-          保存草稿
-          <span class="save-time">上次保存 10:23</span>
+          {{ store.isDirty ? '保存草稿 *' : '保存草稿' }}
+          <span class="save-time" v-if="store.lastSavedTime">上次保存 {{ store.lastSavedTime }}</span>
         </el-button>
       </div>
 
@@ -83,17 +82,43 @@
       <div class="footer-right"></div>
     </footer>
 
+    <el-dialog v-model="releaseDialogVisible" title="确认发布产品" width="500px" align-center destroy-on-close
+      class="release-dialog">
+      <div class="release-form">
+        <el-alert title="发布后，产品将进入正式环境，配置不可随意回滚。" type="warning" show-icon :closable="false" class="mb-4" />
+
+        <el-form :model="releaseForm" label-position="top">
+          <el-form-item label="发布版本号 (Version)">
+            <el-input v-model="releaseForm.version" placeholder="例如: v1.0.0" />
+          </el-form-item>
+          <el-form-item label="版本说明 (Release Notes)">
+            <el-input v-model="releaseForm.note" type="textarea" :rows="3" placeholder="简要描述本次发布的特性..." />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="releaseDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="store.isLoading" @click="confirmRelease">
+            确认发布
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { ArrowLeft, Monitor, Select, Document } from '@element-plus/icons-vue';
+import { useStudioStore } from '@/stores/studioStore'; // ✅ 引入 Store
+import { ArrowLeft, Select, Document } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 
 const router = useRouter();
 const route = useRoute();
+const store = useStudioStore(); // ✅ 初始化 Store
 
 const steps = [
   { key: 'define', label: '功能定义', route: 'ProductFunction' },
@@ -105,7 +130,17 @@ const steps = [
 
 const activeIndex = computed(() => (route.meta.step as number) || 0);
 
+// --- 初始化逻辑 ---
+onMounted(() => {
+  // 确保 Store 知道当前的产品 ID
+  if (route.params.id) {
+    store.initStudio(route.params.id as string);
+  }
+});
+
+// --- 导航逻辑 ---
 const goBack = () => router.push('/products');
+
 const handlePrev = () => {
   if (activeIndex.value > 0) {
     const prev = steps[activeIndex.value - 1];
@@ -114,39 +149,64 @@ const handlePrev = () => {
     }
   }
 };
+
+// --- ✅ 修复：保存草稿 ---
+const handleSaveDraft = async () => {
+  await store.saveDraft();
+};
+
+// --- ✅ 修复：发布逻辑 ---
+const releaseDialogVisible = ref(false);
+const releaseForm = reactive({
+  version: 'v1.0.0',
+  note: ''
+});
+
 const handleNext = () => {
   if (activeIndex.value < steps.length - 1) {
+    // 正常下一步
     const next = steps[activeIndex.value + 1];
     if (next && next.route) {
       router.push({ name: next.route as string });
     }
   } else {
-    ElMessage.success('发布成功');
+    // 到了最后一步：弹出发布确认框
+    releaseDialogVisible.value = true;
+  }
+};
+
+const confirmRelease = async () => {
+  if (!releaseForm.version) {
+    ElMessage.warning('请输入版本号');
+    return;
+  }
+
+  const success = await store.publishProduct(releaseForm.version, releaseForm.note);
+  if (success) {
+    releaseDialogVisible.value = false;
+    // 发布成功后，跳转回列表页或详情页
+    setTimeout(() => {
+      router.push('/products');
+    }, 1000);
   }
 };
 </script>
 
 <style scoped>
 /* 核心布局逻辑：视口固定操作栏 */
-
 .studio-layout {
   display: flex;
   flex-direction: column;
-  /* 填满 AppMain 的高度 */
   height: 100%;
   width: 100%;
   background-color: #f5f7fa;
   overflow: hidden;
-  /* 严禁外层滚动 */
 }
 
-/* ✅ 关键：可滚动的区域，包含 Header 和 Body */
 .studio-scroll-area {
   flex: 1;
   overflow-y: auto;
-  /* 允许纵向滚动 */
   overflow-x: auto;
-  /* 允许横向滚动保护内容 */
   display: flex;
   flex-direction: column;
 }
@@ -154,7 +214,6 @@ const handleNext = () => {
 /* --- Header 层 --- */
 .studio-header-group {
   flex-shrink: 0;
-  /* 保持自身高度 */
   background: #fff;
 }
 
@@ -249,7 +308,7 @@ const handleNext = () => {
   padding: 24px;
 }
 
-/* --- ✅ Footer 层：永远固定在底部 --- */
+/* --- ✅ Footer 层 --- */
 .studio-footer {
   height: 72px;
   background: #fff;
@@ -259,7 +318,6 @@ const handleNext = () => {
   justify-content: space-between;
   padding: 0 32px;
   flex-shrink: 0;
-  /* 绝对禁止被挤压或移动 */
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
   z-index: 1000;
 }
@@ -285,6 +343,10 @@ const handleNext = () => {
   font-size: 12px;
   color: #909399;
   margin-left: 8px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
 }
 
 /* 动画 */

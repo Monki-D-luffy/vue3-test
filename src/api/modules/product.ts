@@ -28,3 +28,9 @@ export const fetchProductStats = () => {
         totalActiveDevices: number;
     }>('/products/stats/summary');
 };
+
+// 更新产品信息 (用于保存草稿、发布产品)
+// 支持 Partial<ProductDetail>，即只更新部分字段
+export const updateProduct = (pid: string, data: Partial<ProductDetail> & Record<string, any>) => {
+    return request.patch(`/products/${pid}`, data);
+};
