@@ -14,11 +14,15 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write src/",
+    
     "// --- 新增的自动化脚本 ---": "",
     "init:mock": "cd mock-server && npm install",
     "dev:mock": "node mock-server/server.js",
-    "start": "concurrently \"npm run dev\" \"npm run dev:mock\" --names \"FRONTEND,BACKEND\" --prefix-colors \"green,blue\" --kill-others"
-  },
+    "start": "concurrently \"npm run dev\" \"npm run dev:mock\" --names \"FRONTEND,BACKEND\" --prefix-colors \"green,blue\" --kill-others",
+    
+    "// --- 👇 添加这一行 需要添加generate, npm run gen:api才能执行成功 ---": "",
+    "gen:api": "swagger-typescript-api generate -p swagger.json -o src/api/generated -n business.ts --axios"
+},
   "dependencies": {
     "axios": "^1.13.1",
     "echarts": "^6.0.0",
@@ -45,6 +49,7 @@
     "npm-run-all2": "^8.0.4",
     "prettier": "3.6.2",
     "sass-embedded": "^1.97.1",
+    "swagger-typescript-api": "^13.2.16",
     "typescript": "~5.9.0",
     "vite": "^7.1.11",
     "vite-plugin-mkcert": "^1.17.9",

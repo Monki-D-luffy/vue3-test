@@ -1,0 +1,1933 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "IdentityService API",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/DeviceLogs/GetDeviceLogsTotalCount": {
+      "post": {
+        "tags": [
+          "DeviceLogs"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceLogsCountRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceLogsCountRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceLogsCountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DeviceLogs/GetDeviceLogs": {
+      "post": {
+        "tags": [
+          "DeviceLogs"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceLogsQueryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceLogsQueryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceLogsQueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Devices/GetDevicesTotalCount": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Devices/GetDevices": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevicesQueryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevicesQueryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevicesQueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Firmwares/AddFirmware": {
+      "post": {
+        "tags": [
+          "Firmwares"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "repoId": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "mandatoryVersion": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "releaseNote": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "repoId": {
+                  "style": "form"
+                },
+                "version": {
+                  "style": "form"
+                },
+                "mandatoryVersion": {
+                  "style": "form"
+                },
+                "releaseNote": {
+                  "style": "form"
+                },
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Firmwares/UpdateFirmware": {
+      "post": {
+        "tags": [
+          "Firmwares"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFirmwareRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFirmwareRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFirmwareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Firmwares/DeleteFirmware": {
+      "post": {
+        "tags": [
+          "Firmwares"
+        ],
+        "parameters": [
+          {
+            "name": "repoId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Firmwares/QueryFirmwares": {
+      "post": {
+        "tags": [
+          "Firmwares"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryFirmwaresRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryFirmwaresRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryFirmwaresRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Firmwares/FindFirmwareByVersion": {
+      "post": {
+        "tags": [
+          "Firmwares"
+        ],
+        "parameters": [
+          {
+            "name": "repoId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/FirmwaresRepo/CreateFirmwaresRepo": {
+      "post": {
+        "tags": [
+          "FirmwaresRepo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFirmwaresRepoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFirmwaresRepoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFirmwaresRepoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/FirmwaresRepo/UpdateFirmwaresRepo": {
+      "post": {
+        "tags": [
+          "FirmwaresRepo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFirmwaresRepoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFirmwaresRepoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFirmwaresRepoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/FirmwaresRepo/DeleteFirmwaresRepo": {
+      "post": {
+        "tags": [
+          "FirmwaresRepo"
+        ],
+        "parameters": [
+          {
+            "name": "firmwaresRepoId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/FirmwaresRepo/QueryFirmwaresRepos": {
+      "post": {
+        "tags": [
+          "FirmwaresRepo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryFirmwaresRepoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryFirmwaresRepoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryFirmwaresRepoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/FirmwaresRepo/FindFirmwaresRepoById": {
+      "post": {
+        "tags": [
+          "FirmwaresRepo"
+        ],
+        "parameters": [
+          {
+            "name": "firmwaresRepoId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/CreateDraft": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraftRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraftRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Update": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/PublishFull": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/PublishGray": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishGrayRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishGrayRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishGrayRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/PausePublish": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Delete": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Get": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Query": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryTasksRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryTasksRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryTasksRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Verify/Add": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uuid",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Verify/Remove": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uuid",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Verify/Query": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Verify/Clear": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "parameters": [
+          {
+            "name": "otaTaskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OTATaskManage/Devices/Query": {
+      "post": {
+        "tags": [
+          "OTATaskManage"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryTaskDevicesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryTaskDevicesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryTaskDevicesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ota/CheckForUpdate": {
+      "post": {
+        "tags": [
+          "OTATasks"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckForUpdateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckForUpdateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckForUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ota/StartOTA": {
+      "post": {
+        "tags": [
+          "OTATasks"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartOTARequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartOTARequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartOTARequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/GetProductDPInfoByUUID": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "parameters": [
+          {
+            "name": "UUID",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/GetProductDPInfoByProductId": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/GetProductInfoByProductId": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/GetProductsTotalCount": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductQueryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductQueryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductQueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/GetProducts": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductQueryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductQueryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductQueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/SaveProductConfig": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveProductConfigRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveProductConfigRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveProductConfigRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/DeleteProduct": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/UploadProductImage": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Product/CreateProduct": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ProductFirmwares/AddProductFirmware": {
+      "post": {
+        "tags": [
+          "ProductFirmwares"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddProductFirmwareRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddProductFirmwareRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddProductFirmwareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ProductFirmwares/UpdateProductFirmware": {
+      "post": {
+        "tags": [
+          "ProductFirmwares"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductFirmwareRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductFirmwareRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductFirmwareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ProductFirmwares/DeleteProductFirmware": {
+      "post": {
+        "tags": [
+          "ProductFirmwares"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "firmwaresRepoId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ProductFirmwares/QueryProductFirmwares": {
+      "post": {
+        "tags": [
+          "ProductFirmwares"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryProductFirmwaresRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryProductFirmwaresRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryProductFirmwaresRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ProductFirmwares/FindProductFirmware": {
+      "post": {
+        "tags": [
+          "ProductFirmwares"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "firmwaresRepoId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Users/GetUsersTotalCount": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsersCountRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsersCountRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsersCountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Users/GetUsers": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsersQueryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsersQueryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsersQueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddProductFirmwareRequest": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CheckForUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "nullable": true
+          },
+          "target": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDraftRequest": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwareVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "upgradeMode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "releaseNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "remark": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateFirmwaresRepoRequest": {
+        "type": "object",
+        "properties": {
+          "firmwaresRepoName": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firmwaresRepoChannel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updateTimeoutValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "releaseNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "properties": {
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "productType": {
+            "type": "string",
+            "nullable": true
+          },
+          "communicateType": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeviceLogsCountRequest": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "nullable": true
+          },
+          "dpid": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeviceLogsQueryRequest": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "nullable": true
+          },
+          "dpid": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DevicesQueryRequest": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "uuid": {
+            "type": "string",
+            "nullable": true
+          },
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "onlineStatus": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "bindStatus": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductDPInfoModel": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "dpId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dpName": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataType": {
+            "type": "string",
+            "nullable": true
+          },
+          "transType": {
+            "type": "string",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductQueryRequest": {
+        "type": "object",
+        "properties": {
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "productType": {
+            "type": "string",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublishGrayRequest": {
+        "type": "object",
+        "properties": {
+          "otaTaskId": {
+            "type": "string",
+            "nullable": true
+          },
+          "grayPolicy": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "grayValue": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QueryFirmwaresRepoRequest": {
+        "type": "object",
+        "properties": {
+          "firmwaresRepoName": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QueryFirmwaresRequest": {
+        "type": "object",
+        "properties": {
+          "repoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QueryProductFirmwaresRequest": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QueryTaskDevicesRequest": {
+        "type": "object",
+        "properties": {
+          "otaTaskId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QueryTasksRequest": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwareVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveProductConfigRequest": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "productType": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "productImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "dpList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductDPInfoModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StartOTARequest": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateFirmwareRequest": {
+        "type": "object",
+        "properties": {
+          "repoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwareVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "mandatoryVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "releaseNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateFirmwaresRepoRequest": {
+        "type": "object",
+        "properties": {
+          "firmwaresRepoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoName": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updateTimeoutValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "releaseNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateProductFirmwareRequest": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmwaresRepoId": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateTaskRequest": {
+        "type": "object",
+        "properties": {
+          "otaTaskId": {
+            "type": "string",
+            "nullable": true
+          },
+          "upgradeMode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "releaseNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "remark": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsersCountRequest": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "userID": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsersQueryRequest": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "userID": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "pageIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "请输入 Bearer {Token}",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
+}
