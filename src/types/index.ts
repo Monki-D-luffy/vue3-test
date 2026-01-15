@@ -70,8 +70,16 @@ export interface DeviceQueryParams {
 // 日志查询参数
 export interface DeviceLogQueryParams {
   deviceId: string;
+
+  // 真实接口参数
+  pageIndex?: number;
+  pageSize?: number;
+  eventId?: string | number; // 对应 dpid
+
+  // Mock 参数 (保留以防万一)
   _page?: number;
   _limit?: number;
+
   startTime?: string;
   endTime?: string;
   type?: string;
@@ -194,7 +202,7 @@ export interface DeviceSummary {
   online: number;
   offline: number;
   fault: number;
-  activated: number; // ✅ 补上缺失的字段
+  activated: number;
   inactive?: number; //以此类推，根据实际 API 返回扩展
   upgrade?: number;
 }

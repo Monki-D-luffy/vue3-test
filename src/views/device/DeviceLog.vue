@@ -18,22 +18,65 @@
         </PageMainHeader>
 
         <div class="content-wrapper">
-
-            <div class="saas-card info-section">
+            <div class="saas-card info-section" v-loading="deviceLoading">
                 <div class="info-grid">
-                    <div class="info-item">
-                        <span class="label">设备名称</span>
-                        <span class="value">{{ deviceName }}</span>
+                    <div class="info-group">
+                        <div class="info-item">
+                            <span class="label">设备名称</span>
+                            <span class="value main-value" :title="deviceName">
+                                {{ displayDeviceName }}
+                            </span>
+                        </div>
+                        <div class="info-item sub-item">
+                            <span class="label">设备 SN (UUID)</span>
+                            <span class="value mono copyable" @click="copyText(deviceId)">
+                                {{ deviceId }}
+                                <el-icon class="copy-icon">
+                                    <CopyDocument />
+                                </el-icon>
+                            </span>
+                        </div>
                     </div>
+
                     <div class="divider"></div>
-                    <div class="info-item">
-                        <span class="label">设备 ID</span>
-                        <span class="value mono">{{ deviceId }}</span>
+
+                    <div class="info-group">
+                        <div class="info-item">
+                            <span class="label">产品 ID (PID)</span>
+                            <span class="value mono">{{ realDeviceDetail?.ProductId || realDeviceDetail?.productId ||
+                                '-'
+                            }}</span>
+                        </div>
+                        <div class="info-item sub-item">
+                            <span class="label">区域/时区</span>
+                            <span class="value">
+                                <el-icon class="location-icon">
+                                    <Location />
+                                </el-icon>
+                                {{ realDeviceDetail?.Country || realDeviceDetail?.region || 'CN' }}
+                            </span>
+                        </div>
                     </div>
+
                     <div class="divider"></div>
-                    <div class="info-item">
-                        <span class="label">归属客户</span>
-                        <span class="value highlight">{{ mockOwnerName }}</span>
+
+                    <div class="info-group">
+                        <div class="info-item">
+                            <span class="label">固件版本 (DP22)</span>
+                            <div class="value-row">
+                                <span class="value highlight">{{ firmwareVersion || '--' }}</span>
+                                <el-tag v-if="hasNewVersion" size="small" type="danger" effect="dark"
+                                    class="ml-2">NEW</el-tag>
+                            </div>
+                        </div>
+                        <div class="info-item sub-item">
+                            <span class="label">当前状态</span>
+                            <el-tag size="small" :type="isOnline ? 'success' : 'info'" effect="light"
+                                class="status-tag">
+                                <span class="dot" :class="{ online: isOnline }"></span>
+                                {{ deviceStatusText }}
+                            </el-tag>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -41,25 +84,15 @@
             <div class="saas-card filter-section">
                 <el-form :inline="true" :model="filters" class="modern-filter-form">
                     <div class="filter-group">
-                        <el-form-item label="任务 ID">
-                            <el-input v-model="filters.taskId" placeholder="输入 ID..." clearable />
-                        </el-form-item>
-                        <el-form-item label="事件 ID">
-                            <el-input v-model="filters.eventId" placeholder="输入 ID..." clearable />
-                        </el-form-item>
-                        <el-form-item label="类型">
-                            <el-select v-model="filters.type" placeholder="全部类型" clearable class="w-140">
-                                <el-option label="全部类型" value="all" />
-                                <el-option label="数据转换" value="数据转换" />
-                                <el-option label="状态通知" value="状态通知" />
-                                <el-option label="云端处理" value="云端处理" />
-                                <el-option label="设备上报" value="设备上报" />
-                                <el-option label="平台下发" value="平台下发" />
-                            </el-select>
+                        <el-form-item label="DP / 事件 ID">
+                            <el-input v-model="filters.eventId" placeholder="例如: 22" clearable style="width: 140px">
+                                <template #prefix>DP</template>
+                            </el-input>
                         </el-form-item>
                         <el-form-item label="时间范围">
-                            <el-date-picker v-model="filters.dateRange" type="datetimerange" range-separator="-"
-                                start-placeholder="开始" end-placeholder="结束" :shortcuts="dateShortcuts" unlink-panels />
+                            <el-date-picker v-model="filters.dateRange" type="datetimerange" range-separator="→"
+                                start-placeholder="开始时间" end-placeholder="结束时间" :shortcuts="dateShortcuts" unlink-panels
+                                style="width: 320px" />
                         </el-form-item>
                     </div>
                     <div class="search-btn-wrapper">
@@ -71,64 +104,54 @@
 
             <div class="saas-card table-section">
                 <el-table :data="logData" v-loading="loading" style="width: 100%" class="modern-table"
-                    :header-cell-style="{ background: '#f8fafc', color: '#64748b', fontWeight: '600' }">
+                    :header-cell-style="{ background: '#f8fafc', color: '#475569', fontWeight: '600' }">
+
                     <el-table-column type="index" label="#" width="60" align="center" />
 
-                    <el-table-column prop="time" label="时间 (GMT+8)" width="200">
+                    <el-table-column prop="time" label="上报时间" width="180">
                         <template #default="{ row }">
-                            <span class="time-text">{{ row.time }}</span>
+                            <span class="time-text">{{ formatDateTime(row.time) }}</span>
                         </template>
                     </el-table-column>
 
-                    <el-table-column prop="event" label="事件" width="140">
+                    <el-table-column prop="event" label="功能点 (DP)" width="160">
                         <template #default="{ row }">
-                            <el-tag :type="getEventTypeColor(row.type)" effect="light" round>
+                            <el-tag :type="getEventTypeColor(row.event)" effect="plain" round class="event-tag">
                                 {{ row.event }}
                             </el-tag>
                         </template>
                     </el-table-column>
 
-                    <el-table-column prop="type" label="类型" width="120" />
-
-                    <el-table-column prop="details" label="事件详情 (Payload)" min-width="350">
+                    <el-table-column prop="details" label="数据详情 (Payload)" min-width="300">
                         <template #default="{ row }">
-                            <div class="details-wrapper">
-                                <div class="code-snippet" @click="copyToClipboard(row.details)">
-                                    {{ truncateRawDetails(row.details) }}
-                                </div>
-                                <el-popover placement="left" :width="500" trigger="click"
-                                    popper-class="log-details-popover">
-                                    <template #default>
-                                        <div class="popover-header">
-                                            <span>完整报文解析</span>
-                                            <el-button link type="primary" size="small"
-                                                @click="copyToClipboard(row.details)">复制</el-button>
-                                        </div>
-                                        <pre class="log-details-parsed">{{ parseLogDetails(row.details) }}</pre>
-                                    </template>
-                                    <template #reference>
-                                        <el-button link type="primary" size="small">解析</el-button>
-                                    </template>
-                                </el-popover>
-                            </div>
+                            <LogPayloadPopover :content="row.details" :event-id="row.event" />
                         </template>
                     </el-table-column>
 
-                    <el-table-column prop="source" label="来源" width="100" align="right">
+                    <el-table-column prop="source" label="来源" width="110" align="center">
                         <template #default="{ row }">
-                            <span class="source-badge">{{ row.source }}</span>
+                            <span class="source-badge" :class="getSourceClass(row.source)">
+                                {{ row.source }}
+                            </span>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column prop="sourceDetail" label="备注" width="150" show-overflow-tooltip>
+                        <template #default="{ row }">
+                            <span class="text-secondary">{{ row.sourceDetail || '-' }}</span>
                         </template>
                     </el-table-column>
 
                     <template #empty>
-                        <el-empty description="暂无日志数据" :image-size="120" />
+                        <el-empty description="暂无日志数据" :image-size="100" />
                     </template>
                 </el-table>
 
-                <div class="pagination-wrapper">
-                    <AppPagination v-if="pagination.total > 0" :total="pagination.total"
-                        v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
-                        @size-change="onSizeChange" @current-change="onCurrentChange" />
+                <div class="pagination-wrapper" v-if="pagination.total > 0">
+                    <el-pagination v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
+                        :total="pagination.total" :page-sizes="[20, 50, 100]"
+                        layout="total, sizes, prev, pager, next, jumper" background @size-change="onSizeChange"
+                        @current-change="onCurrentChange" />
                 </div>
             </div>
         </div>
@@ -141,27 +164,59 @@
 import { ref, onMounted, computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, RefreshRight, Upload, Download } from '@element-plus/icons-vue'
+import { Search, RefreshRight, Upload, Download, CopyDocument, Location } from '@element-plus/icons-vue'
 
 import PageMainHeader from '@/components/PageMainHeader.vue'
-import AppPagination from '@/components/AppPagination.vue'
 import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
+import LogPayloadPopover from './components/LogPayloadPopover.vue'
 
+// 引入 API
+import { fetchDeviceLogs, fetchRealDeviceList } from '@/api/modules/device' // ✨ 引入真实列表接口
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
 import { useDataExport } from '@/composables/useDataExport'
-// ✅ 引入 AI 上下文
-import { useAiContext } from '@/ai'
-
 import { formatDateTime } from '@/utils/formatters'
 import { parseLogDetails } from '@/utils/logParser'
-import { fetchDeviceLogs as fetchLogsApi } from '@/api/modules/device'
 
 // --- 基础状态 ---
 const route = useRoute()
 const deviceId = ref(route.query.id as string || 'N/A')
-const deviceName = ref(route.query.name as string || '未知设备')
-const pageTitle = computed(() => `日志审计: ${deviceName.value}`)
-const mockOwnerName = ref('') // 用于 UI 展示和 AI 注入
+const rawDeviceName = ref(route.query.name as string || '')
+
+// 设备详情相关
+const deviceLoading = ref(false)
+const realDeviceDetail = ref<any>(null) // 存储从列表接口获取的完整详情
+const firmwareVersion = ref<string>('--')
+
+// --- 计算属性 ---
+const pageTitle = computed(() => `日志审计`)
+
+// 智能显示名称
+const displayDeviceName = computed(() => {
+    // 优先用真实接口返回的 DeviceName，其次用 URL 参数
+    const name = realDeviceDetail.value?.DeviceName || realDeviceDetail.value?.deviceName || rawDeviceName.value
+    const id = deviceId.value
+    if (!name || name === id || name === 'Unknown') {
+        return `设备 (${id.substring(0, 4)}...)`
+    }
+    return name
+})
+
+const deviceName = computed(() => displayDeviceName.value)
+
+const deviceStatusText = computed(() => {
+    // 兼容后端不同的大小写返回
+    const status = realDeviceDetail.value?.OnlineStatus ?? realDeviceDetail.value?.status
+    if (status === 1 || status === 'Online' || status === '在线') return '在线'
+    return '离线'
+})
+
+const isOnline = computed(() => deviceStatusText.value === '在线')
+const hasNewVersion = computed(() => false) // 暂无此字段
+
+const deviceForModal = computed(() => {
+    if (deviceId.value === 'N/A') return null
+    return { id: deviceId.value, name: deviceName.value } as any
+})
 
 // --- Composables ---
 const {
@@ -179,13 +234,6 @@ const {
 } = useDeviceLogs()
 
 const { isExporting, exportData } = useDataExport()
-const { setPageContext } = useAiContext()
-
-// --- 辅助计算 ---
-const deviceForModal = computed(() => {
-    if (deviceId.value === 'N/A') return null
-    return { id: deviceId.value, name: deviceName.value } as any
-})
 
 const dateShortcuts = [
     { text: '最近1小时', value: () => [new Date(Date.now() - 3600 * 1000), new Date()] },
@@ -193,27 +241,84 @@ const dateShortcuts = [
     { text: '最近7天', value: () => [new Date(Date.now() - 3600 * 1000 * 24 * 7), new Date()] },
 ]
 
-// --- 方法 ---
+// --- 核心方法 ---
 
-const getEventTypeColor = (type: string) => {
-    if (type === 'danger' || type === 'alarm') return 'danger'
-    if (type === 'warning') return 'warning'
-    if (type === 'success') return 'success'
+// 1. ✨ 从真实设备列表获取完整元数据 (包含 PID)
+const loadRealDeviceMeta = async () => {
+    if (deviceId.value === 'N/A') return
+    try {
+        deviceLoading.value = true
+        // 调用列表接口，按 UUID 过滤
+        // 注意：这里假设后端支持 uuid 参数，如果不支持，可能需要获取列表后前端 find
+        // 根据之前的 verify_api.js，GetDevices 支持 uuid 参数
+        const res: any = await fetchRealDeviceList({
+            pageIndex: 1,
+            pageSize: 1,
+            uuid: deviceId.value,
+            country: 'CN' // 必填项，防止报错
+        })
+
+        // 解析列表返回结构
+        const list = res.data?.Data || res.data || [] // 兼容 {Data:[], Success:true}
+        if (Array.isArray(list) && list.length > 0) {
+            realDeviceDetail.value = list[0]
+        } else {
+            console.warn('Device not found in real list')
+        }
+    } catch (e) {
+        console.warn('Failed to load real device meta:', e)
+    } finally {
+        deviceLoading.value = false
+    }
+}
+
+// 2. 获取 DP22 版本号
+const loadLatestFirmwareVersion = async () => {
+    if (deviceId.value === 'N/A') return
+    try {
+        const res = await fetchDeviceLogs({
+            deviceId: deviceId.value,
+            eventId: 22,
+            pageIndex: 1,
+            pageSize: 1
+        })
+
+        if (res && res.items && res.items.length > 0) {
+            let ver = res.items[0].details
+            ver = ver.replace(/"/g, '')
+            firmwareVersion.value = ver
+        }
+    } catch (e) {
+        console.warn('Failed to fetch firmware version (DP22):', e)
+    }
+}
+
+const copyText = (text: string) => {
+    navigator.clipboard.writeText(text)
+    ElMessage.success('已复制到剪贴板')
+}
+
+// 样式辅助
+const getEventTypeColor = (eventStr: string) => {
+    if (eventStr.includes('22') || eventStr.includes('Version')) return 'primary'
+    if (eventStr.includes('Alert') || eventStr.includes('Fault')) return 'danger'
     return 'info'
 }
 
-const truncateRawDetails = (rawDetails: any): string => {
-    const str = String(rawDetails);
-    if (str.length > 60) return str.substring(0, 60) + '...';
-    return str;
+const getSourceClass = (source: string) => {
+    if (source === '设备上报') return 'bg-blue'
+    if (source === '云端下发') return 'bg-purple'
+    return 'bg-gray'
 }
 
-const copyToClipboard = (text: any) => {
-    navigator.clipboard.writeText(String(text));
-    ElMessage.success('已复制到剪贴板');
-}
+const logTableColumns = [
+    { label: '时间', key: 'time' },
+    { label: '功能点', key: 'event' },
+    { label: '数据详情', key: 'details' },
+    { label: '来源', key: 'source' },
+    { label: '备注', key: 'sourceDetail' }
+]
 
-// 导出处理
 const logDataProcessor = (data: any[]) => {
     return data.map(row => ({
         ...row,
@@ -222,94 +327,18 @@ const logDataProcessor = (data: any[]) => {
     }))
 }
 
-const logTableColumns = [
-    { label: '时间', key: 'time' },
-    { label: '事件', key: 'event' },
-    { label: '类型', key: 'type' },
-    { label: '详情', key: 'details' },
-    { label: '来源', key: 'source' }
-]
-
 const handleExport = () => {
     const exportParams = buildDeviceLogParams(deviceId.value, filters)
     exportData('/deviceLogs', exportParams, logTableColumns, `设备日志_${deviceName.value}`, logDataProcessor)
 }
 
-// 核心数据加载与 AI 注入
-const loadData = async () => {
-    if (deviceId.value === 'N/A') {
-        ElMessage.error('未指定设备ID，无法查询日志')
-        return
-    }
-
-    // 1. UI 线程：正常加载表格数据 (受分页限制，比如 10 条)
-    await fetchLogs(deviceId.value)
-
-    // 生成虚拟客户 (Mock)
-    const mockCustomers = ['长沙智能制造示范工厂', '深圳南山科技园机房', '上海张江高科实验室', '北京亦庄数据中心'];
-    const customerIndex = deviceId.value.charCodeAt(0) % mockCustomers.length;
-    mockOwnerName.value = mockCustomers[customerIndex] || '未知客户';
-
-    // 2. AI 上下文注册
-    setPageContext(async () => {
-        // 🚀 P1 核心升级：影子请求 (Shadow Fetch)
-        // 专门为 AI 拉取更多数据 (比如 50 条)，突破 UI 分页限制
-        // 这样用户问 "第 17 条日志" 时，AI 就能看见了！
-        let aiLogData: any[] = [];
-        try {
-            // 手动构建参数，请求 50 条
-            const aiParams = {
-                deviceId: deviceId.value,
-                _limit: 50, // 让 AI 能看到更多
-                _sort: 'time',
-                _order: 'desc'
-            };
-            const res: any = await fetchLogsApi(aiParams);
-            if (Array.isArray(res)) aiLogData = res;
-            else if (res?.items) aiLogData = res.items;
-        } catch (e) {
-            // 如果影子请求失败，降级使用当前表格数据
-            console.warn('AI Shadow Fetch Failed', e);
-            aiLogData = logData.value;
-        }
-
-        // 提取文本快照
-        const logSnapshot = aiLogData.map(log =>
-            `[${formatDateTime(log.time)}] [${log.type}] ${log.event}: ${String(log.details).substring(0, 100)}`
-        ).join('\n');
-
-        return {
-            scene: 'DeviceLogAnalysis',
-            businessContext: {
-                device: {
-                    id: deviceId.value,
-                    name: deviceName.value,
-                    owner: mockOwnerName.value,
-                    status: 'Active'
-                },
-                environment: 'Production'
-            },
-            dataContext: {
-                totalLogs: pagination.total,
-                // 告诉 AI 这是更完整的数据
-                dataScope: `Top ${aiLogData.length} logs (Expanded View)`,
-                recentLogs: logSnapshot
-            }
-        }
-    })
-}
-
-const onUpgradeDone = () => { handleUpgradeDone() }
-
 const handleSearch = () => {
     resetPagination()
-    loadData()
+    fetchLogs(deviceId.value)
 }
 
 const handleReset = () => {
-    filters.taskId = ''
     filters.eventId = ''
-    filters.type = 'all'
     filters.dateRange = null
     handleSearch()
 }
@@ -317,47 +346,31 @@ const handleReset = () => {
 const onSizeChange = (newSize: number) => { handleSizeChange(newSize, deviceId.value) }
 const onCurrentChange = (newPage: number) => { handleCurrentChange(newPage, deviceId.value) }
 
-onMounted(() => {
-    loadData()
+const onUpgradeDone = () => { handleUpgradeDone() }
+
+// 生命周期
+onMounted(async () => {
+    if (deviceId.value !== 'N/A') {
+        fetchLogs(deviceId.value)
+        await loadRealDeviceMeta() // ✨ 加载 PID
+        loadLatestFirmwareVersion()
+    } else {
+        ElMessage.error('未指定设备ID')
+    }
 })
 </script>
 
 <style scoped>
-/* --- 布局容器 --- */
-.page-container {
-    width: 100%;
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-}
+/* ... (原有的样式保持不变) ... */
 
-/* 增加左右内边距，使其不贴边 */
-.content-wrapper {
-    padding: 0 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    /* 卡片之间的呼吸感 */
-    margin-top: 16px;
-    padding-bottom: 40px;
-}
-
-/* --- 通用 SaaS 卡片风格 --- */
+/* 新增：Info Card 样式微调，适配 PID 显示 */
 .saas-card {
     background: #ffffff;
-    border-radius: 12px;
-    /* 核心：弥散阴影代替边框 */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    /* 极淡的边框增强层次 */
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-.saas-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-}
-
-/* --- 1. 信息卡片 --- */
 .info-section {
     padding: 20px 24px;
 }
@@ -365,200 +378,192 @@ onMounted(() => {
 .info-grid {
     display: flex;
     align-items: center;
-    gap: 24px;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.divider {
+    width: 1px;
+    height: 40px;
+    background-color: #e2e8f0;
+    margin: 0 10px;
 }
 
 .info-item {
     display: flex;
     flex-direction: column;
-    gap: 4px;
 }
 
-.info-item .label {
+.info-item.sub-item {
+    margin-top: 4px;
+}
+
+.label {
     font-size: 12px;
     color: #64748b;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    margin-bottom: 2px;
 }
 
-.info-item .value {
-    font-size: 15px;
+.value {
+    font-size: 14px;
     color: #1e293b;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.info-item .value.mono {
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    color: #475569;
+.main-value {
+    font-size: 16px;
+    color: #0f172a;
 }
 
-.info-item .value.highlight {
-    color: #4f46e5;
-    /* Indigo-600 */
+.mono {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.5px;
 }
 
-.divider {
-    width: 1px;
-    height: 32px;
-    background-color: #e2e8f0;
+.highlight {
+    color: #2563eb;
 }
 
-/* --- 2. 筛选栏 --- */
+.copyable {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.copyable:hover {
+    color: #3b82f6;
+}
+
+.copy-icon,
+.location-icon {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.status-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #94a3b8;
+}
+
+.dot.online {
+    background-color: #22c55e;
+}
+
+/* Filter & Table section */
 .filter-section {
-    padding: 20px 24px;
+    padding: 16px 24px;
 }
 
 .modern-filter-form {
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
-    justify-content: space-between;
     align-items: center;
 }
 
-.filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    align-items: center;
-}
-
-/* 覆盖 Element Plus 默认 Form Item 边距 */
-.modern-filter-form :deep(.el-form-item) {
-    margin-bottom: 0;
-    margin-right: 0;
-}
-
-/* 搜索按钮组 */
 .search-btn-wrapper {
+    margin-left: auto;
     display: flex;
     gap: 12px;
 }
 
-/* --- 3. 表格区域 --- */
 .table-section {
     padding: 0;
-    /* 表格卡片通常不需要 padding，让表格铺满 */
     overflow: hidden;
-    /* 圆角溢出隐藏 */
 }
 
 .modern-table {
-    /* 移除表格默认边框 */
-    --el-table-border-color: transparent;
     --el-table-header-bg-color: #f8fafc;
-    --el-table-row-hover-bg-color: #f1f5f9;
 }
 
-.modern-table :deep(th.el-table__cell) {
-    padding: 16px 0;
-    /* 增加表头高度 */
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.modern-table :deep(td.el-table__cell) {
-    padding: 16px 0;
-    /* 增加行高，增加空气感 */
-}
-
-/* 时间列 */
 .time-text {
-    font-feature-settings: "tnum";
-    color: #334155;
-    font-size: 13px;
-}
-
-/* 代码块样式 */
-.details-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.code-snippet {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: #475569;
-    background: #f1f5f9;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s;
-    max-width: 90%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: 13px;
+    color: #334155;
 }
 
-.code-snippet:hover {
-    background: #e2e8f0;
-    color: #0f172a;
+.event-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
 }
 
 .source-badge {
     font-size: 12px;
-    color: #94a3b8;
-    background: #f8fafc;
     padding: 2px 8px;
-    border-radius: 99px;
-    border: 1px solid #f1f5f9;
+    border-radius: 4px;
+    font-weight: 500;
 }
 
-/* 分页栏 */
+.bg-blue {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.bg-purple {
+    background: #f5f3ff;
+    color: #8b5cf6;
+}
+
+.bg-gray {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.text-secondary {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
 .pagination-wrapper {
-    padding: 16px 24px;
+    padding: 12px 24px;
     border-top: 1px solid #f1f5f9;
     display: flex;
     justify-content: flex-end;
 }
 
-/* --- Popover 内部样式 --- */
-.popover-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.log-details-parsed {
-    background: #1e1e1e;
-    /* 深色主题代码块 */
-    color: #d4d4d4;
-    padding: 12px;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    max-height: 300px;
-    overflow-y: auto;
-    margin: 0;
-}
-
-/* --- Header Buttons --- */
 .glass-button {
     backdrop-filter: blur(4px);
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.8);
 }
 
 .glow-button {
-    box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.3);
-    /* 按钮微光 */
-    transition: all 0.2s;
+    box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.2);
 }
 
-.glow-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.4);
+/* 页面通用布局 */
+.page-container {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.mr-1 {
-    margin-right: 4px;
-}
-
-.w-140 {
-    width: 140px;
+.content-wrapper {
+    padding: 0 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+    padding-bottom: 40px;
 }
 </style>

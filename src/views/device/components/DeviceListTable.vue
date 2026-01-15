@@ -34,9 +34,13 @@
             </el-table-column>
         </el-table>
 
-        <AppPagination :total="pagination.total" :current-page="pagination.currentPage" :page-size="pagination.pageSize"
-            @update:currentPage="(val: number) => emits('page-change', val)"
-            @update:pageSize="(val: number) => emits('size-change', val)" />
+        <div class="pagination-wrapper" v-if="pagination.total > 0">
+            <el-pagination :current-page="pagination.currentPage" :page-size="pagination.pageSize"
+                :total="pagination.total" :page-sizes="[10, 20, 50, 100]" background
+                layout="total, sizes, prev, pager, next, jumper"
+                @size-change="(val: number) => emits('size-change', val)"
+                @current-change="(val: number) => emits('page-change', val)" />
+        </div>
     </div>
 </template>
 
@@ -45,9 +49,9 @@ import { ref } from 'vue'
 import { ElTable } from 'element-plus'
 import type { Device, DeviceStatusType } from '@/types'
 import StatusBadge from '@/components/StatusBadge.vue'
-import AppPagination from '@/components/AppPagination.vue'
+// ❌ 已移除: import AppPagination from '@/components/AppPagination.vue'
 
-// ✅ 1. 严格 Props 类型
+// 1. Props 定义
 defineProps<{
     deviceList: Device[];
     loading: boolean;
@@ -58,7 +62,7 @@ defineProps<{
     };
 }>()
 
-// ✅ 2. 严格 Emits 定义
+// 2. Emits 定义
 const emits = defineEmits<{
     (e: 'selection-change', rows: Device[]): void
     (e: 'page-change', page: number): void
@@ -82,28 +86,26 @@ defineExpose({
     clearSelection
 })
 
-// ✅ 3. 强类型状态映射：输入参数指定为 DeviceStatusType
+// 3. 状态类型映射
 const getStatusType = (status: DeviceStatusType | string) => {
     switch (status) {
         case '在线': return 'success'
         case '离线': return 'info'
         case '故障': return 'danger'
         case '升级中': return 'primary'
-        default: return 'info' // 修正为合法的 Element Plus type
+        default: return 'info'
     }
 }
 </script>
 
 <style scoped>
-/* 表格基础样式微调 */
+/* 表格基础样式 */
 .modern-table :deep(.el-table__inner-wrapper::before) {
     display: none;
-    /* 去除表格底部白线 */
 }
 
 .modern-table :deep(.el-table__row) {
     height: 72px;
-    /* 稍微增加行高，容纳 StatusBadge，更具现代感 */
 }
 
 .device-name-cell {
@@ -127,11 +129,20 @@ const getStatusType = (status: DeviceStatusType | string) => {
     font-size: 12px;
     color: var(--el-text-color-secondary);
     font-family: monospace;
-    /* SN 码建议用等宽字体 */
     margin-top: 4px;
 }
 
 .ml-2 {
     margin-left: 8px;
+}
+
+/* ✅ 新增：分页容器样式，确保靠右对齐且有呼吸感 */
+.pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 0;
+    margin-top: 8px;
+    background-color: transparent;
+    /* 确保背景透明，不产生遮挡 */
 }
 </style>
