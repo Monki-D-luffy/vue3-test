@@ -113,37 +113,41 @@ service.interceptors.response.use(
 
         const authStore = useAuthStore()
 
-        // 401 Token 过期处理
+        // ✨ 401 Token 过期处理 (核心补全)
         if (error.response?.status === 401 && !config._retry) {
+
+            // 如果已经在刷新中，将当前请求加入队列等待
             if (isRefreshing) {
                 return new Promise((resolve) => {
                     requestsQueue.push((token) => {
                         if (config.headers) config.headers.Authorization = `Bearer ${token}`
-                        resolve(service(config))
+                        resolve(service(config)) // 重新发送
                     })
                 })
             }
 
+            // 标记开始刷新
             config._retry = true
             isRefreshing = true
 
             try {
-                const newToken = await authStore.tryAutoLogin() // 假设 Store 有此方法
+                // 🚀 调用 Store 的刷新动作
+                const newToken = await authStore.refreshSession()
+
                 if (newToken) {
-                    processQueue(null, newToken as string)
+                    // 1. 处理队列中的请求
+                    processQueue(null, newToken)
+
+                    // 2. 重试当前请求
                     if (config.headers) config.headers.Authorization = `Bearer ${newToken}`
                     return service(config)
                 }
             } catch (refreshErr) {
+                // 刷新失败，清空队列并报错
                 processQueue(refreshErr, null)
-                authStore.logout()
-                if (!document.querySelector('.el-message-box__wrapper')) {
-                    ElMessageBox.alert('会话已过期，请重新登录', '提示', {
-                        confirmButtonText: '去登录',
-                        callback: () => router.push(`/login?redirect=${router.currentRoute.value.fullPath}`)
-                    })
-                }
+                // authStore.logout() 已经在 refreshSession 内部调用了
             } finally {
+                // 解除锁定
                 isRefreshing = false
             }
         }

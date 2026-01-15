@@ -1,4 +1,5 @@
 import request from '@/api/core/request'
+import type { LoginParams, LoginResult } from '@/api/types/auth'
 
 // --- 类型定义 ---
 export interface LoginRequest {
@@ -37,4 +38,16 @@ export const refreshToken = (token: string) => {
 
 export const register = async (data: any) => {
     return Promise.resolve({})
+}
+
+/**
+ * 刷新令牌接口
+ * 假设后端路径为 /api/Login/RefreshToken (需根据实际后端调整)
+ */
+export const refreshTokenApi = (refreshToken: string) => {
+    // 这里通常传 refreshToken，或者是 { token: ..., refreshToken: ... }
+    // 请根据你的 Swagger 确认参数名
+    return request.post<LoginResult>('/identity/api/Login/RefreshToken', {
+        refreshToken: refreshToken
+    })
 }
