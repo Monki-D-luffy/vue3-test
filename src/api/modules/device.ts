@@ -58,3 +58,25 @@ export const startDeviceUpgrade = (deviceId: string) => {
 export const getUpgradeTaskStatus = (taskId: string) => {
     return request.get<UpgradeTask>(`/upgrade-task/${taskId}`)
 }
+
+// ==========================================
+// 真实 API
+// ==========================================
+
+/**
+ * ✨ [New] 真实后端设备查询接口 (RPC 风格)
+ * 对应后端: POST /api/Devices/GetDevices
+ * * @param data.pageIndex 页码 (1-based)
+ * @param data.pageSize 页大小
+ * @param data.country 区域代码 (必填, 如 "CN")
+ * @param data.uuid (可选) 设备 UUID 用于精确查询
+ */
+export const fetchRealDeviceList = (data: {
+    pageIndex: number;
+    pageSize: number;
+    country?: string;
+    uuid?: string;
+}) => {
+    // 注意：前缀 manager 会被 vite.config.ts 代理转发到真实服务器
+    return request.post('manager/api/Devices/GetDevices', data)
+}

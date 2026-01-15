@@ -1,62 +1,79 @@
-// src/api/business/device.ts
-import { fetchDeviceList, fetchDeviceCount } from '@/api/services/deviceService'
-import type { DeviceQueryParams } from '@/api/types/device'
-
-// 定义给 Vue 组件用的返回结构
-export interface DeviceTableResult {
-    items: any[]; // 暂时用 any 或 DeviceModel，取决于你是否做前端字段映射
-    total: number;
-}
+import { fetchRealDeviceList } from '@/api/modules/device'
+import type { DeviceListFilters, Device } from '@/types'
 
 /**
- * [Smart API] 获取设备表格数据
- * 职责：
- * 1. 并在请求 List 和 Count
- * 2. 清洗空参数 (上位机 ViewModel 会把空搜索置为空字符串，这里保持一致)
+ * 🛠️ 智能业务层：获取设备表格数据
  */
 export const getDeviceTableData = async (
-    page: number,
+    pageIndex: number,
     pageSize: number,
-    filters: Record<string, any>
-): Promise<DeviceTableResult> => {
-
-    // 1. 构造标准查询参数
-    const queryPayload: DeviceQueryParams = {
-        // ⚠️ 确认：上位机 ViewModel PageIndex 初始化为 1
-        // 咱们前端 ElementUI 也是 1，所以这里直接透传，不需要 -1
-        pageIndex: page,
-        pageSize: pageSize,
-
-        uuid: filters.keyword || '', // 搜索框对应 UUID
-        country: filters.dataCenter || '',
-        productId: filters.productId || '',
-
-        // 时间范围处理
-        startTime: filters.dateRange?.[0] ? new Date(filters.dateRange[0]).toISOString() : undefined,
-        endTime: filters.dateRange?.[1] ? new Date(filters.dateRange[1]).toISOString() : undefined,
-    }
-
+    filters: DeviceListFilters
+): Promise<{ items: Device[], total: number }> => {
     try {
-        // 2. 并行请求 (正如上位机是分开获取的一样，我们用 Promise.all 模拟聚合)
-        const [listData, totalCountResp] = await Promise.all([
-            fetchDeviceList(queryPayload),
-            // 总数接口只跟 Country 有关，跟搜索关键词无关 (根据 DevicesApiService.cs 逻辑)
-            fetchDeviceCount(filters.dataCenter)
-        ])
+        const payload = {
+            pageIndex,
+            pageSize,
+            country: filters.dataCenter || 'CN', // 必填，默认 CN
+            uuid: filters.keyword || undefined,
+        }
 
-        // 3. 提取数据
-        // 注意：fetchDeviceCount 返回的是 DeviceRegionCountDTO (含 TotalCount 字段) 还是直接 int?
-        // 再次查阅文档 DevicesApiService.cs: GetDeviceRegionCountAsync 返回 DeviceRegionCountDTO
-        // 所以这里要注意解包
-        const total = (totalCountResp as any)?.totalCount || 0
+        console.log('🚀 [Business] Fetching Real Data:', payload)
+
+        const res: any = await fetchRealDeviceList(payload)
+
+        // 兼容处理：可能 request 拦截器返回了 data，也可能返回了完整 response
+        let rawList: any[] = []
+        let totalCount = 0
+
+        // 尝试解析结构
+        if (res && Array.isArray(res.Data)) {
+            rawList = res.Data
+            totalCount = res.TotalCount || 0
+        } else if (res && typeof res === 'object' && (res.Success || res.success)) {
+            // 某些特殊情况下可能的结构
+            rawList = res.Data || res.data || []
+            totalCount = res.TotalCount || res.totalCount || 0
+        } else if (Array.isArray(res)) {
+            rawList = res
+            totalCount = res.length
+        }
+
+        // 数据映射 (PascalCase -> camelCase)
+        const items = rawList.map((item: any) => {
+            const get = (k1: string, k2: string) => item[k1] ?? item[k2] ?? null
+            return {
+                id: get('UUID', 'uuid'),
+                uuid: get('UUID', 'uuid'),
+                name: get('DeviceName', 'deviceName') || get('UUID', 'uuid'),
+                productName: get('ProductName', 'productName') || '未知产品',
+                productId: get('ProductId', 'productId'),
+                status: mapDeviceStatus(item.OnlineStatus ?? item.onlineStatus),
+                gmtActive: formatDateRaw(get('ActiveTime', 'activeTime')),
+                gmtLastOnline: formatDateRaw(get('LastOnlineTime', 'lastOnlineTime')),
+                region: get('Country', 'country'),
+                _raw: item
+            } as any as Device
+        })
 
         return {
-            items: listData || [],
-            total: total
+            items,
+            total: totalCount || items.length
         }
+
     } catch (error) {
-        console.error('API Error:', error)
-        // 可以在这里处理静默失败，或者抛出让 UI loading 停止
-        throw error
+        console.error('❌ [Business] 获取设备列表失败:', error)
+        return { items: [], total: 0 }
     }
+}
+
+function mapDeviceStatus(status: any): 'online' | 'offline' {
+    if (String(status).toLowerCase() === 'online') return 'online'
+    if (status === 1 || status === true) return 'online'
+    return 'offline'
+}
+
+function formatDateRaw(dateStr: string | null): string {
+    if (!dateStr) return '-'
+    if (dateStr.includes('T')) return dateStr.replace('T', ' ').split('.')[0]
+    return dateStr
 }

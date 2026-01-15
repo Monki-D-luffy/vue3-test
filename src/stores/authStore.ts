@@ -21,38 +21,51 @@ export const useAuthStore = defineStore('auth', () => {
 
   const login = async (account: string, password: string) => {
     try {
-      // 🛠️ 构造完全体 Payload
-      // 1. 映射变量名: account -> userName
-      // 2. 补充必填项: productName
       const loginPayload = {
-        userName: account,               // 必须叫 userName
+        userName: account,
         password: password,
-        productName: 'ManagerIdentity'   // 🚨🚨🚨 必须包含这一行，且值不能错！
+        productName: 'ManagerIdentity'
       };
 
-      console.log('📦 [Store] 正在发送完整 Payload:', loginPayload);
+      console.log('📦 [Store] 发起登录:', loginPayload);
 
-      // 调用 API
+      // 1. 发起请求
+      // 注意：由于 request.ts 拦截器修改，这里返回的 res 可能是整个响应体对象
       const res: any = await apiLogin(loginPayload)
 
-      const data = res.data || res;
-      console.log('✅ [Store] 登录成功, 返回数据:', data);
+      // 2. ✨ 核心修正：深度解析 Token
+      // 真实后端的结构通常是: { Success: true, Data: { Access_Token: "...", ... } }
+      const rootData = res.data || res || {};
+      const innerData = rootData.Data || rootData.data || {}; // 尝试进入 Data 层
 
-      token.value = data.accessToken || data.token
-      userInfo.value = data
+      // 兼容各种奇葩的大小写组合 (参照 verify_api_v2.js)
+      const targetToken =
+        innerData.Access_Token ||
+        innerData.access_token ||
+        innerData.accessToken ||
+        innerData.token ||
+        // 兜底：万一 Token 在最外层
+        rootData.accessToken ||
+        rootData.token;
 
-      if (token.value) {
-        localStorage.setItem(STORAGE_KEYS.TOKEN || 'token', token.value)
+      if (targetToken) {
+        token.value = targetToken
+        userInfo.value = innerData // 保存用户信息
+        localStorage.setItem(STORAGE_KEYS.TOKEN, targetToken)
+        console.log('✅ [Store] Token 提取成功:', targetToken.substring(0, 10) + '...')
+        ElMessage.success('登录成功！')
+        return true
+      } else {
+        console.error('❌ [Store] 登录响应中未找到 Token。响应结构:', rootData)
+        ElMessage.error('登录异常：未获取到令牌')
+        return false
       }
 
-      ElMessage.success('登录成功！')
-      return true
     } catch (error: any) {
-      console.error('❌ [Store] 登录失败:', error);
+      console.error('❌ [Store] 登录请求失败:', error);
       return false
     }
   }
-
   // 2. 注册动作
   const register = async (registerData: any) => {
     try {

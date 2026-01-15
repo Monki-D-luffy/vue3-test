@@ -84,13 +84,25 @@ service.interceptors.response.use(
             return { items: data, total: parseInt(headers['x-total-count'], 10) || 0 } as any
         }
 
-        // 场景 B: 标准后端响应
-        if (data && typeof data === 'object' && 'code' in data) {
-            if (data.code === 200 || data.success === true) {
-                return data.data
+        // 场景 B: 真实后端 / 标准响应
+        if (data && typeof data === 'object') {
+            // ✨ [增强] 兼容 C# 风格 (Success) 和标准风格 (code=200)
+            const isSuccess =
+                data.code === 200 ||
+                data.success === true ||
+                data.Success === true; // C# PascalCase
+
+            if (isSuccess) {
+                // 如果后端返回了 Data 字段，优先解包 Data，但保留外层结构以便获取 TotalCount
+                // 这里为了通用性，我们返回整个 body，让 Business 层去解构 Data 和 TotalCount
+                return data
             } else {
-                if (!config._silent) ElMessage.error(data.message || '操作失败')
-                return Promise.reject(new Error(data.message || 'Error'))
+                // 处理明确的业务失败
+                if (data.code !== undefined || data.Success === false) {
+                    const msg = data.Message || data.message || '操作失败';
+                    if (!config._silent) ElMessage.error(msg)
+                    return Promise.reject(new Error(msg))
+                }
             }
         }
         return data

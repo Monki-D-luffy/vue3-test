@@ -22,22 +22,34 @@ export default defineConfig(({ mode }) => {
       https: {},
       host: '0.0.0.0',
       proxy: {
-        // [新增] 1. 身份认证服务代理 (必须放在 /api 之前)
-        // 匹配 /api/identity -> 转发到真实后端
+        // 1. 身份认证服务代理 (Identity Server)
+        // 用途：登录获取 Token
+        // 匹配: /api/identity/api/Login/... -> https://iotserver.dabbsson.cn/manager-identity/api/Login/...
         '/api/identity': {
           target: 'https://iotserver.dabbsson.cn/manager-identity/',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/identity/, ''), // 去除前缀
+          rewrite: (path) => path.replace(/^\/api\/identity/, ''),
           secure: false
         },
 
-        // 2. 常规业务 API 代理 (指向 Mock 或其他业务后端)
+        // ✨ [新增] 2. IoT Manager 业务后端代理 (Manager Server)
+        // 用途：获取设备列表、产品列表等
+        // 匹配: /api/manager/api/Devices/... -> https://iotserver.dabbsson.cn/manager/api/Devices/...
+        '/api/manager': {
+          target: 'https://iotserver.dabbsson.cn/manager/',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/manager/, ''),
+          secure: false
+        },
+
+        // 3. 常规 Mock 代理 (兜底策略)
+        // 用途：处理尚未接入真实后端的请求
         '/api': {
           target: 'http://localhost:3000',
           changeOrigin: true,
         },
 
-        // 3. AI 服务代理
+        // 4. AI 服务代理
         '/ai-proxy': {
           target: env.VITE_AI_API_URL,
           changeOrigin: true,
