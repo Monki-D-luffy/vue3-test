@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
 import * as XLSX from 'xlsx'
-import request from '@/utils/request' // ✅ 使用统一的 request 实例
+import request from '@/api/core/request' // ✅ 使用统一的 request 实例
 
 // 定义列的结构
 interface ExportColumn {

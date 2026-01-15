@@ -1,10 +1,26 @@
-D:\HTML\vue3\vue-useProject>npm run gen:api
-
-> vue-useproject@0.0.0 gen:api
-> swagger-typescript-api generate -p swagger.json -o src/api/generated -n business.ts --axios
-
-ℹ Code generator will use the default template for "api"                                                  16:00:43
-ℹ Code generator will use the default template for "routetypes"                                           16:00:43
-ℹ try to get swagger by path "D:\HTML\vue3\vue-useProject\swagger.json"                                   16:00:43   
-ℹ start generating your typescript api                                                                    16:00:43
-✔ api file "business.ts" created in D:\HTML\vue3\vue-useProject\src\api\generated      
+[{
+	"resource": "/d:/HTML/vue3/vue-useProject/src/api/index.ts",
+	"owner": "typescript",
+	"code": "2559",
+	"severity": 8,
+	"message": "类型“AxiosInstance”与类型“ApiConfig<unknown>”不具有相同的属性。",
+	"source": "ts",
+	"startLineNumber": 7,
+	"startColumn": 28,
+	"endLineNumber": 7,
+	"endColumn": 44,
+	"origin": "extHost1"
+}]
+[{
+	"resource": "/d:/HTML/vue3/vue-useProject/src/api/modules/auth.ts",
+	"owner": "typescript",
+	"code": "2305",
+	"severity": 8,
+	"message": "模块“\"@/types\"”没有导出的成员“LoginRequest,LoginResponse",
+	"source": "ts",
+	"startLineNumber": 3,
+	"startColumn": 15,
+	"endLineNumber": 3,
+	"endColumn": 27,
+	"origin": "extHost1"
+}]

@@ -1,5 +1,5 @@
 // src/api/modules/firmware.ts
-import request from '@/utils/request'
+import request from '@/api/core/request'
 import type { Firmware, PaginationParams, PaginatedResponse, ApiResponse } from '@/types'
 
 // 通用查询参数接口

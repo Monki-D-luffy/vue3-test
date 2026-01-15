@@ -1,5 +1,5 @@
 // src/api/modules/product.ts
-import request from '@/utils/request';
+import request from '@/api/core/request';
 import type { ProductDetail, ProductListItem, ProductQueryParams } from '@/types/product';
 
 // 获取产品列表 (支持搜索、筛选、分页)

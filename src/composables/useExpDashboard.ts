@@ -1,5 +1,5 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
-import request from '@/utils/request';
+import request from '@/api/core/request';
 import type { DashboardData } from '@/types/dashboard';
 import { fetchAnalysisReport } from '@/api/modules/dashboard';
 

@@ -1,5 +1,5 @@
 // src/api/modules/device.ts
-import request from '@/utils/request'
+import request from '@/api/core/request'
 import type {
     Device,
     DeviceQueryParams,

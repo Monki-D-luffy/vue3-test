@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '@/api/core/request'
 import type { UpgradeTask, ApiResponse } from '@/types'
 
 export const estimateUpgradeImpact = async (

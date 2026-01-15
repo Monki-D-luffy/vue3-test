@@ -18,6 +18,7 @@ import firmwareRoutes from './routes/firmware.js';
 import campaignRoutes from './routes/campaign.js';
 import productRoutes from './routes/product.js';
 import sceneRoutes from './routes/scene.js';
+import deviceRoutes from './routes/device.js';
 
 server.use(middlewares);
 server.use(jsonServer.bodyParser);
@@ -31,6 +32,7 @@ authRoutes(server, router.db);
 firmwareRoutes(server, router.db);
 campaignRoutes(server, router.db);
 productRoutes(server, router.db);
+deviceRoutes(server, router.db);
 
 // --- 自定义 json-server 的返回格式 ---
 router.render = (req, res) => {

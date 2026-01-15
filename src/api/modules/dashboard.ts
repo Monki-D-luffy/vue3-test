@@ -1,4 +1,4 @@
-import request from '@/utils/request';
+import request from '@/api/core/request';
 import type { DashboardData, AiAnalysisReport } from '@/types/dashboard';
 
 // 1. 获取仪表盘概览数据 (原有)
