@@ -7,10 +7,6 @@ import mkcert from 'vite-plugin-mkcert'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
-  // 🌍 真实后端地址 (来自你的文档 "后端请求链接.md")
-  // 务必使用 HTTP，因为 C# 代码中配置的是 http://...:6101
-  const REAL_BACKEND_TARGET = 'http://192.168.5.143:6101'
-
   return {
     plugins: [
       vue(),
@@ -23,22 +19,25 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      https: true, // 前端保持 HTTPS (mkcert)
+      https: {},
       host: '0.0.0.0',
       proxy: {
-        // ❌ [删除] 以前的 identity 代理，不再需要云端验证
-        // '/api/identity': { ... },
-
-        // ✅ [统一] 所有 /api 请求直连本地 C# 后端
-        '/api': {
-          target: REAL_BACKEND_TARGET,
+        // [新增] 1. 身份认证服务代理 (必须放在 /api 之前)
+        // 匹配 /api/identity -> 转发到真实后端
+        '/api/identity': {
+          target: 'https://iotserver.dabbsson.cn/manager-identity/',
           changeOrigin: true,
-          secure: false,
-          // ⚠️ 关键：你的后端接口本身就有 /api 前缀 (例如 /api/Login/LoginByPwd)
-          // 所以不需要 rewrite 去掉它，直接透传即可
+          rewrite: (path) => path.replace(/^\/api\/identity/, ''), // 去除前缀
+          secure: false
         },
 
-        // AI 服务代理保持不变
+        // 2. 常规业务 API 代理 (指向 Mock 或其他业务后端)
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+        },
+
+        // 3. AI 服务代理
         '/ai-proxy': {
           target: env.VITE_AI_API_URL,
           changeOrigin: true,
