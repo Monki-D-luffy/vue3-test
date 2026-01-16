@@ -1,7 +1,7 @@
 <template>
     <div class="table-wrapper">
-        <el-table ref="tableRef" v-loading="loading" :data="deviceList" style="width: 100%"
-            @selection-change="handleSelectionChange" class="modern-table">
+        <el-table ref="tableRef" v-loading="loading" :data="deviceList" style="width: 100%" class="modern-table"
+            @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" />
 
             <el-table-column label="设备名称" min-width="180">
@@ -17,17 +17,31 @@
 
             <el-table-column label="状态" width="140">
                 <template #default="{ row }">
-                    <StatusBadge :label="row.status" :type="getStatusType(row.status)" />
+                    <StatusBadge :label="row.status === 'online' ? '在线' : '离线'" :type="getStatusType(row.status)" />
                 </template>
             </el-table-column>
 
-            <el-table-column prop="productInfo" label="产品信息" min-width="150" />
-            <el-table-column prop="dataCenter" label="数据中心" width="120" />
-            <el-table-column prop="gmtLastOnline" label="最后在线" width="180" />
+            <el-table-column label="产品信息" min-width="150">
+                <template #default="{ row }">
+                    <div>{{ row.productName }}</div>
+                    <div class="text-xs text-gray-400">{{ row.productId }}</div>
+                </template>
+            </el-table-column>
+
+            <el-table-column prop="region" label="数据中心" width="120" />
+
+            <el-table-column label="活跃时间" min-width="200">
+                <template #default="{ row }">
+                    <div class="text-xs">
+                        <div>首: {{ row.gmtActive }}</div>
+                        <div :class="{ 'text-gray-300': row.status !== 'online' }">近: {{ row.gmtLastOnline }}</div>
+                    </div>
+                </template>
+            </el-table-column>
 
             <el-table-column label="操作" width="180" fixed="right">
                 <template #default="{ row }">
-                    <el-button link type="primary" @click="emits('view-logs', row)">查看</el-button>
+                    <el-button link type="primary" @click="emits('view-logs', row)">日志</el-button>
                     <el-button link type="primary" @click="emits('open-detail', row)">详情</el-button>
                     <el-button link type="danger" @click="emits('unbind', row)">解绑</el-button>
                 </template>
@@ -47,11 +61,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElTable } from 'element-plus'
-import type { Device, DeviceStatusType } from '@/types'
+import type { Device } from '@/types'
 import StatusBadge from '@/components/StatusBadge.vue'
-// ❌ 已移除: import AppPagination from '@/components/AppPagination.vue'
 
-// 1. Props 定义
+// Props
 defineProps<{
     deviceList: Device[];
     loading: boolean;
@@ -62,7 +75,7 @@ defineProps<{
     };
 }>()
 
-// 2. Emits 定义
+// Emits
 const emits = defineEmits<{
     (e: 'selection-change', rows: Device[]): void
     (e: 'page-change', page: number): void
@@ -72,34 +85,32 @@ const emits = defineEmits<{
     (e: 'view-logs', row: Device): void
 }>()
 
+// Refs
 const tableRef = ref<InstanceType<typeof ElTable>>()
+
+// Methods
+// 核心修复：显式定义函数，确保模板可访问
+const handleSelectionChange = (rows: Device[]) => {
+    emits('selection-change', rows)
+}
 
 const clearSelection = () => {
     tableRef.value?.clearSelection()
 }
 
-const handleSelectionChange = (rows: Device[]) => {
-    emits('selection-change', rows)
-}
-
+// 暴露给父组件
 defineExpose({
     clearSelection
 })
 
-// 3. 状态类型映射
-const getStatusType = (status: DeviceStatusType | string) => {
-    switch (status) {
-        case '在线': return 'success'
-        case '离线': return 'info'
-        case '故障': return 'danger'
-        case '升级中': return 'primary'
-        default: return 'info'
-    }
+// 样式映射
+const getStatusType = (status: string) => {
+    if (status === 'online') return 'success'
+    return 'info'
 }
 </script>
 
 <style scoped>
-/* 表格基础样式 */
 .modern-table :deep(.el-table__inner-wrapper::before) {
     display: none;
 }
@@ -117,12 +128,6 @@ const getStatusType = (status: DeviceStatusType | string) => {
     font-weight: 600;
     color: var(--el-color-primary);
     cursor: pointer;
-    transition: color 0.2s;
-}
-
-.name-text:hover {
-    color: var(--el-color-primary-dark-2);
-    text-decoration: underline;
 }
 
 .sn-text {
@@ -136,13 +141,23 @@ const getStatusType = (status: DeviceStatusType | string) => {
     margin-left: 8px;
 }
 
-/* ✅ 新增：分页容器样式，确保靠右对齐且有呼吸感 */
+.text-xs {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.text-gray-400 {
+    color: #9ca3af;
+}
+
+.text-gray-300 {
+    color: #d1d5db;
+}
+
 .pagination-wrapper {
     display: flex;
     justify-content: flex-end;
     padding: 16px 0;
     margin-top: 8px;
-    background-color: transparent;
-    /* 确保背景透明，不产生遮挡 */
 }
 </style>
