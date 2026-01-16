@@ -23,7 +23,8 @@ export interface UserRegisterData {
   confirmPassword?: string; // 前端验证用
 }
 
-export type DeviceStatusType = '在线' | '离线' | '故障' | '未激活' | '升级中';
+export type DeviceStatusType = '在线' | '离线' | '故障' | '未激活' | '升级中' | 'online' | 'offline';
+
 // 设备对象
 export interface Device {
   id: string;

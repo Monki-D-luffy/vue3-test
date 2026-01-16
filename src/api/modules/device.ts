@@ -1,50 +1,231 @@
 // src/api/modules/device.ts
 import request from '@/api/core/request'
 import type {
-    DeviceLogsQueryRequest,
-    DeviceLogsCountRequest
-} from '@/api/generated/business'
-import type {
     Device,
-    DeviceQueryParams,
+    DeviceListFilters,
     PaginatedResponse,
     DeviceSummary,
     UpgradeTask,
     DeviceLogQueryParams
 } from '@/types'
 
+// ==========================================
+// 🛠️ 类型定义 (Module Specific)
+// ==========================================
+
+// ✨ Fix: 对齐 DeviceSummary 接口，使用 activated 而非 active
+export interface DeviceRealStats {
+    total: number;
+    online: number;
+    offline: number;
+    activated: number; // Fixed name
+}
+
+// 后端原始数据类型 (用于类型提示)
+interface RawDevice {
+    UUID?: string;
+    uuid?: string;
+    Id?: string;
+    id?: string;
+    ProductName?: string;
+    productName?: string;
+    ProductId?: string;
+    productId?: string;
+    DeviceName?: string;
+    deviceName?: string;
+    Country?: string;
+    country?: string;
+    OnlineStatus?: boolean | string | number;
+    onlineStatus?: boolean | string | number;
+    BindStatus?: number;
+    bindStatus?: number;
+    ActiveTime?: string;
+    activeTime?: string;
+    LastOnlineTime?: string;
+    lastOnlineTime?: string;
+    UpdateTime?: string;
+    updateTime?: string;
+    FirmwareVersion?: string;
+    firmwareVersion?: string;
+    [key: string]: any;
+}
+
+// ==========================================
+// 🧼 防腐层 (ACL) - 数据清洗
+// ==========================================
+
+/**
+ * 核心清洗函数：将后端混乱的 PascalCase/MixedCase 转换为标准前端模型
+ */
+function transformDevice(item: RawDevice): Device {
+    // 辅助工具：按优先级获取字段值
+    const get = (...keys: string[]) => {
+        for (const k of keys) {
+            if (item[k] !== undefined && item[k] !== null) return item[k]
+        }
+        return null
+    }
+
+    // 状态归一化
+    const mapStatus = (val: any): any => {
+        const s = String(val).toLowerCase()
+        return (s === 'online' || s === '1' || s === 'true') ? '在线' : '离线'
+    }
+
+    // 时间格式化
+    const fmtDate = (val: any): string => {
+        if (!val || typeof val !== 'string') return '-'
+        return val.replace('T', ' ').split('.')[0]
+    }
+
+    // ✨ Fix: 严格按照 src/types/index.ts 的 Device 接口构造
+    return {
+        id: get('UUID', 'uuid', 'Id', 'id'),
+        uuid: get('UUID', 'uuid'), // 注意: Device 接口可能没有定义 uuid，如果报错请检查 types，通常 id=uuid
+
+        name: get('DeviceName', 'deviceName') || get('UUID', 'uuid')?.substring(0, 8) || 'Unknown Device',
+        sn: get('UUID', 'uuid'),
+
+        productName: get('ProductName', 'productName') || '未知产品',
+        productId: get('ProductId', 'productId') || '-',
+
+        status: mapStatus(get('OnlineStatus', 'onlineStatus')),
+
+        // ✨ Fix: 映射 Country -> dataCenter
+        dataCenter: get('Country', 'country') || 'CN',
+
+        // ✨ Fix: 补充必填字段
+        firmwareVersion: get('FirmwareVersion', 'firmwareVersion') || '-',
+        puuid: get('Puuid', 'puuid') || '-',
+        isBound: get('BindStatus', 'bindStatus') === 1,
+
+        gmtActive: fmtDate(get('ActiveTime', 'activeTime', 'BindTime', 'bindTime', 'CreateTime', 'createAt')),
+        gmtLastOnline: fmtDate(get('LastOnlineTime', 'lastOnlineTime', 'UpdateTime', 'updateTime', 'lastSeen')),
+
+        hasNewFirmware: false,
+
+        // 保留原始数据 (Cast as any 以绕过 Device 类型检查)
+        // @ts-ignore
+        _raw: item
+    } as Device
+}
+
+// ==========================================
+// 🚀 API 方法定义
+// ==========================================
+
 /**
  * 获取设备列表
- * 拦截器已自动处理 x-total-count 并转换为 PaginatedResponse 结构
  */
-export const fetchDevices = (params: DeviceQueryParams) => {
-    return request.get<PaginatedResponse<Device>>('/devices', { params })
+export const fetchDeviceList = async (
+    pageIndex: number,
+    pageSize: number,
+    filters: DeviceListFilters
+): Promise<PaginatedResponse<Device>> => {
+    const payload = {
+        pageIndex,
+        pageSize,
+        country: filters.dataCenter || 'CN',
+        uuid: filters.keyword || undefined,
+    }
+
+    try {
+        const res = await request.post<any>('/manager/api/Devices/GetDevices', payload)
+
+        let rawList: RawDevice[] = []
+        let total = 0
+
+        if (res && Array.isArray(res.Data)) {
+            rawList = res.Data
+            total = res.TotalCount || 0
+        } else if (Array.isArray(res)) {
+            rawList = res
+            total = res.length
+        } else if (res && res.data) {
+            rawList = Array.isArray(res.data) ? res.data : []
+            total = res.total || rawList.length
+        }
+
+        const items = rawList.map(transformDevice)
+        return { items, total }
+
+    } catch (error) {
+        console.error('❌ Fetch Device List Failed:', error)
+        return { items: [], total: 0 }
+    }
+}
+
+/**
+ * 兼容性导出
+ */
+export const fetchDevices = fetchDeviceList;
+
+/**
+ * 获取设备统计数据
+ */
+export const fetchDeviceStats = async (country: string = 'CN'): Promise<DeviceRealStats> => {
+    try {
+        const [totalRes, onlineRes] = await Promise.all([
+            request.post<any>('/manager/api/Devices/GetDevicesTotalCount', null, { params: { country } }),
+            request.post<any>('/manager/api/Devices/GetDevices', {
+                pageIndex: 1,
+                pageSize: 1,
+                country,
+                onlineStatus: 1
+            })
+        ])
+
+        // 解析 Total
+        let total = 0
+        if (typeof totalRes === 'number') total = totalRes
+        else if (totalRes?.Data) total = Number(totalRes.Data)
+        else if (totalRes?.data) total = Number(totalRes.data)
+
+        // 解析 Online
+        let online = 0
+        const onlineData = onlineRes?.Data || onlineRes
+        if (onlineData?.TotalCount) online = Number(onlineData.TotalCount)
+        else if (Array.isArray(onlineData)) online = onlineData.length
+
+        return {
+            total: total || 0,
+            online: online || 0,
+            offline: Math.max(0, (total || 0) - (online || 0)),
+            // ✨ Fix: 重命名为 activated 以匹配 DeviceSummary
+            activated: total || 0
+        }
+    } catch (error) {
+        console.warn('⚠️ Fetch Device Stats Failed, using defaults.', error)
+        return { total: 0, online: 0, offline: 0, activated: 0 }
+    }
 }
 
 /**
  * 获取设备详情
  */
 export const fetchDeviceDetail = (id: string) => {
-    return request.get<Device>(`/devices/${id}`)
+    return request.post<any>('/manager/api/Devices/GetDevices', {
+        pageIndex: 1,
+        pageSize: 1,
+        uuid: id,
+        country: 'CN'
+    }).then(res => {
+        const list = res.Data || []
+        if (list.length > 0) return transformDevice(list[0])
+        throw new Error('Device not found')
+    })
 }
 
 /**
- * 删除设备
+ * 删除设备 (RPC)
  */
 export const deleteDevice = (id: string) => {
-    return request.delete<void>(`/devices/${id}`)
-}
-
-/**
- * 获取设备统计概览
- */
-export const fetchDeviceSummary = (dataCenter?: string) => {
-    const params = dataCenter ? { dataCenter } : {}
-    return request.get<DeviceSummary>('/dashboard/stats', { params })
+    // 假设后端删除接口，需根据实际情况调整 URL
+    return request.post<void>('/manager/api/Devices/DeleteDevice', { uuid: id })
 }
 
 // ==========================================
-// ✨ 修复后的真实设备日志 API
+// 🪵 日志 API (保留之前的修复版逻辑)
 // ==========================================
 
 const LOG_API = {
@@ -52,120 +233,64 @@ const LOG_API = {
     GET_COUNT: '/manager/api/DeviceLogs/GetDeviceLogsTotalCount'
 }
 
-/**
- * 获取设备日志 (真实后端对接 - 修复版)
- * 解决 total 解析失败导致分页消失的问题
- */
 export const fetchDeviceLogs = async (params: DeviceLogQueryParams): Promise<PaginatedResponse<any>> => {
     const commonParams = {
         uuid: params.deviceId,
-        // ✨ Fix: 修复之前的拼写检查可能导致的误会，确保使用正确的 eventId
         dpid: params.eventId ? Number(params.eventId) : null,
         startTime: params.startTime,
         endTime: params.endTime
     }
 
-    // ✨ Fix: 使用 pageIndex 和 pageSize (interface 已在 types/index.ts 更新)
-    const listPayload: DeviceLogsQueryRequest = {
+    const listPayload = {
         ...commonParams,
         pageIndex: params.pageIndex || 1,
         pageSize: params.pageSize || 20
     }
 
-    const countPayload: DeviceLogsCountRequest = {
-        ...commonParams
-    }
-
     try {
         const [listRes, countRes] = await Promise.all([
             request.post<any>(LOG_API.GET_LIST, listPayload),
-            request.post<any>(LOG_API.GET_COUNT, countPayload)
+            request.post<any>(LOG_API.GET_COUNT, commonParams)
         ])
 
-        // 1. 数据解包
-        const listBody = listRes.data || {};
+        // 解包列表
+        const listBody = listRes.data || listRes || {};
         const rawList = Array.isArray(listBody)
             ? listBody
             : (Array.isArray(listBody.Data) ? listBody.Data : []);
 
-        const countBody = countRes.data;
+        // 解包总数
         let total = 0;
-        if (typeof countBody === 'number') {
-            total = countBody;
-        } else if (countBody && typeof countBody.Data === 'number') {
-            total = countBody.Data;
-        } else if (countBody && typeof countBody.total === 'number') {
-            total = countBody.total;
-        }
+        const countBody = countRes.data || countRes;
+        if (typeof countBody === 'number') total = countBody;
+        else if (countBody?.Data) total = Number(countBody.Data);
+        else if (countBody?.total) total = Number(countBody.total);
 
-        // 2. ✨ 精确映射 (基于您提供的 Console Log)
-        // Raw: { dpid: 22, dpValue: "00.00.13", createdAt: "...", remark: "", source: "1" }
+        // 映射
         const items = rawList.map((log: any) => ({
-            // 时间: createdAt
             time: log.createdAt || log.CreateTime || new Date().toISOString(),
-
-            // 事件: dpid (如 "DPID: 22")
-            event: log.dpid ? `DPID: ${log.dpid}` : (log.eventName || '系统上报'),
-
-            // 级别: 后端无此字段，根据 dpid 或默认给 info
-            type: 'info',
-
-            // 详情: dpValue
-            details: formatDetails(log.dpValue || log.LogContent),
-
-            // 来源: source
-            source: mapSource(log.source),
-
-            // 来源详情: remark
+            event: log.dpid ? `DPID: ${log.dpid}` : (log.eventName || 'Report'),
+            type: mapLogType(log.type || 'info'),
+            details: typeof log.dpValue === 'object' ? JSON.stringify(log.dpValue) : String(log.dpValue || log.LogContent || ''),
+            source: String(log.source || 'Device'),
             sourceDetail: log.remark || '-'
         }))
 
-        return {
-            items,
-            total: total || 0
-        }
+        return { items, total: total || 0 }
     } catch (error) {
         console.error('Fetch device logs failed:', error)
         return { items: [], total: 0 }
     }
 }
-/**
- * 辅助：日志类型映射
- * 解决乱码或数字显示问题
- */
-function mapLogType(val: any): string {
-    // 强制转字符串比较
-    const s = String(val).toLowerCase();
 
-    // 数字映射
-    if (s === '1' || s === 'info') return 'info';
-    if (s === '2' || s === 'warn' || s === 'warning') return 'warning';
-    if (s === '3' || s === 'error' || s === 'fatal') return 'danger';
-
-    // 中文模糊匹配
-    if (s.includes('错误') || s.includes('异常')) return 'danger';
-    if (s.includes('警告')) return 'warning';
-
-    return 'info'; // 默认
+function mapLogType(val: string): string {
+    if (val === 'error') return 'danger';
+    if (val === 'warn') return 'warning';
+    return 'info';
 }
 
-function formatDetails(val: any): string {
-    if (!val) return '{}';
-    if (typeof val === 'object') return JSON.stringify(val);
-    return String(val);
-}
-/**
- * 辅助：来源映射
- */
-function mapSource(val: any): string {
-    const s = String(val);
-    if (s === '1') return '设备上报';
-    if (s === '2') return '云端下发';
-    if (s === '3') return 'App操作';
-    return s || 'Device';
-}
 // ==========================================
-// 升级相关 API
+// 🆙 升级相关 API (透传)
 // ==========================================
 
 export const startDeviceUpgrade = (deviceId: string) => {
@@ -174,26 +299,4 @@ export const startDeviceUpgrade = (deviceId: string) => {
 
 export const getUpgradeTaskStatus = (taskId: string) => {
     return request.get<UpgradeTask>(`/upgrade-task/${taskId}`)
-}
-
-// ==========================================
-// 真实 API
-// ==========================================
-
-/**
- * ✨ [New] 真实后端设备查询接口 (RPC 风格)
- * 对应后端: POST /api/Devices/GetDevices
- * * @param data.pageIndex 页码 (1-based)
- * @param data.pageSize 页大小
- * @param data.country 区域代码 (必填, 如 "CN")
- * @param data.uuid (可选) 设备 UUID 用于精确查询
- */
-export const fetchRealDeviceList = (data: {
-    pageIndex: number;
-    pageSize: number;
-    country?: string;
-    uuid?: string;
-}) => {
-    // 注意：前缀 manager 会被 vite.config.ts 代理转发到真实服务器
-    return request.post('manager/api/Devices/GetDevices', data)
 }

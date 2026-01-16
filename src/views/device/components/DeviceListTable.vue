@@ -28,7 +28,7 @@
                 </template>
             </el-table-column>
 
-            <el-table-column prop="region" label="数据中心" width="120" />
+            <el-table-column prop="dataCenter" label="数据中心" width="120" />
 
             <el-table-column label="活跃时间" min-width="200">
                 <template #default="{ row }">

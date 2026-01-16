@@ -59,8 +59,8 @@ import { useDataExport } from '@/composables/useDataExport'
 import { useProducts } from '@/composables/useProducts'
 import { useDeviceListAi } from '@/ai'
 
-// 🚀 新引入的业务层 API
-import { getDeviceTableData, getDeviceRealStats, type DeviceRealStats } from '@/api/business/device'
+// 🚀 [Updated] 引用标准模块化 API
+import { fetchDeviceList, fetchDeviceStats, type DeviceRealStats } from '@/api/modules/device'
 import type { Device, DeviceListFilters } from '@/types'
 
 const router = useRouter()
@@ -80,7 +80,7 @@ const stats = reactive<DeviceRealStats>({
     total: 0,
     online: 0,
     offline: 0,
-    active: 0
+    activated: 0
 })
 
 const filters = reactive<DeviceListFilters>({
@@ -94,7 +94,8 @@ const filters = reactive<DeviceListFilters>({
 const loadData = async () => {
     loading.value = true
     try {
-        const { items, total } = await getDeviceTableData(
+        // ✨ 使用新的标准 API 方法
+        const { items, total } = await fetchDeviceList(
             pagination.currentPage,
             pagination.pageSize,
             filters
@@ -110,8 +111,8 @@ const loadData = async () => {
 
 // --- 核心动作: 加载统计 ---
 const loadStats = async () => {
-    // 根据当前筛选的区域获取统计
-    const res = await getDeviceRealStats(filters.dataCenter || 'CN')
+    // ✨ 使用新的标准 API 方法
+    const res = await fetchDeviceStats(filters.dataCenter || 'CN')
     Object.assign(stats, res)
 }
 
@@ -234,13 +235,10 @@ const handleExport = () => {
 /* 现代化卡片容器 */
 .dashboard-card {
     background: var(--bg-card);
-    /* 使用全局变量 */
     padding: 24px;
     border-radius: 16px;
-    /* 更大的圆角 */
     margin-top: 16px;
     box-shadow: var(--shadow-card);
-    /* 弥散阴影 */
     border: 1px solid var(--border-color-light);
 }
 </style>

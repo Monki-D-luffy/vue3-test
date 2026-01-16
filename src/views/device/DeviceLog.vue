@@ -43,9 +43,9 @@
                     <div class="info-group">
                         <div class="info-item">
                             <span class="label">产品 ID (PID)</span>
-                            <span class="value mono">{{ realDeviceDetail?.ProductId || realDeviceDetail?.productId ||
-                                '-'
-                            }}</span>
+                            <span class="value mono">{{ realDeviceDetail?.productId || '-'
+                                || '-'
+                                }}</span>
                         </div>
                         <div class="info-item sub-item">
                             <span class="label">区域/时区</span>
@@ -53,7 +53,7 @@
                                 <el-icon class="location-icon">
                                     <Location />
                                 </el-icon>
-                                {{ realDeviceDetail?.Country || realDeviceDetail?.region || 'CN' }}
+                                {{ realDeviceDetail?.dataCenter || 'CN' }}
                             </span>
                         </div>
                     </div>
@@ -170,12 +170,13 @@ import PageMainHeader from '@/components/PageMainHeader.vue'
 import FirmwareUpgradeModal from '@/components/FirmwareUpgradeModal.vue'
 import LogPayloadPopover from './components/LogPayloadPopover.vue'
 
-// 引入 API
-import { fetchDeviceLogs, fetchRealDeviceList } from '@/api/modules/device' // ✨ 引入真实列表接口
+// ✨ 修复：使用新的标准 API fetchDeviceList
+import { fetchDeviceLogs, fetchDeviceList } from '@/api/modules/device'
 import { useDeviceLogs, buildDeviceLogParams } from '@/composables/useDeviceLogs'
 import { useDataExport } from '@/composables/useDataExport'
 import { formatDateTime } from '@/utils/formatters'
 import { parseLogDetails } from '@/utils/logParser'
+import type { Device } from '@/types'
 
 // --- 基础状态 ---
 const route = useRoute()
@@ -184,7 +185,7 @@ const rawDeviceName = ref(route.query.name as string || '')
 
 // 设备详情相关
 const deviceLoading = ref(false)
-const realDeviceDetail = ref<any>(null) // 存储从列表接口获取的完整详情
+const realDeviceDetail = ref<Device | null>(null) // 使用标准类型
 const firmwareVersion = ref<string>('--')
 
 // --- 计算属性 ---
@@ -192,8 +193,8 @@ const pageTitle = computed(() => `日志审计`)
 
 // 智能显示名称
 const displayDeviceName = computed(() => {
-    // 优先用真实接口返回的 DeviceName，其次用 URL 参数
-    const name = realDeviceDetail.value?.DeviceName || realDeviceDetail.value?.deviceName || rawDeviceName.value
+    // ✨ 适配：标准 Device 对象使用 name 字段
+    const name = realDeviceDetail.value?.name || rawDeviceName.value
     const id = deviceId.value
     if (!name || name === id || name === 'Unknown') {
         return `设备 (${id.substring(0, 4)}...)`
@@ -204,9 +205,9 @@ const displayDeviceName = computed(() => {
 const deviceName = computed(() => displayDeviceName.value)
 
 const deviceStatusText = computed(() => {
-    // 兼容后端不同的大小写返回
-    const status = realDeviceDetail.value?.OnlineStatus ?? realDeviceDetail.value?.status
-    if (status === 1 || status === 'Online' || status === '在线') return '在线'
+    // ✨ 适配：标准 Device 对象使用 status 字段 (online/offline)
+    const status = realDeviceDetail.value?.status
+    if (status === 'online' || status === '在线') return '在线'
     return '离线'
 })
 
@@ -243,27 +244,20 @@ const dateShortcuts = [
 
 // --- 核心方法 ---
 
-// 1. ✨ 从真实设备列表获取完整元数据 (包含 PID)
+// 1. ✨ 从真实设备列表获取完整元数据
 const loadRealDeviceMeta = async () => {
     if (deviceId.value === 'N/A') return
     try {
         deviceLoading.value = true
-        // 调用列表接口，按 UUID 过滤
-        // 注意：这里假设后端支持 uuid 参数，如果不支持，可能需要获取列表后前端 find
-        // 根据之前的 verify_api.js，GetDevices 支持 uuid 参数
-        const res: any = await fetchRealDeviceList({
-            pageIndex: 1,
-            pageSize: 1,
-            uuid: deviceId.value,
-            country: 'CN' // 必填项，防止报错
+        // ✨ 使用标准 API，它会自动清洗数据
+        const { items } = await fetchDeviceList(1, 1, {
+            keyword: deviceId.value, // keyword 会被映射为 uuid
+            dataCenter: 'CN'
         })
 
-        // 解析列表返回结构
-        const list = res.data?.Data || res.data || [] // 兼容 {Data:[], Success:true}
-        if (Array.isArray(list) && list.length > 0) {
-            realDeviceDetail.value = list[0]
-        } else {
-            console.warn('Device not found in real list')
+        if (items && items.length > 0) {
+            // items[0] 已经是标准的 Device 对象 (CamelCase)
+            realDeviceDetail.value = items[0]
         }
     } catch (e) {
         console.warn('Failed to load real device meta:', e)
@@ -352,7 +346,7 @@ const onUpgradeDone = () => { handleUpgradeDone() }
 onMounted(async () => {
     if (deviceId.value !== 'N/A') {
         fetchLogs(deviceId.value)
-        await loadRealDeviceMeta() // ✨ 加载 PID
+        await loadRealDeviceMeta()
         loadLatestFirmwareVersion()
     } else {
         ElMessage.error('未指定设备ID')
