@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Location } from '@element-plus/icons-vue'
 
 // 组件
@@ -59,8 +59,8 @@ import { useDataExport } from '@/composables/useDataExport'
 import { useProducts } from '@/composables/useProducts'
 import { useDeviceListAi } from '@/ai'
 
-// 🚀 [Updated] 引用标准模块化 API
-import { fetchDeviceList, fetchDeviceStats, type DeviceRealStats } from '@/api/modules/device'
+// API
+import { fetchDeviceList, fetchDeviceStats, deleteDevice, type DeviceRealStats } from '@/api/modules/device'
 import type { Device, DeviceListFilters } from '@/types'
 
 const router = useRouter()
@@ -75,26 +75,24 @@ const pagination = reactive({
     total: 0
 })
 
-// 统计数据 State
 const stats = reactive<DeviceRealStats>({
     total: 0,
     online: 0,
-    offline: 0,
+    boundCount: 0,
     activated: 0
 })
 
 const filters = reactive<DeviceListFilters>({
     keyword: '',
-    dataCenter: 'CN', // 默认选中 CN，符合业务逻辑
+    dataCenter: 'CN',
     productId: '',
     dateRange: null,
 })
 
-// --- 核心动作: 加载列表 ---
+// --- 加载数据 ---
 const loadData = async () => {
     loading.value = true
     try {
-        // ✨ 使用新的标准 API 方法
         const { items, total } = await fetchDeviceList(
             pagination.currentPage,
             pagination.pageSize,
@@ -104,15 +102,16 @@ const loadData = async () => {
         pagination.total = total
     } catch (error) {
         console.error('Failed to load list', error)
+        ElMessage.error('数据加载失败')
     } finally {
         loading.value = false
     }
 }
 
-// --- 核心动作: 加载统计 ---
 const loadStats = async () => {
-    // ✨ 使用新的标准 API 方法
-    const res = await fetchDeviceStats(filters.dataCenter || 'CN')
+    // 允许传空值给 fetchDeviceStats 以获取全部区域统计
+    const res = await fetchDeviceStats(filters.dataCenter || undefined)
+    console.log('Stats Loaded:', res)
     Object.assign(stats, res)
 }
 
@@ -135,7 +134,7 @@ const handleSearch = () => {
 
 const handleDataCenterChange = (val: string) => {
     handleSearch()
-    loadStats() // 区域变化时，刷新统计
+    loadStats()
     const name = val ? dataCenterMap[val] : '全部区域'
     ElMessage.success(`已切换至 ${name}`)
 }
@@ -147,16 +146,30 @@ const handleRefresh = () => {
 }
 
 const handleReset = () => {
+    // 1. 清空关键词
     filters.keyword = ''
+
+    // 2. 清空产品选择
     filters.productId = ''
+
+    // 3. ✨ Fix: 必须显式清空绑定状态 (设为 undefined 让 API 不传此字段)
+    filters.isBound = undefined
+
+    // 4. 清空日期
     filters.dateRange = null
-    // filters.dataCenter 保持不变，避免用户迷失
+
+    // 5. 注意：dataCenter (区域) 建议保留当前选择，防止用户迷失
+    // 如果你希望重置连区域也清空，可以加上：filters.dataCenter = ''
+
+    // 6. 触发搜索 (会自动重置到第 1 页)
     handleSearch()
+
+    ElMessage.success('筛选条件已重置')
 }
 
 const handleFilterUpdate = (newFilters: any) => Object.assign(filters, newFilters)
 
-// --- 其他逻辑 (保持原样) ---
+// --- Composable / Hooks ---
 const { products, fetchProducts, getProductName } = useProducts()
 const { isExporting, exportData } = useDataExport()
 const selectedRows = ref<Device[]>([])
@@ -166,12 +179,10 @@ const unbindDialogVisible = ref(false)
 const deviceToUnbind = ref<Device | null>(null)
 const tableComponentRef = ref<InstanceType<typeof DeviceListTable> | null>(null)
 
-// AI Hook
 useDeviceListAi({ filters, pagination, summary: stats as any, dataCenterMap })
 
 // --- Lifecycle ---
 onMounted(async () => {
-    // 并行加载所有数据
     await Promise.all([
         loadData(),
         loadStats(),
@@ -200,16 +211,57 @@ const handleUnbindSuccess = () => {
     loadData()
     loadStats()
 }
-const handleBatchDelete = () => {
-    ElMessage.success('批量删除演示成功')
-    clearSelection()
-    loadData()
-}
-const handleBatchRestart = () => { ElMessage.success('指令已发送'); clearSelection() }
-const handleBatchEnable = () => { ElMessage.success('设备已启用'); clearSelection() }
 
-// 导出
+// ✨ Fix: 真实的批量删除逻辑
+const handleBatchDelete = async () => {
+    if (selectedRows.value.length === 0) return
+
+    try {
+        await ElMessageBox.confirm(
+            `确定要永久删除选中的 ${selectedRows.value.length} 台设备吗？此操作不可逆。`,
+            '高危操作警告',
+            {
+                confirmButtonText: '确定删除',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }
+        )
+
+        loading.value = true
+        // 并行执行删除请求
+        const deletePromises = selectedRows.value.map(row => deleteDevice(row.id || row.puuid || ''))
+        await Promise.all(deletePromises)
+
+        ElMessage.success('批量删除成功')
+        clearSelection()
+        // 删除后重置到第一页防止空页
+        pagination.currentPage = 1
+        await loadData()
+        await loadStats()
+
+    } catch (error) {
+        if (error !== 'cancel') {
+            console.error('Batch delete failed:', error)
+            ElMessage.error('部分设备删除失败，请刷新后重试')
+        }
+    } finally {
+        loading.value = false
+    }
+}
+
+// TODO: 等待后端提供真实的批量控制 API
+const handleBatchRestart = () => { ElMessage.info('该功能后端暂未接入'); clearSelection() }
+const handleBatchEnable = () => { ElMessage.info('该功能后端暂未接入'); clearSelection() }
+
+// ✨ Fix: 增加导出限制
 const handleExport = () => {
+    if (pagination.total > 5000) {
+        ElMessageBox.alert('导出数据量超过 5000 条，建议缩小筛选范围后分批导出，以免浏览器卡顿。', '导出限制', {
+            confirmButtonText: '我知道了'
+        });
+        return;
+    }
+
     const params = { pageIndex: 0, pageSize: 10000, ...filters }
     exportData('/devices', params, DEVICE_EXPORT_COLUMNS, '设备列表', (data) => {
         return data.map(d => ({
@@ -232,7 +284,6 @@ const handleExport = () => {
     width: 180px;
 }
 
-/* 现代化卡片容器 */
 .dashboard-card {
     background: var(--bg-card);
     padding: 24px;
