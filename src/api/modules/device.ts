@@ -12,7 +12,6 @@ import type {
 // 🛠️ 类型定义
 // ==========================================
 
-// 真实后端返回的统计数据结构 (基于你抓包看到的真实数据)
 export interface DeviceStatsResponse {
     country: string;
     totalCount: number;
@@ -20,7 +19,6 @@ export interface DeviceStatsResponse {
     onlineCount: number;
 }
 
-// 前端使用的统计结构
 export interface DeviceRealStats {
     total: number;
     online: number;
@@ -28,7 +26,6 @@ export interface DeviceRealStats {
     activated: number;
 }
 
-// 后端原始设备数据类型
 interface RawDevice {
     UUID?: string;
     uuid?: string;
@@ -58,7 +55,7 @@ interface RawDevice {
 }
 
 // ==========================================
-// 🧼 防腐层 (ACL) - 数据清洗
+// 🧼 防腐层 (ACL)
 // ==========================================
 
 function transformDevice(item: RawDevice): Device {
@@ -115,13 +112,13 @@ export const fetchDeviceList = async (
     const keyword = filters.keyword || '';
     const isUUID = /^[0-9a-fA-F-]{36}$/.test(keyword);
 
-    // 1. 智能区域回退 (全球查询保护)
+    // 1. 智能区域回退
     let targetCountry = filters.dataCenter;
     if (!targetCountry && !isUUID) {
         targetCountry = 'CN';
     }
 
-    // 2. 构建 Payload (注意: GetDevices 接口通常使用 Body 传参，根据文档 DevicesQueryRequest)
+    // 2. 构建 Payload
     const payload: any = {
         pageIndex,
         pageSize,
@@ -147,12 +144,13 @@ export const fetchDeviceList = async (
         if (isUUID) {
             payload.uuid = keyword;
         } else {
-            payload.deviceName = keyword; // 如果后端不支持 deviceName，可能需要回退逻辑
+            payload.deviceName = keyword;
         }
     }
 
     try {
-        const res = await request.post<any>('/manager/api/Devices/GetDevices', payload)
+        // ✨ Fix: 使用 /api/Devices/...，通过 Vite 转发
+        const res = await request.post<any>('/api/Devices/GetDevices', payload)
 
         let rawList: RawDevice[] = []
         let total = 0
@@ -182,29 +180,19 @@ export const fetchDevices = fetchDeviceList;
 
 /**
  * 获取设备统计数据
- * ✅ 修复: 使用 Query 参数传递 country，解决 400 Bad Request 问题
  */
 export const fetchDeviceStats = async (country?: string): Promise<DeviceRealStats> => {
-    // 1. 默认区域处理
     const effectiveCountry = country || 'CN';
 
     try {
-        // ✨ [关键修复]
-        // 接口: POST /manager/api/Devices/GetDevicesTotalCount
-        // 参数: Query参数 (country)
-        // Axios 写法: post(url, body, { params: { ... } })
-        // 这里 body 传 null，参数传给 params
-
         const res = await request.post<any>(
-            '/manager/api/Devices/GetDevicesTotalCount',
-            null, // Body 置空
+            '/api/Devices/GetDevicesTotalCount', // ✨ Fix: /api/...
+            null,
             {
-                params: { country: effectiveCountry } // ✅ 参数放这里，Axios 会自动拼接到 URL 后
+                params: { country: effectiveCountry }
             }
         );
 
-        // 2. 解析数据 (基于你提供的真实 JSON: { country: "CN", totalCount: 2, ... })
-        // request.ts 的拦截器通常会返回 data 本身，或者我们需要从 res.data 取
         const statsData = (res?.data || res || {}) as DeviceStatsResponse;
 
         console.log('📊 Real Stats Response:', statsData);
@@ -213,7 +201,7 @@ export const fetchDeviceStats = async (country?: string): Promise<DeviceRealStat
             total: Number(statsData.totalCount || 0),
             online: Number(statsData.onlineCount || 0),
             boundCount: Number(statsData.bindCount || 0),
-            activated: Number(statsData.totalCount || 0) // 暂用总数代替激活数
+            activated: Number(statsData.totalCount || 0)
         }
     } catch (error) {
         console.error('⚠️ Fetch Device Stats Failed:', error)
@@ -225,7 +213,7 @@ export const fetchDeviceStats = async (country?: string): Promise<DeviceRealStat
  * 获取设备详情
  */
 export const fetchDeviceDetail = (id: string) => {
-    return request.post<any>('/manager/api/Devices/GetDevices', {
+    return request.post<any>('/api/Devices/GetDevices', {
         pageIndex: 1,
         pageSize: 1,
         uuid: id
@@ -240,16 +228,15 @@ export const fetchDeviceDetail = (id: string) => {
  * 删除设备
  */
 export const deleteDevice = (id: string) => {
-    return request.post<void>('/manager/api/Devices/DeleteDevice', null, { params: { uuid: id } })
+    return request.post<void>('/api/Devices/DeleteDevice', null, { params: { uuid: id } })
 }
 
 const LOG_API = {
-    GET_LIST: '/manager/api/DeviceLogs/GetDeviceLogs',
-    GET_COUNT: '/manager/api/DeviceLogs/GetDeviceLogsTotalCount'
+    GET_LIST: '/api/DeviceLogs/GetDeviceLogs', // ✨ Fix
+    GET_COUNT: '/api/DeviceLogs/GetDeviceLogsTotalCount' // ✨ Fix
 }
 
 export const fetchDeviceLogs = async (params: DeviceLogQueryParams): Promise<PaginatedResponse<any>> => {
-    // 日志接口也是 POST，参数根据文档也是 Body (DeviceLogsQueryRequest)
     const commonParams = {
         uuid: params.deviceId,
         dpid: params.eventId ? Number(params.eventId) : null,
@@ -266,7 +253,6 @@ export const fetchDeviceLogs = async (params: DeviceLogQueryParams): Promise<Pag
         const listBody = listRes.data || listRes || {};
         const rawList = Array.isArray(listBody) ? listBody : (Array.isArray(listBody.Data) ? listBody.Data : []);
 
-        // 尝试解析 Count
         let total = 0;
         const countBody = countRes.data || countRes;
         if (typeof countBody === 'number') total = countBody;

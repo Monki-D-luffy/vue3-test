@@ -21,7 +21,7 @@ export const fetchProducts = (params?: any) => {
         productName: params?.keyword || undefined
     }
 
-    return request.post('/manager/api/Product/GetProducts', payload)
+    return request.post('/api/Product/GetProducts', payload)
 }
 
 /**

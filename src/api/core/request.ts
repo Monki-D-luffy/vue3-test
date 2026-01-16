@@ -22,9 +22,9 @@ const isMockMode = localStorage.getItem(STORAGE_KEY_MOCK) === 'true'
 
 const baseURL = isMockMode
     ? (import.meta.env.VITE_API_URL_MOCK || 'http://localhost:3000')
-    : (import.meta.env.VITE_API_URL_REAL || '/api')
+    : ''
 
-const service: AxiosInstance = axios.create({
+export const service: AxiosInstance = axios.create({
     baseURL,
     timeout: 15000,
 })
