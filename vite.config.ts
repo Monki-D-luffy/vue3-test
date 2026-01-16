@@ -24,11 +24,11 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       proxy: {
         // 1. 身份认证 (保持不变)
-        '/api/identity': {
-          target: 'https://iotserver.dabbsson.cn/manager-identity/',
+        '/identity': {
+          target: 'https://iotserver.dabbsson.cn/manager-identity',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/identity/, ''),
-          secure: false
+          secure: false,
+          rewrite: (path) => path.replace(/^\/identity/, '')
         },
 
         // 2. 业务接口代理 (核心修改)

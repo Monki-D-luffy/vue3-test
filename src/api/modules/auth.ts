@@ -27,7 +27,7 @@ export const login = (data: LoginRequest) => {
 
     // 注意：这里不需要再加 /api 前缀，因为 request.ts 或 vite 代理会处理
     // 最终路径由 vite 代理 /api/identity -> https://iotserver.../manager-identity/
-    return request.post('/identity/api/Login/LoginByPwd', data)
+    return request.post<LoginResult>('/identity/api/Login/LoginByPwd', data)
 }
 
 export const refreshToken = (token: string) => {
