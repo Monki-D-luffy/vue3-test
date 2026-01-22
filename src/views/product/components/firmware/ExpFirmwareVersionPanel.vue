@@ -90,7 +90,9 @@
 
         <ExpFirmwareVerifyModal v-model="isVerifyVisible" :firmware="currentVerifyRow" @success="refreshData" />
         <ExpFirmwareDeleteModal v-model="isDeleteVisible" :firmware="currentDeleteRow" @success="refreshData" />
-        <ExpFirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="refreshData" />
+
+        <ExpFirmwareUploadWizard v-model="isUploadVisible" :product="product" :repo-status="repoStatus"
+            :current-repo-id="currentRepoId" @success="refreshData" />
     </div>
 </template>
 
@@ -116,12 +118,14 @@ const isDeleteVisible = ref(false)
 const currentVerifyRow = ref<any>(null)
 const currentDeleteRow = ref<any>(null)
 
+// ⚡️ [关键修复] 解构出 missing props
 const {
     loading,
     firmwareList,
     pagination,
-    getFirmwares,
-    handlePaginationChange
+    repoStatus,      // 新增
+    currentRepoId,   // 新增
+    getFirmwares
 } = useFirmwareManagement()
 
 const refreshData = () => {
@@ -132,7 +136,8 @@ const refreshData = () => {
 
 const onPageChange = () => {
     if (props.product?.id) {
-        handlePaginationChange(props.product.id)
+        // 直接调用 refreshData 即可
+        getFirmwares(props.product.id)
     }
 }
 
@@ -151,8 +156,6 @@ const openDeleteDialog = (row: any) => {
     isDeleteVisible.value = true
 }
 
-// ✨ [关键修复] 将硬编码颜色替换为 CSS 变量
-// 注意：这里必须是字符串形式的 'var(...)'
 const headerStyle = {
     background: 'var(--bg-hover)',
     color: 'var(--text-secondary)',
@@ -164,6 +167,7 @@ const tableRowClassName = () => 'modern-row'
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .exp-panel {
     display: flex;
     flex-direction: column;
@@ -180,10 +184,8 @@ const tableRowClassName = () => 'modern-row'
 .left-tip {
     display: flex;
     align-items: center;
-    /* ✨ [修复] 文字颜色 */
     color: var(--text-secondary);
     font-size: 13px;
-    /* ✨ [修复] 背景颜色 */
     background: var(--bg-hover);
     padding: 6px 12px;
     border-radius: 20px;
@@ -201,7 +203,6 @@ const tableRowClassName = () => 'modern-row'
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     transition: all 0.2s;
     color: #fff;
-    /* 按钮文字始终保持白色 */
 }
 
 .tech-btn:hover {
@@ -230,7 +231,6 @@ const tableRowClassName = () => 'modern-row'
 .version-code {
     font-family: 'JetBrains Mono', 'Monaco', monospace;
     font-weight: 600;
-    /* ✨ [修复] */
     color: var(--text-primary);
     font-size: 14px;
 }
@@ -246,7 +246,6 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .time-text {
-    /* ✨ [修复] */
     color: var(--text-secondary);
     font-size: 13px;
 }
@@ -288,7 +287,6 @@ const tableRowClassName = () => 'modern-row'
 }
 
 .note-content {
-    /* ✨ [修复] */
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -306,7 +304,6 @@ const tableRowClassName = () => 'modern-row'
 .action-btn {
     border: none;
     transition: all 0.2s;
-    /* ✨ [修复] 按钮背景透明，适配黑夜 */
     background-color: transparent;
 }
 
@@ -333,7 +330,6 @@ const tableRowClassName = () => 'modern-row'
     transition: background-color 0.2s;
 }
 
-/* ✨ [修复] 表格悬浮颜色变量 */
 :deep(.el-table__row:hover) {
     background-color: var(--bg-hover) !important;
 }

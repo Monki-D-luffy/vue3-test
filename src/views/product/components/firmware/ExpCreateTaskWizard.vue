@@ -56,8 +56,9 @@
                     <p class="step-desc">仅显示已通过验证的版本。</p>
 
                     <div class="firmware-selector">
-                        <div v-for="fw in verifiedFirmwares" :key="fw.id" class="fw-item"
-                            :class="{ selected: form.firmwareId === fw.id }" @click="selectFirmware(fw)">
+                        <div v-for="fw in verifiedFirmwares" :key="fw.version" class="fw-item"
+                            :class="{ selected: form.firmwareId === fw.repoId && form.firmwareVersion === fw.version }"
+                            @click="selectFirmware(fw)">
                             <div class="fw-icon">
                                 <el-icon>
                                     <Files />
@@ -67,7 +68,7 @@
                                 <div class="fw-ver">{{ fw.version }}</div>
                                 <div class="fw-time">{{ formatDateTime(fw.uploadedAt) }}</div>
                             </div>
-                            <div class="fw-check" v-if="form.firmwareId === fw.id">
+                            <div class="fw-check" v-if="form.firmwareVersion === fw.version">
                                 <el-icon>
                                     <Check />
                                 </el-icon>
@@ -162,8 +163,10 @@ import {
 import { ElMessage } from 'element-plus'
 import { formatDateTime } from '@/utils/formatters'
 import type { Product, Firmware } from '@/types'
-// 引入 API (请确保 index.ts 里有这些 Mock 函数，或者自己 mock)
-import { fetchFirmwares, estimateUpgradeImpact, createUpgradeCampaign } from '@/api'
+
+// ⚡️ [修复] 引入正确的 API
+import { estimateUpgradeImpact, createUpgradeCampaign } from '@/api'
+import { fetchFirmwaresByProduct } from '@/api/modules/firmware'
 
 const props = defineProps<{
     modelValue: boolean
@@ -204,31 +207,15 @@ const form = reactive({
 const loadVerifiedFirmwares = async () => {
     if (!props.product) return
     try {
-        // 使用 verified: true 直接让后端过滤（如果后端支持），这里为了保险还是保留前端过滤逻辑
-        const res = await fetchFirmwares({
-            productId: props.product.id,
-            _page: 1,      // 修正：通常是 page 而不是 _page
-            _limit: 100    // 修正：通常是 limit 而不是 _limit
-        })
+        // ⚡️ [修复] 使用新的 API (不需要分页参数)
+        const list = await fetchFirmwaresByProduct(props.product.id)
 
-        let list: Firmware[] = []
-
-        // 兼容性处理：判断 res 是数组还是对象
-        if (Array.isArray(res)) {
-            list = res
-        } else if (res && Array.isArray(res.items)) {
-            list = res.items
-        } else if (res && Array.isArray(res.list)) {
-            // 某些后端习惯用 list
-            list = res.list
-        }
-
-        // 过滤出已验证的固件
+        // ⚡️ [修复] 新 API 返回的就是数组，直接过滤
         verifiedFirmwares.value = list.filter((f: any) => f.verified)
 
     } catch (e) {
         console.error('加载固件列表失败:', e)
-        verifiedFirmwares.value = [] // 出错时置空，防止 UI 崩壞
+        verifiedFirmwares.value = []
     }
 }
 
@@ -241,7 +228,11 @@ watch(() => props.modelValue, (val) => {
 
 // 2. 选择固件
 const selectFirmware = (fw: Firmware) => {
-    form.firmwareId = fw.id
+    // ⚡️ [注意] firmware.ts 中清洗出的字段是 repoId 和 version
+    // 我们用 repoId 作为 firmwareId 传递给后端 (取决于后端 campaign 接口要什么)
+    // 通常 Campaign 需要的是 FirmwareId (Guid) 或者 RepoId + Version
+    // 假设后端 Campaign 接口接收 RepoId 和 Version
+    form.firmwareId = fw.repoId || (fw as any).id
     form.firmwareVersion = fw.version
 }
 

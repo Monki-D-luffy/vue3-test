@@ -1,89 +1,96 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { Firmware } from '@/types'
-// 引用你原本已有的 API 函數
-import {
-    fetchFirmwares,
-    updateFirmware, // 對應驗證功能 (更新狀態)
-    deleteFirmware  // 對應刪除功能
-} from '@/api/modules/firmware'
+import * as FirmwareApi from '@/api/modules/firmware'
+import { createOTATaskDraft, type CreateOTATaskDraftRequest } from '@/api/modules/iot-ota'
 
 export function useFirmwareManagement() {
     const loading = ref(false)
     const firmwareList = ref<Firmware[]>([])
-    // 你的原始分頁邏輯
+    const repoStatus = ref<'unlinked' | 'linked' | 'unknown'>('unknown')
+    const linkedRepos = ref<Array<{ id: string, name: string, type: number, channel: number }>>([])
+
     const pagination = reactive({
         currentPage: 1,
         pageSize: 10,
         total: 0
     })
 
-    // 獲取固件列表
-    const getFirmwares = async (productId: string) => {
-        if (!productId) return
+    // 1. 初始化检查
+    const checkProductContext = async (productId: string) => {
+        console.log(`🧠 [Logic] 开始检查产品上下文: ${productId}`)
+        repoStatus.value = 'unknown'
+        try {
+            const repos = await FirmwareApi.fetchLinkedRepos(productId)
+            linkedRepos.value = repos
 
+            if (repos.length > 0) {
+                console.log(`🧠 [Logic] 发现 ${repos.length} 个关联库，状态 -> linked`)
+                repoStatus.value = 'linked'
+                await getFirmwares(productId)
+            } else {
+                console.warn(`🧠 [Logic] 未发现关联库，状态 -> unlinked`)
+                repoStatus.value = 'unlinked'
+                firmwareList.value = []
+            }
+        } catch (e) {
+            console.error('Context check failed', e)
+        }
+    }
+
+    // 2. 获取列表
+    const getFirmwares = async (productId: string) => {
         loading.value = true
         try {
-            // 根據你的 API 定義調用 fetchFirmwares
-            const res = await fetchFirmwares({
-                productId,
-                page: pagination.currentPage,
-                limit: pagination.pageSize,
-                _page: 0,
-                _limit: 0
-            })
-
-            // 處理回傳結構，兼容 items/list 格式
-            if (res && Array.isArray(res.items)) {
-                firmwareList.value = res.items
-                pagination.total = res.total || 0
-            } else if (Array.isArray(res)) {
-                firmwareList.value = res
-                pagination.total = res.length
-            }
-
+            const list = await FirmwareApi.fetchFirmwaresByProduct(productId)
+            firmwareList.value = list
+            pagination.total = list.length
         } catch (error) {
-            console.error('獲取固件列表失敗:', error)
-            firmwareList.value = []
+            console.error('Failed to fetch firmwares:', error)
         } finally {
             loading.value = false
         }
     }
 
-    const handlePaginationChange = (productId: string) => {
-        getFirmwares(productId)
+    // Actions (保持不变)
+    const createRepoAction = async (params: { name: string, type: number, channel: number, note?: string }) => {
+        return await FirmwareApi.createRepoAndGetId(params)
     }
 
-    // --- 橋接函數 ---
-
-    /**
-     * 驗證固件 (Pure版 - 不處理 UI Loading，只回傳 Promise)
-     * 對應 UI 中的 verifyFirmwarePure
-     * 實際上是呼叫 updateFirmware 來更新 verified 狀態
-     */
-    const verifyFirmwarePure = async (id: string | number) => {
-        // 使用你現有的 updateFirmware API
-        // 假設後端接受 { verified: true } 來標記驗證通過
-        return await updateFirmware(String(id), { verified: true })
+    const linkRepoAction = async (productId: string, repoId: string) => {
+        return await FirmwareApi.linkRepoToProduct(productId, repoId)
     }
 
-    /**
-     * 刪除固件 (Pure版)
-     * 對應 UI 中的 removeFirmwarePure
-     * 實際上是呼叫 deleteFirmware
-     */
-    const removeFirmwarePure = async (id: string | number) => {
-        // 使用你現有的 deleteFirmware API
-        return await deleteFirmware(String(id))
+    const uploadAction = async (repoId: string, version: string, note: string, file: File) => {
+        return await FirmwareApi.uploadFirmware(repoId, version, note, file)
+    }
+
+    const createTaskAction = async (taskPayload: CreateOTATaskDraftRequest) => {
+        return await createOTATaskDraft(taskPayload)
+    }
+
+    const verifyFirmwarePure = async (row: any) => {
+        if (linkedRepos.value.length === 0) return
+        await FirmwareApi.verifyFirmware(linkedRepos.value[0].id, row.version)
+    }
+
+    const removeFirmwarePure = async (row: any) => {
+        if (linkedRepos.value.length === 0) return
+        await FirmwareApi.deleteFirmware(linkedRepos.value[0].id, row.version)
     }
 
     return {
         loading,
         firmwareList,
         pagination,
+        repoStatus,
+        linkedRepos,
+        checkProductContext,
         getFirmwares,
-        handlePaginationChange,
-        // 導出 UI 元件需要的函數名稱
+        createRepoAction,
+        linkRepoAction,
+        uploadAction,
+        createTaskAction,
         verifyFirmwarePure,
         removeFirmwarePure
     }
