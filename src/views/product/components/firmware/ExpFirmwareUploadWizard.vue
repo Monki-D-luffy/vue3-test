@@ -10,7 +10,7 @@
       </el-steps>
     </div>
 
-    <div class="wizard-content px-8 min-h-[320px]" v-loading="loading">
+    <div class="wizard-content px-8 min-h-[320px]" v-loading="loading || internalLoading">
 
       <div v-if="activeStep === 0" class="step-panel max-w-lg mx-auto">
 
@@ -20,16 +20,16 @@
         </el-radio-group>
 
         <div v-if="step1.mode === 'select'">
-          <div v-if="linkedRepos.length === 0" class="text-xs text-gray-400 text-center mb-2">
-            (暂未检测到关联库，数据加载中或为空)
+          <div class="text-xs text-gray-300 text-center mb-2" v-if="availableRepos.length === 0">
+            (正在扫描关联库... ProductID: {{ product.id }})
           </div>
 
-          <div v-if="linkedRepos.length > 0">
+          <div v-if="availableRepos.length > 0">
             <el-form label-width="100px" label-position="left">
               <el-form-item label="目标仓库" required>
                 <el-select v-model="step1.selectedRepoId" placeholder="请选择目标仓库" class="w-full"
                   @change="handleRepoSelectChange">
-                  <el-option v-for="repo in linkedRepos" :key="repo.id" :label="repo.name" :value="repo.id">
+                  <el-option v-for="repo in availableRepos" :key="repo.id" :label="repo.name" :value="repo.id">
                     <span class="float-left">{{ repo.name }}</span>
                     <span class="float-right text-gray-400 text-xs ml-2">
                       {{ formatRepoType(repo.type) }} (Ch:{{ repo.channel }})
@@ -51,7 +51,7 @@
             </div>
           </div>
 
-          <div v-else class="text-center py-10">
+          <div v-else-if="!internalLoading" class="text-center py-10">
             <el-empty description="当前产品暂无关联固件库" :image-size="80">
               <el-button type="primary" @click="step1.mode = 'create'">去新建一个</el-button>
             </el-empty>
@@ -112,7 +112,7 @@
                 </el-icon>
                 <span class="font-bold">{{ step2.file.name }}</span>
                 <span class="text-xs text-gray-400 bg-white px-1 rounded border">{{ formatSize(step2.file.size)
-                  }}</span>
+                }}</span>
               </div>
             </div>
           </el-form-item>
@@ -174,13 +174,14 @@
     <template #footer>
       <div class="flex justify-between items-center pt-4 border-t border-gray-100">
         <div class="text-xs text-gray-300">
-          Repos: {{ linkedRepos.length }}
+          Repos: {{ availableRepos.length }}
         </div>
 
         <div class="flex gap-3">
           <el-button v-if="activeStep === 0" @click="visible = false">取消</el-button>
 
-          <el-button v-if="activeStep === 0" type="primary" @click="handleStep1Next" :loading="loading">
+          <el-button v-if="activeStep === 0" type="primary" @click="handleStep1Next"
+            :loading="loading || internalLoading">
             下一步: 上传固件
           </el-button>
 
@@ -211,19 +212,28 @@ import type { Product } from '@/types'
 import type { CreateOTATaskDraftRequest } from '@/api/modules/iot-ota'
 import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
 
-// 定义 Props (使用 withDefaults 增强健壮性)
+// 定义 Props
 const props = withDefaults(defineProps<{
   modelValue: boolean
   product: Product
-  repoStatus: string
-  linkedRepos?: any[]
+  repoStatus?: string // 可选
+  linkedRepos?: any[] // 可选
 }>(), {
   linkedRepos: () => []
 })
 
 const emit = defineEmits(['update:modelValue', 'success'])
 
-const { createRepoAction, linkRepoAction, uploadAction, createTaskAction } = useFirmwareManagement()
+// ⚠️ 关键修正：引入 checkProductContext 和内部 state
+const {
+  createRepoAction,
+  linkRepoAction,
+  uploadAction,
+  createTaskAction,
+  checkProductContext,
+  linkedRepos: internalFetchedRepos, // 这是组件自己拉取的数据
+  loading: internalLoading
+} = useFirmwareManagement()
 
 const visible = computed({
   get: () => props.modelValue,
@@ -234,9 +244,19 @@ const activeStep = ref(0)
 const loading = ref(false)
 const createFormRef = ref<FormInstance>()
 
+// ⚠️ 核心逻辑：双源合并 (Props 优先，自查兜底)
+const availableRepos = computed(() => {
+  // 如果父组件传了有效数据，就用父组件的
+  if (props.linkedRepos && props.linkedRepos.length > 0) {
+    return props.linkedRepos
+  }
+  // 否则使用自己拉取的数据
+  return internalFetchedRepos.value || []
+})
+
 // Data Models
 const step1 = reactive({
-  mode: 'select', // 默认 select
+  mode: 'select',
   selectedRepoId: '',
   createForm: {
     name: '',
@@ -253,20 +273,17 @@ const createRules = {
   channel: [
     {
       validator: (rule: any, value: number, callback: Function) => {
-        // Module(0) 类型通道号必须 > 0
         if (step1.createForm.type === 0 && (!value || value <= 0)) {
           return callback(new Error('Device/Module 类型通道号必须大于0'))
         }
-
-        // 前端重复检查
-        const conflict = props.linkedRepos?.some(repo =>
+        // 使用 computed 的数据进行检查
+        const conflict = availableRepos.value.some(repo =>
           repo.type === step1.createForm.type &&
           repo.channel === value
         )
         if (conflict) {
           return callback(new Error('该类型和通道的固件库已存在，请直接选择已关联库'))
         }
-
         callback()
       },
       trigger: 'change'
@@ -296,42 +313,58 @@ const runtimeContext = reactive({
 
 // --- 初始化与监听 ---
 
-// 1. 监听弹窗打开：重置状态
-watch(() => props.modelValue, (val) => {
+// 1. 监听弹窗打开：重置状态 + 强制拉取数据
+watch(() => props.modelValue, async (val) => {
   if (val) {
+    console.log('🚀 Wizard Opened. Checking data sources...')
     activeStep.value = 0
-    initializeStep1()
-    // Reset forms
     step2.version = ''
     step2.file = null
     step3.taskName = ''
+
+    // ⚠️ 核心修复：如果父组件没给数据，自己去拉！
+    if (props.linkedRepos.length === 0) {
+      console.log('⚠️ Props data is empty. Triggering self-fetch for product:', props.product.id)
+      await checkProductContext(props.product.id)
+    } else {
+      console.log('✅ Props data detected. Using parent data.')
+    }
+
+    // 数据到位后初始化 UI 状态
+    initializeStep1()
   }
 })
 
-// 2. 监听数据延迟到达：如果在弹窗打开期间数据来了，自动切换到 select 模式
-watch(() => props.linkedRepos, (newVal) => {
+// 2. 监听数据变化 (无论是 Props 变了还是 Internal 变了)
+watch(availableRepos, (newVal) => {
   if (props.modelValue && newVal && newVal.length > 0) {
-    console.log('📦 Wizard detected data update, switching to Select mode')
+    console.log('📦 Wizard detected data update (Props or Internal), refreshing UI')
     initializeStep1()
   }
 }, { deep: true })
 
 const initializeStep1 = () => {
-  if (props.linkedRepos && props.linkedRepos.length > 0) {
+  if (availableRepos.value.length > 0) {
     step1.mode = 'select'
     // 默认选中第一个
-    step1.selectedRepoId = props.linkedRepos[0].id
-    handleRepoSelectChange(props.linkedRepos[0].id)
+    if (!step1.selectedRepoId) {
+      const first = availableRepos.value[0]
+      step1.selectedRepoId = first.id
+      handleRepoSelectChange(first.id)
+    }
   } else {
+    // 确实没数据，切换到新建模式
     step1.mode = 'create'
     step1.selectedRepoId = ''
-    step1.createForm.name = `${props.product.name}_Repo`
+    if (!step1.createForm.name) {
+      step1.createForm.name = `${props.product.name}_Repo`
+    }
   }
 }
 
 // 辅助函数
 const handleRepoSelectChange = (id: string) => {
-  const repo = props.linkedRepos?.find(r => r.id === id)
+  const repo = availableRepos.value.find(r => r.id === id)
   if (repo) {
     runtimeContext.repoId = repo.id
     runtimeContext.repoName = repo.name
@@ -340,11 +373,10 @@ const handleRepoSelectChange = (id: string) => {
 }
 
 const getSelectedRepoName = () => {
-  return props.linkedRepos?.find(r => r.id === step1.selectedRepoId)?.name || ''
+  return availableRepos.value.find(r => r.id === step1.selectedRepoId)?.name || ''
 }
 
 const formatRepoType = (type: number) => {
-  // 0: Module, 1: MCU
   return type === 1 ? 'MCU (主控)' : 'Module (模组)'
 }
 
@@ -362,13 +394,10 @@ const formatSize = (bytes: number) => {
 // --- Step Handlers ---
 
 const handleStep1Next = async () => {
-  // Branch A: Select Existing
   if (step1.mode === 'select') {
     if (!step1.selectedRepoId) return ElMessage.warning('请选择一个仓库')
-    // runtimeContext 已在 change 事件中更新
     activeStep.value = 1
   }
-  // Branch B: Create New
   else {
     if (!createFormRef.value) return
     await createFormRef.value.validate(async (valid) => {
@@ -383,7 +412,9 @@ const handleStep1Next = async () => {
           })
           await linkRepoAction(props.product.id, id)
 
-          // 更新 Context
+          // 强制刷新内部数据，确保下一步能用
+          await checkProductContext(props.product.id)
+
           runtimeContext.repoId = id
           runtimeContext.repoName = step1.createForm.name
           step3.taskName = `Upgrade ${props.product.name}`
@@ -431,9 +462,7 @@ const handleStep3Next = async () => {
     }
 
     await createTaskAction(taskPayload)
-    // 生成一个模拟 ID 用于展示
     runtimeContext.taskId = 'DRAFT_' + Date.now().toString().slice(-6)
-
     activeStep.value = 3
   } catch (e) {
     ElMessage.error('创建任务失败')
