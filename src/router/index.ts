@@ -59,6 +59,12 @@ const router = createRouter({
           }
         },
         {
+          path: 'ota-test',
+          name: 'OTATest',
+          component: () => import('@/views/ota/OTATest.vue'),
+          meta: { title: 'OTA 测试台', requiresAuth: true }
+        },
+        {
           path: 'serial',
           name: 'SerialTerminal',
           component: () => import('@/views/experiment/SerialTerminal.vue'),

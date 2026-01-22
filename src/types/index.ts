@@ -109,6 +109,7 @@ export interface Product {
   gmtCreate?: string;     // 创建时间
   icon?: string;          // 产品图标
   apiKey?: string;        // 用于显示的 API Key (如果有)
+  communicateType?: string; // 通讯方式
 }
 
 export interface Firmware {
