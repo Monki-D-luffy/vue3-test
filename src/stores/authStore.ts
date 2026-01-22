@@ -1,4 +1,3 @@
-// src/stores/authStore.ts
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
@@ -31,11 +30,21 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('📦 [Store] 发起登录:', loginPayload);
       const res: any = await apiLogin(loginPayload)
 
+      // 解析逻辑
       const rootData = res.data || res || {};
       const innerData = rootData.Data || rootData.data || {};
 
-      const accessTokenVal = innerData.Access_Token || innerData.accessToken || rootData.accessToken;
-      const refreshTokenVal = innerData.Refresh_Token || innerData.refreshToken || rootData.refreshToken;
+      const accessTokenVal =
+        innerData.Access_Token ||
+        innerData.access_Token ||
+        innerData.accessToken ||
+        rootData.accessToken;
+
+      const refreshTokenVal =
+        innerData.Refresh_Token ||
+        innerData.refresh_Token ||
+        innerData.refreshToken ||
+        rootData.refreshToken;
 
       if (accessTokenVal) {
         setToken(accessTokenVal, refreshTokenVal)
@@ -73,81 +82,86 @@ export const useAuthStore = defineStore('auth', () => {
     router.push(`/login?redirect=${router.currentRoute.value.fullPath}`)
   }
 
-  // 4. 自动登录 (App.vue 调用)
+  // 4. 自动登录
   const tryAutoLogin = async () => {
     const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
     const storedRefresh = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-
     if (!storedToken) return false
-
     token.value = storedToken
-    if (storedRefresh) {
-      refreshToken.value = storedRefresh
-    }
-
+    if (storedRefresh) refreshToken.value = storedRefresh
     return true
   }
 
-  // 5. 刷新令牌 (拦截器调用)
+  // 5. 刷新令牌 (核心修复)
   const refreshSession = async (): Promise<string | null> => {
     if (!refreshToken.value) {
-      console.warn('⚠️ [Store] 刷新失败：本地没有 Refresh Token，强制登出')
+      console.warn('⚠️ [Store] 刷新失败：本地没有 Refresh Token')
       logout()
       return null
     }
 
     try {
       const time = new Date().toLocaleTimeString();
-      // 📝 LOG: 开始刷新
       console.log(`%c🔄 [${time}] 正在尝试刷新 Token...`, 'color: #e6a23c; font-weight: bold;')
-      console.log(`   👉 使用 RefreshToken: ${refreshToken.value.substring(0, 10)}...`)
 
       const res: any = await refreshTokenApi(refreshToken.value)
 
-      const rootData = res.data || res || {};
-      const innerData = rootData.Data || rootData.data || {};
+      // 🔍 调试日志：打印完整结构
+      console.log('📦 [Store] 刷新接口原始响应:', JSON.stringify(res, null, 2));
 
-      const newAccessToken = innerData.Access_Token || innerData.accessToken || rootData.accessToken;
-      const newRefreshToken = innerData.Refresh_Token || innerData.refreshToken || rootData.refreshToken;
+      // --- 终极解析逻辑 ---
+      let newAccessToken = '';
+      let newRefreshToken = '';
+
+      // 1. 提取最深层的数据对象
+      const root = res || {};
+      const data = root.data || root.Data || root;
+
+      // 2. 暴力匹配 (针对您日志中的 access_Token)
+      if (typeof data === 'string') {
+        newAccessToken = data;
+      } else {
+        newAccessToken =
+          data.access_Token || // ✅ 针对您的后端: access_Token
+          data.Access_Token ||
+          data.accessToken ||
+          data.token ||
+          root.accessToken ||
+          root.access_Token;   // 有时候在最外层
+
+        newRefreshToken =
+          data.refresh_Token || // ✅ 针对您的后端: refresh_Token
+          data.Refresh_Token ||
+          data.refreshToken ||
+          root.refreshToken;
+      }
 
       if (newAccessToken) {
         setToken(newAccessToken, newRefreshToken || refreshToken.value)
         return newAccessToken
       }
 
-      throw new Error('刷新接口未返回有效 Token')
+      // 如果还是失败，抛出带详细数据的错误
+      console.error('❌ [Store] 无法解析 Token。数据对象 Keys:', Object.keys(data));
+      throw new Error('刷新接口返回了 200 但未找到 Token 字段')
+
     } catch (error) {
-      console.error('❌ [Store] Token 刷新失败，会话已过期:', error)
+      console.error('❌ [Store] Token 刷新失败:', error)
       logout()
       return null
     }
   }
 
-  // 辅助：统一设置 Token 并打印日志
   const setToken = (access: string, refresh: string | null) => {
     const time = new Date().toLocaleTimeString();
-
     token.value = access
     localStorage.setItem(STORAGE_KEYS.TOKEN, access)
-
     if (refresh) {
       refreshToken.value = refresh
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh)
     }
-
-    // 📝 LOG: 刷新成功
-    console.log(`%c✅ [${time}] Token 更新成功!`, 'color: #67c23a; font-weight: bold; font-size: 12px;')
-    console.log(`   🔑 New AccessToken: ${access.substring(0, 15)}...`)
+    console.log(`%c✅ [${time}] Token 更新成功!`, 'color: #67c23a; font-weight: bold;')
   }
 
-  return {
-    token,
-    refreshToken,
-    userInfo,
-    login,
-    register,
-    logout,
-    tryAutoLogin,
-    refreshSession
-  }
+  return { token, refreshToken, userInfo, login, register, logout, tryAutoLogin, refreshSession }
 })

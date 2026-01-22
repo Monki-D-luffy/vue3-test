@@ -27,8 +27,8 @@ export interface OTATaskDto {
   remark?: string
   createTime: string
   publishTime?: string
-  productName?: string // 辅助字段，前端自行关联
-  repoName?: string // 辅助字段
+  productName?: string
+  repoName?: string
 }
 
 /** 任务设备详情 */
@@ -70,9 +70,16 @@ export interface OTATaskDeviceQueryRequest extends BasePageReq {
   status?: number
 }
 
+/** 直接开始 OTA (点对点推送) 请求 */
+export interface StartOTARequest {
+  uuid: string
+  version: string
+  firmwaresRepoId: string
+}
+
 // --- API 方法 ---
 
-// 1. 任务管理
+// 1. 任务管理 (Task Management)
 
 export const queryOTATasks = (data: OTATaskQueryRequest) => {
   return request.post<PageResult<OTATaskDto>>('/api/OTATaskManage/Query', data)
@@ -80,6 +87,29 @@ export const queryOTATasks = (data: OTATaskQueryRequest) => {
 
 export const createOTATaskDraft = (data: CreateOTATaskDraftRequest) => {
   return request.post<boolean>('/api/OTATaskManage/CreateDraft', data)
+}
+
+/**
+ * [组合操作] 创建任务并尝试获取 ID (仅用于 Task Wizard)
+ */
+export const createTaskAndGetId = async (data: CreateOTATaskDraftRequest): Promise<string> => {
+  await createOTATaskDraft(data)
+  // 给后端一点时间落库
+  await new Promise(resolve => setTimeout(resolve, 500))
+  const res = await queryOTATasks({
+    pageIndex: 1,
+    pageSize: 1,
+    productId: data.productId,
+    firmwaresRepoId: data.firmwaresRepoId,
+  } as any)
+
+  const listData = (res.data as any)?.data || (res.data as any)?.Data || res.data
+  const items = Array.isArray(listData?.items) ? listData.items : (Array.isArray(listData) ? listData : [])
+
+  if (items.length > 0) {
+    return items[0].otaTaskId || (items[0] as any).id
+  }
+  throw new Error('任务创建成功，但无法检索到任务 ID')
 }
 
 export const publishFull = (otaTaskId: string) => {
@@ -128,4 +158,22 @@ export const queryVerifyDevices = (otaTaskId: string, pageIndex = 1, pageSize = 
 
 export const queryTaskDevices = (data: OTATaskDeviceQueryRequest) => {
   return request.post<PageResult<OTATaskDeviceInfoDTO>>('/api/OTATaskManage/Devices/Query', data)
+}
+
+// 4. 直接指令 (Direct Push) ✨ NEW
+
+/**
+ * 直接对设备发起升级 (无需创建任务)
+ * 对应后端: /api/ota/StartOTA
+ */
+export const startOTA = (data: StartOTARequest) => {
+  return request.post<boolean>('/api/ota/StartOTA', data)
+}
+
+/**
+ * 检查设备是否有更新
+ * 对应后端: /api/ota/CheckForUpdate
+ */
+export const checkForUpdate = (uuid: string, target: number) => {
+  return request.post<any>('/api/ota/CheckForUpdate', { uuid, target })
 }

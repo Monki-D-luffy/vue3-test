@@ -55,8 +55,8 @@ const handleSend = (text: string) => {
 }
 
 .float-btn {
-    width: 56px;
-    height: 56px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
     color: white;

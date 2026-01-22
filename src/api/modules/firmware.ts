@@ -16,7 +16,6 @@ const getRepoDetail = async (repoId: string, fallbackName?: string) => {
   }
 
   try {
-    // console.log(`🔎 [FirmwareAPI] 尝试查询详情 ID: ${repoId}`)
     const res = await client.api.firmwaresRepoFindFirmwaresRepoByIdCreate({
       id: repoId,
       firmwaresRepoId: repoId
@@ -75,19 +74,15 @@ export const fetchLinkedRepos = async (productId: string) => {
 }
 
 /**
- * ✅ [修复] 获取固件版本列表 (聚合所有关联库)
+ * [列表] 获取固件版本列表 (聚合所有关联库)
  * 核心改动：遍历所有 linkedRepos，而不是只查第一个
  */
 export const fetchFirmwaresByProduct = async (productId: string) => {
   try {
-    console.group('🚀 [FirmwareAPI] 全量拉取固件流程')
-
     // 1. 获取所有关联库
     const repos = await fetchLinkedRepos(productId)
-    console.log(`📦 关联固件库数量: ${repos.length}`, repos)
 
     if (repos.length === 0) {
-      console.groupEnd()
       return []
     }
 
@@ -107,12 +102,6 @@ export const fetchFirmwaresByProduct = async (productId: string) => {
         if (Array.isArray(innerData)) items = innerData
         else items = innerData?.items || innerData?.Items || []
 
-        // 🕵️ 深度探针：打印每个库返回的第一条原始数据，用于校对字段
-        if (items.length > 0) {
-          console.log(`🔍 [Probe] 库 "${repo.name}" 返回的原始数据 Keys:`, Object.keys(items[0]))
-          console.log(`🔍 [Probe] 库 "${repo.name}" 第一条样本:`, items[0])
-        }
-
         // 映射数据
         return items.map((item: any) => ({
           // 关联信息
@@ -129,8 +118,8 @@ export const fetchFirmwaresByProduct = async (productId: string) => {
           // ⚠️ 时间字段重点兼容
           uploadedAt: item.CreateTime || item.createTime || item.UploadTime || item.uploadTime || new Date(),
 
-          // 状态
-          verified: item.Verified || item.verified || false,
+          // 状态 (兼容后端大小写)
+          verified: !!(item.Verified || item.verified),
 
           // ⚠️ Key 字段 (如果没有则尝试用 ID 或空字符串)
           firmwareKey: item.FirmwareKey || item.firmwareKey || item.Key || item.key || ''
@@ -145,20 +134,14 @@ export const fetchFirmwaresByProduct = async (productId: string) => {
     const results = await Promise.all(promises)
     const allFirmwares = results.flat()
 
-    console.log(`✅ 合并后固件总数: ${allFirmwares.length}`)
-    console.groupEnd()
-
     return allFirmwares
 
   } catch (error) {
     console.error('fetchFirmwaresByProduct Error:', error)
-    console.groupEnd()
     return []
   }
 }
 
-// ... 保持其他方法 (createRepoAndGetId, uploadFirmware 等) 不变 ...
-// 为了文件完整性，请确保保留 export const createRepoAndGetId = ... 等后续代码
 export const getRepoIdByProduct = async (productId: string): Promise<string | null> => {
   const repos = await fetchLinkedRepos(productId)
   return repos.length > 0 ? repos[0].id : null
@@ -214,11 +197,32 @@ export const uploadFirmware = async (repoId: string, version: string, note: stri
   })
 }
 
-export const verifyFirmware = async (repoId: string, version: string) => {
+/**
+ * 验证固件
+ * @param repoId 仓库ID
+ * @param version 版本号
+ * @param note 验证备注 (可选，如果为空则使用默认文案)
+ */
+export const verifyFirmware = async (repoId: string, version: string, note?: string) => {
+  const finalNote = note || 'Verified via Product Dashboard'
   return await client.api.firmwaresUpdateFirmwareCreate({
     repoId,
     firmwareVersion: version,
-    releaseNote: 'Verified via Product Dashboard'
+    releaseNote: finalNote
+  })
+}
+
+/**
+ * 更新固件信息 (如修改 ReleaseNote)
+ * @param repoId 仓库ID
+ * @param version 版本号
+ * @param note 新的备注
+ */
+export const updateFirmware = async (repoId: string, version: string, note: string) => {
+  return await client.api.firmwaresUpdateFirmwareCreate({
+    repoId,
+    firmwareVersion: version,
+    releaseNote: note
   })
 }
 

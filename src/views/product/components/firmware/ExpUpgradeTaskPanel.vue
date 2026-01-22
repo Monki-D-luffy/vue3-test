@@ -29,7 +29,7 @@
                     <template #default="{ row }">
                         <div class="task-info">
                             <span class="task-name" :title="row.name">{{ row.name || `Task_${row.id?.slice(0, 6)}`
-                            }}</span>
+                                }}</span>
                             <span class="task-id">ID: {{ row.id }}</span>
                         </div>
                     </template>

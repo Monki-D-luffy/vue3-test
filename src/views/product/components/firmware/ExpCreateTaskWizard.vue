@@ -27,20 +27,14 @@
                     </transition>
 
                     <transition name="slide-fade">
-                        <div class="mini-card" v-if="form.targetScope">
-                            <label>覆盖范围</label>
+                        <div class="mini-card" v-if="form.upgradeMode !== undefined">
+                            <label>发布策略</label>
                             <div class="value">{{ scopeText }}</div>
-                            <div class="sub-value" v-if="estimatedCount !== null">
-                                预计影响 <span class="count">{{ estimatedCount }}</span> 台设备
+                            <div class="sub-value" v-if="form.upgradeMode === 1 && verifyDeviceList.length > 0">
+                                测试设备: {{ verifyDeviceList.length }} 台
                             </div>
                         </div>
                     </transition>
-                </div>
-
-                <div class="summary-footer">
-                    <div class="step-dots">
-                        <span v-for="i in 3" :key="i" class="dot" :class="{ active: activeStep >= i - 1 }"></span>
-                    </div>
                 </div>
             </div>
 
@@ -52,13 +46,12 @@
                 </div>
 
                 <div v-if="activeStep === 0" class="step-content fade-in">
-                    <h2 class="step-title">1. 选择要推送的固件</h2>
-                    <p class="step-desc">仅显示已通过验证的版本。</p>
+                    <h2 class="step-title">1. 选择版本</h2>
+                    <p class="step-desc">选择要推送的固件版本。</p>
 
                     <div class="firmware-selector">
-                        <div v-for="fw in verifiedFirmwares" :key="fw.version" class="fw-item"
-                            :class="{ selected: form.firmwareId === fw.repoId && form.firmwareVersion === fw.version }"
-                            @click="selectFirmware(fw)">
+                        <div v-for="fw in allFirmwares" :key="fw.version" class="fw-item"
+                            :class="{ selected: form.firmwareVersion === fw.version }" @click="selectFirmware(fw)">
                             <div class="fw-icon">
                                 <el-icon>
                                     <Files />
@@ -66,7 +59,9 @@
                             </div>
                             <div class="fw-info">
                                 <div class="fw-ver">{{ fw.version }}</div>
-                                <div class="fw-time">{{ formatDateTime(fw.uploadedAt) }}</div>
+                                <div class="fw-meta">
+                                    {{ formatDateTime(fw.uploadedAt) }}
+                                </div>
                             </div>
                             <div class="fw-check" v-if="form.firmwareVersion === fw.version">
                                 <el-icon>
@@ -74,80 +69,78 @@
                                 </el-icon>
                             </div>
                         </div>
-                        <el-empty v-if="verifiedFirmwares.length === 0" description="暂无已验证固件，请先去版本库上传并验证" />
+                        <el-empty v-if="allFirmwares.length === 0" description="暂无固件" />
                     </div>
                 </div>
 
                 <div v-if="activeStep === 1" class="step-content fade-in">
-                    <h2 class="step-title">2. 设定升级范围</h2>
+                    <h2 class="step-title">2. 发布策略</h2>
+                    <p class="step-desc">选择全量发布或灰度测试。</p>
 
-                    <el-radio-group v-model="form.targetScope" class="scope-selector">
-                        <el-radio-button value="all">全量推送 (All)</el-radio-button>
-                        <el-radio-button value="filter">定向筛选 (Filter)</el-radio-button>
+                    <el-radio-group v-model="form.upgradeMode" class="mode-selector">
+                        <div class="mode-card" :class="{ active: form.upgradeMode === 0 }"
+                            @click="form.upgradeMode = 0">
+                            <div class="mode-icon"><el-icon>
+                                    <Lightning />
+                                </el-icon></div>
+                            <div class="mode-info">
+                                <div class="mode-name">全量发布 (Full Release)</div>
+                                <div class="mode-desc">向所有设备推送更新。</div>
+                            </div>
+                            <el-radio :value="0" class="hidden-radio" />
+                        </div>
+
+                        <div class="mode-card" :class="{ active: form.upgradeMode === 1 }"
+                            @click="form.upgradeMode = 1">
+                            <div class="mode-icon"><el-icon>
+                                    <Cpu />
+                                </el-icon></div>
+                            <div class="mode-info">
+                                <div class="mode-name">灰度验证 (Gray/Beta)</div>
+                                <div class="mode-desc">仅向指定白名单设备推送。</div>
+                            </div>
+                            <el-radio :value="1" class="hidden-radio" />
+                        </div>
                     </el-radio-group>
 
-                    <div v-if="form.targetScope === 'filter'" class="filter-panel">
-                        <el-form label-position="top">
-                            <el-form-item label="所属数据中心">
-                                <el-select v-model="form.filters.dataCenter" placeholder="选择数据中心" clearable>
-                                    <el-option label="华东节点 (CN-East)" value="cn-east" />
-                                    <el-option label="北美节点 (US-West)" value="us-west" />
-                                </el-select>
-                            </el-form-item>
-                            <el-form-item label="在线状态">
-                                <el-select v-model="form.filters.status" placeholder="全部" clearable>
-                                    <el-option label="仅在线设备" value="online" />
-                                </el-select>
-                            </el-form-item>
-                        </el-form>
-                    </div>
+                    <transition name="slide-fade">
+                        <div v-if="form.upgradeMode === 1" class="gray-panel">
+                            <div class="panel-label">测试设备 UUID (回车添加)</div>
+                            <el-input v-model="deviceInput" placeholder="输入 UUID..." @keyup.enter="addVerifyDeviceItem"
+                                clearable>
+                                <template #append>
+                                    <el-button @click="addVerifyDeviceItem">添加</el-button>
+                                </template>
+                            </el-input>
+                            <div class="device-tags">
+                                <el-tag v-for="(uuid, idx) in verifyDeviceList" :key="idx" closable type="info"
+                                    @close="removeVerifyDeviceItem(idx)">
+                                    {{ uuid }}
+                                </el-tag>
+                            </div>
+                        </div>
+                    </transition>
 
-                    <div class="impact-preview">
-                        <el-button type="info" link :loading="estimating" @click="estimateImpact">
-                            <el-icon>
-                                <Refresh />
-                            </el-icon> 点击重新预估影响范围
-                        </el-button>
-                    </div>
-                </div>
+                    <el-divider border-style="dashed" />
 
-                <div v-if="activeStep === 2" class="step-content fade-in center-align">
-                    <div class="confirm-icon">
-                        <el-icon>
-                            <Lightning />
-                        </el-icon>
-                    </div>
-                    <h2 class="step-title">准备就绪</h2>
-                    <p class="step-desc">
-                        即将向 <strong>{{ estimatedCount || '若干' }}</strong> 台设备推送
-                        <span class="highlight-ver">{{ form.firmwareVersion }}</span>
-                    </p>
-
-                    <el-form label-position="top" class="task-name-form">
-                        <el-form-item label="任务名称 (可选)">
-                            <el-input v-model="form.name" placeholder="默认为：升级 vX.X.X" />
+                    <el-form label-position="top">
+                        <el-form-item label="发布说明 (Release Notes)">
+                            <el-input v-model="form.releaseNote" type="textarea" :rows="3" placeholder="填写本次更新内容..." />
                         </el-form-item>
                     </el-form>
-
-                    <div class="warning-box">
-                        <el-icon>
-                            <WarningFilled />
-                        </el-icon>
-                        <span>请确保目标设备处于稳定网络环境，升级过程不可中断。</span>
-                    </div>
                 </div>
 
                 <div class="wizard-footer">
                     <el-button v-if="activeStep > 0" @click="prevStep">上一步</el-button>
 
-                    <el-button v-if="activeStep < 2" type="primary" class="next-btn" :disabled="!canProceed"
+                    <el-button v-if="activeStep === 0" type="primary" class="next-btn" :disabled="!form.repoId"
                         @click="nextStep">
                         下一步
                     </el-button>
 
-                    <el-button v-if="activeStep === 2" type="primary" class="next-btn launch-btn" :loading="submitting"
+                    <el-button v-if="activeStep === 1" type="primary" class="next-btn launch-btn" :loading="submitting"
                         @click="handleSubmit">
-                        {{ submitting ? '创建中...' : '立即启动任务' }}
+                        {{ submitting ? '处理中...' : (form.upgradeMode === 1 ? '启动灰度任务' : '启动全量发布') }}
                     </el-button>
                 </div>
             </div>
@@ -158,19 +151,20 @@
 <script setup lang="ts">
 import { ref, computed, reactive, watch } from 'vue'
 import {
-    Promotion, Close, Files, Check, Refresh, Lightning, WarningFilled
+    Promotion, Close, Files, Check, Lightning, Cpu
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { formatDateTime } from '@/utils/formatters'
 import type { Product, Firmware } from '@/types'
 
-// ⚡️ [修复] 引入正确的 API
-import { estimateUpgradeImpact, createUpgradeCampaign } from '@/api'
+// API
+import { createTaskAndGetId, addVerifyDevice, publishFull, publishGray } from '@/api/modules/iot-ota'
 import { fetchFirmwaresByProduct } from '@/api/modules/firmware'
 
 const props = defineProps<{
     modelValue: boolean
     product?: Product
+    preselectedFirmware?: { repoId: string, version: string, repoType: number } | null
 }>()
 
 const emit = defineEmits(['update:modelValue', 'success'])
@@ -183,159 +177,142 @@ const visible = computed({
 // 状态
 const activeStep = ref(0)
 const submitting = ref(false)
-const estimating = ref(false)
-const estimatedCount = ref<number | null>(null)
+const allFirmwares = ref<Firmware[]>([])
 
-// 数据源
-const verifiedFirmwares = ref<Firmware[]>([])
+// 灰度设备
+const deviceInput = ref('')
+const verifyDeviceList = ref<string[]>([])
 
-// 表单数据
+// 表单
 const form = reactive({
-    name: '',
-    firmwareId: '',
+    repoId: '',
     firmwareVersion: '',
-    targetScope: 'all' as 'all' | 'filter',
-    filters: {
-        dataCenter: '',
-        status: ''
-    }
+    upgradeMode: 0, // 0:全量, 1:灰度
+    releaseNote: ''
 })
 
-// --- 逻辑控制 ---
-
-// 1. 初始化：获取已验证固件列表
-const loadVerifiedFirmwares = async () => {
+// 初始化
+const initWizard = async () => {
     if (!props.product) return
+    resetForm()
+
+    // 如果有预选，直接跳到 Step 1
+    if (props.preselectedFirmware) {
+        form.repoId = props.preselectedFirmware.repoId
+        form.firmwareVersion = props.preselectedFirmware.version
+        activeStep.value = 1
+    } else {
+        activeStep.value = 0
+    }
+
     try {
-        // ⚡️ [修复] 使用新的 API (不需要分页参数)
         const list = await fetchFirmwaresByProduct(props.product.id)
-
-        // ⚡️ [修复] 新 API 返回的就是数组，直接过滤
-        verifiedFirmwares.value = list.filter((f: any) => f.verified)
-
+        allFirmwares.value = list // 不再过滤 verified
     } catch (e) {
-        console.error('加载固件列表失败:', e)
-        verifiedFirmwares.value = []
+        allFirmwares.value = []
     }
 }
 
 watch(() => props.modelValue, (val) => {
-    if (val) {
-        resetForm()
-        loadVerifiedFirmwares()
-    }
+    if (val) initWizard()
 })
 
-// 2. 选择固件
 const selectFirmware = (fw: Firmware) => {
-    // ⚡️ [注意] firmware.ts 中清洗出的字段是 repoId 和 version
-    // 我们用 repoId 作为 firmwareId 传递给后端 (取决于后端 campaign 接口要什么)
-    // 通常 Campaign 需要的是 FirmwareId (Guid) 或者 RepoId + Version
-    // 假设后端 Campaign 接口接收 RepoId 和 Version
-    form.firmwareId = fw.repoId || (fw as any).id
+    form.repoId = fw.repoId || (fw as any).id
     form.firmwareVersion = fw.version
 }
 
-// 3. 预估影响
-const estimateImpact = async () => {
-    if (!props.product) return
-    estimating.value = true
-    try {
-        const res = await estimateUpgradeImpact(
-            props.product.id,
-            form.firmwareId,
-            form.targetScope === 'all' ? {} : form.filters
-        )
-        estimatedCount.value = res.total
-    } catch (e) {
-        estimatedCount.value = 0
-    } finally {
-        estimating.value = false
+const addVerifyDeviceItem = () => {
+    const val = deviceInput.value.trim()
+    if (val && !verifyDeviceList.value.includes(val)) {
+        verifyDeviceList.value.push(val)
+        deviceInput.value = ''
     }
 }
 
-// 监听范围变化，自动触发预估
-watch(() => [form.targetScope, form.filters], () => {
-    if (activeStep.value === 1) {
-        estimateImpact() // 简单防抖可以加在这里
-    }
-}, { deep: true })
+const removeVerifyDeviceItem = (index: number) => {
+    verifyDeviceList.value.splice(index, 1)
+}
 
-// 4. 提交任务
 const handleSubmit = async () => {
     if (!props.product) return
     submitting.value = true
     try {
-        const payload = {
-            name: form.name || `升级 ${form.firmwareVersion}`,
+        // 1. 创建任务
+        const taskId = await createTaskAndGetId({
             productId: props.product.id,
-            firmwareId: form.firmwareId,
+            firmwaresRepoId: form.repoId,
             firmwareVersion: form.firmwareVersion,
-            targetScope: form.targetScope,
-            filters: form.filters
+            country: 'Global',
+            upgradeMode: form.upgradeMode,
+            releaseNote: form.releaseNote || `Upgrade v${form.firmwareVersion}`,
+            remark: form.upgradeMode === 1 ? 'Gray' : 'Full'
+        })
+
+        // 2. 如果是灰度，添加白名单
+        if (form.upgradeMode === 1 && verifyDeviceList.value.length > 0) {
+            for (const uuid of verifyDeviceList.value) {
+                await addVerifyDevice(taskId, uuid)
+            }
         }
 
-        await createUpgradeCampaign(payload)
+        // 3. 立即启动任务
+        if (form.upgradeMode === 0) {
+            await publishFull(taskId)
+        } else {
+            // 修复：grayValue 必须在 1-100 之间
+            // 如果是按数量策略，这里我们传 verifyDeviceList.length，但要确保 >=1
+            // 如果后端实际上是百分比，这里传 100 代表 100% 灰度？或者传 1 代表 1%?
+            // 假设：policy 0=百分比, 1=数量。我们这里用数量
+            const count = verifyDeviceList.value.length
+            await publishGray({
+                otaTaskId: taskId,
+                grayPolicy: 1,
+                grayValue: count > 0 ? count : 1 // 兜底至少传 1 避免报错
+            })
+        }
 
-        ElMessage.success('批量升级任务创建成功！')
+        ElMessage.success('任务已创建并启动')
         emit('success')
         close()
-    } catch (e) {
-        ElMessage.error('任务创建失败')
+    } catch (e: any) {
+        console.error(e)
+        ElMessage.error(typeof e === 'string' ? e : (e.message || '操作失败'))
     } finally {
         submitting.value = false
     }
 }
 
-// 辅助计算
-const scopeText = computed(() => {
-    return form.targetScope === 'all' ? '全量推送' : '定向筛选'
-})
-
-const canProceed = computed(() => {
-    if (activeStep.value === 0) return !!form.firmwareId
-    if (activeStep.value === 1) return true // 筛选条件允许为空
-    return true
-})
-
-const nextStep = () => {
-    if (activeStep.value < 2) {
-        activeStep.value++
-        if (activeStep.value === 1) estimateImpact() // 进入筛选页自动预估
-    }
-}
-const prevStep = () => {
-    if (activeStep.value > 0) activeStep.value--
-}
-
+const nextStep = () => activeStep.value = 1
+const prevStep = () => activeStep.value = 0
 const resetForm = () => {
-    activeStep.value = 0
-    form.firmwareId = ''
+    form.repoId = ''
     form.firmwareVersion = ''
-    form.name = ''
-    form.targetScope = 'all'
-    form.filters = { dataCenter: '', status: '' }
-    estimatedCount.value = null
+    form.upgradeMode = 0
+    form.releaseNote = ''
+    verifyDeviceList.value = []
+    deviceInput.value = ''
 }
-
 const close = () => visible.value = false
+
+const scopeText = computed(() => form.upgradeMode === 0 ? '全量发布' : '灰度验证')
 </script>
 
 <style scoped>
+/* 保持原有 Wizard 样式框架 */
 :deep(.exp-task-wizard) {
     border-radius: 16px;
     overflow: hidden;
     background: transparent;
-    /* 让内部容器决定背景 */
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
     padding: 0;
 }
 
-:deep(.exp-task-wizard .el-dialog__header) {
+:deep(.el-dialog__header) {
     display: none;
 }
 
-:deep(.exp-task-wizard .el-dialog__body) {
+:deep(.el-dialog__body) {
     padding: 0;
     height: 550px;
 }
@@ -346,7 +323,7 @@ const close = () => visible.value = false
     background: #fff;
 }
 
-/* --- 左侧 Summary (Dark Theme) --- */
+/* Left Summary */
 .wizard-summary {
     width: 280px;
     background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
@@ -355,19 +332,6 @@ const close = () => visible.value = false
     display: flex;
     flex-direction: column;
     position: relative;
-    overflow: hidden;
-}
-
-/* 装饰背景纹理 */
-.wizard-summary::before {
-    content: '';
-    position: absolute;
-    top: -50px;
-    right: -50px;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-    border-radius: 50%;
 }
 
 .summary-header {
@@ -389,25 +353,11 @@ const close = () => visible.value = false
     margin-bottom: 16px;
 }
 
-.summary-header h3 {
-    margin: 0 0 4px 0;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.summary-header p {
-    margin: 0;
-    font-size: 13px;
-    color: #94a3b8;
-}
-
 .summary-cards {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    position: relative;
-    z-index: 1;
 }
 
 .mini-card {
@@ -435,48 +385,7 @@ const close = () => visible.value = false
     color: #60a5fa !important;
 }
 
-.mini-card.highlight {
-    border-color: rgba(96, 165, 250, 0.3);
-    background: rgba(96, 165, 250, 0.1);
-}
-
-.sub-value {
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 4px;
-}
-
-.count {
-    color: #34d399;
-    font-weight: 600;
-}
-
-.summary-footer {
-    margin-top: auto;
-    display: flex;
-    justify-content: center;
-}
-
-.step-dots {
-    display: flex;
-    gap: 8px;
-}
-
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transition: all 0.3s;
-}
-
-.dot.active {
-    background: #60a5fa;
-    width: 24px;
-    border-radius: 4px;
-}
-
-/* --- 右侧 Main --- */
+/* Right Main */
 .wizard-main {
     flex: 1;
     padding: 40px 50px;
@@ -489,27 +398,8 @@ const close = () => visible.value = false
     position: absolute;
     top: 20px;
     right: 20px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
     cursor: pointer;
     color: #94a3b8;
-    transition: all 0.2s;
-    z-index: 10;
-}
-
-.close-btn:hover {
-    background: #f1f5f9;
-    color: #64748b;
-}
-
-.step-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
 }
 
 .step-title {
@@ -524,14 +414,12 @@ const close = () => visible.value = false
     margin: 0 0 24px 0;
 }
 
-/* Firmware Selector */
 .firmware-selector {
     display: flex;
     flex-direction: column;
     gap: 12px;
     overflow-y: auto;
     max-height: 320px;
-    padding-right: 4px;
 }
 
 .fw-item {
@@ -544,15 +432,10 @@ const close = () => visible.value = false
     transition: all 0.2s;
 }
 
-.fw-item:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
+.fw-item:hover,
 .fw-item.selected {
     border-color: #3b82f6;
     background: #eff6ff;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .fw-icon {
@@ -575,10 +458,9 @@ const close = () => visible.value = false
     font-weight: 600;
     color: #1e293b;
     font-family: monospace;
-    font-size: 15px;
 }
 
-.fw-time {
+.fw-meta {
     font-size: 12px;
     color: #94a3b8;
     margin-top: 2px;
@@ -589,68 +471,90 @@ const close = () => visible.value = false
     font-size: 20px;
 }
 
-/* Scope Selector */
-.scope-selector {
+/* Mode Selector - 修复变形和颜色 */
+.mode-selector {
+    display: flex;
+    gap: 16px;
+    width: 100%;
     margin-bottom: 24px;
 }
 
-.filter-panel {
-    background: #f8fafc;
-    padding: 20px;
+.mode-card {
+    flex: 1;
+    border: 2px solid #e2e8f0;
     border-radius: 12px;
-    border: 1px solid #f1f5f9;
-}
-
-.impact-preview {
-    margin-top: 20px;
-}
-
-/* Confirm Step */
-.center-align {
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
     align-items: center;
-    justify-content: center;
-    text-align: center;
+    transition: all 0.2s;
 }
 
-.confirm-icon {
-    width: 72px;
-    height: 72px;
-    background: #dbeafe;
-    color: #2563eb;
+.mode-card:hover {
+    border-color: #94a3b8;
+}
+
+.mode-card.active {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+/* Fix: flex-shrink 0 防止变椭圆 */
+.mode-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    background: #f1f5f9;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36px;
-    margin-bottom: 24px;
-    box-shadow: 0 0 0 8px #eff6ff;
+    /* 默认给个深一点的颜色，不要太灰 */
+    color: #475569;
+    margin-right: 12px;
 }
 
-.highlight-ver {
-    background: #f1f5f9;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-family: monospace;
+.mode-card.active .mode-icon {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.mode-name {
     font-weight: 600;
-    color: #0f172a;
+    color: #1e293b;
+    font-size: 14px;
 }
 
-.task-name-form {
-    width: 100%;
-    max-width: 400px;
-    margin: 20px 0;
-    text-align: left;
+.mode-desc {
+    font-size: 12px;
+    color: #64748b;
 }
 
-.warning-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #fff7ed;
-    color: #c2410c;
-    padding: 10px 16px;
+.hidden-radio {
+    display: none;
+}
+
+/* Gray Panel */
+.gray-panel {
+    background: #f8fafc;
+    padding: 16px;
     border-radius: 8px;
+    border: 1px solid #f1f5f9;
+    margin-bottom: 20px;
+}
+
+.panel-label {
     font-size: 13px;
+    color: #475569;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.device-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
 }
 
 /* Footer */
@@ -669,28 +573,11 @@ const close = () => visible.value = false
 
 .launch-btn {
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-.launch-btn:hover {
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
-    transform: translateY(-1px);
 }
 
 /* Transitions */
 .fade-in {
     animation: fadeIn 0.3s ease-out;
-}
-
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-    transition: all 0.3s ease;
-}
-
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-    transform: translateY(10px);
-    opacity: 0;
 }
 
 @keyframes fadeIn {

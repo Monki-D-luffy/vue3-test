@@ -30,24 +30,20 @@ export const login = (data: LoginRequest) => {
     return request.post<LoginResult>('/identity/api/Login/LoginByPwd', data)
 }
 
-export const refreshToken = (token: string) => {
-    return request.post<any>('/identity/api/Login/Refresh', {
-        refreshToken: token // 修正: RefreshToken -> refreshToken
+/**
+ * 刷新令牌接口
+ * 修正: 之前的 /RefreshToken 报 404 (Not Found)，修正为 /Refresh
+ */
+export const refreshTokenApi = (token: string) => {
+    console.log('🔄 [API] 正在调用修正后的刷新接口: /identity/api/Login/Refresh');
+    return request.post<LoginResult>('/identity/api/Login/Refresh', {
+        refreshToken: token
     })
 }
+
+// 兼容旧引用
+export const refreshToken = refreshTokenApi;
 
 export const register = async (data: any) => {
     return Promise.resolve({})
-}
-
-/**
- * 刷新令牌接口
- * 假设后端路径为 /api/Login/RefreshToken (需根据实际后端调整)
- */
-export const refreshTokenApi = (refreshToken: string) => {
-    // 这里通常传 refreshToken，或者是 { token: ..., refreshToken: ... }
-    // 请根据你的 Swagger 确认参数名
-    return request.post<LoginResult>('/identity/api/Login/RefreshToken', {
-        refreshToken: refreshToken
-    })
 }

@@ -5,7 +5,7 @@
                 <el-icon class="info-icon">
                     <InfoFilled />
                 </el-icon>
-                <span>仅“验证通过”的固件可推送 (共 {{ pagination.total }} 个版本)</span>
+                <span>固件版本库 (共 {{ pagination.total }} 个版本)</span>
             </div>
             <div class="right-action">
                 <el-button type="primary" class="tech-btn" @click="isUploadVisible = true">
@@ -63,40 +63,49 @@
                     </template>
                 </el-table-column>
 
-                <el-table-column label="状态" width="120">
-                    <template #default="{ row }">
-                        <div class="status-dot-wrapper" :class="row.verified ? 'is-success' : 'is-pending'">
-                            <div class="dot"></div>
-                            <span class="status-text">{{ row.verified ? '已验证' : '待验证' }}</span>
-                        </div>
-                    </template>
-                </el-table-column>
-
-                <el-table-column label="操作" width="200" align="right" fixed="right">
+                <el-table-column label="操作" width="220" align="right" fixed="right">
                     <template #default="{ row }">
                         <div class="actions">
-                            <el-tooltip content="通过验证" placement="top" :hide-after="50">
-                                <el-button v-if="!row.verified" circle size="small" type="success" plain
-                                    class="action-btn verify-btn" @click="openVerifyDialog(row)">
+                            <el-tooltip content="暂停发布" placement="top" v-if="getActiveTask(row.version)?.status === 1">
+                                <el-button circle size="small" type="warning" class="action-btn"
+                                    @click="handlePauseTask(getActiveTask(row.version))">
                                     <el-icon>
-                                        <Check />
+                                        <VideoPause />
                                     </el-icon>
                                 </el-button>
-                                <span v-else class="verified-mark"><el-icon><Select /></el-icon></span>
                             </el-tooltip>
 
-                            <el-tooltip content="发布任务" placement="top" :hide-after="50">
+                            <el-tooltip content="恢复发布" placement="top"
+                                v-else-if="getActiveTask(row.version)?.status === 2">
+                                <el-button circle size="small" type="success" class="action-btn"
+                                    @click="handleResumeTask(getActiveTask(row.version))">
+                                    <el-icon>
+                                        <CaretRight />
+                                    </el-icon>
+                                </el-button>
+                            </el-tooltip>
+
+                            <el-tooltip content="创建发布任务" placement="top" v-else>
                                 <el-button circle size="small" type="primary" plain class="action-btn publish-btn"
-                                    :disabled="!row.verified" @click="handlePublish(row)">
+                                    @click="handlePublishWizard(row)">
                                     <el-icon>
                                         <Promotion />
                                     </el-icon>
                                 </el-button>
                             </el-tooltip>
 
+                            <el-tooltip content="真机验证推送" placement="top" :hide-after="50">
+                                <el-button circle size="small" type="success" plain class="action-btn verify-btn"
+                                    @click="openVerifyDialog(row)">
+                                    <el-icon>
+                                        <Check />
+                                    </el-icon>
+                                </el-button>
+                            </el-tooltip>
+
                             <el-tooltip content="详情与编辑" placement="top" :hide-after="50">
                                 <el-button circle size="small" type="info" plain class="action-btn edit-btn"
-                                    @click="openDetailDrawer(row)">
+                                    @click="openEditDrawer(row)">
                                     <el-icon>
                                         <EditPen />
                                     </el-icon>
@@ -126,113 +135,106 @@
                 v-model:page-size="pagination.pageSize" @size-change="onPageChange" @current-change="onPageChange" />
         </div>
 
-        <ExpFirmwareVerifyModal v-model="isVerifyVisible" :firmware="currentVerifyRow" @success="refreshData" />
         <ExpFirmwareDeleteModal v-model="isDeleteVisible" :firmware="currentDeleteRow" @success="refreshData" />
+        <ExpFirmwareEditDrawer v-model="isEditVisible" :firmware="currentEditRow" @success="refreshData" />
         <ExpFirmwareUploadWizard v-model="isUploadVisible" :product="product" @success="refreshData" />
 
-        <el-drawer v-model="isDrawerVisible" title="固件版本详情" size="450px" append-to-body destroy-on-close
-            class="firmware-drawer">
-            <div v-if="currentDetailRow" class="drawer-content">
-                <div class="info-card mb-6">
-                    <div class="info-row">
-                        <span class="label">固件版本:</span>
-                        <span class="value font-mono font-bold">{{ currentDetailRow.version }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">固件库ID:</span>
-                        <span class="value font-mono text-xs">{{ currentDetailRow.repoId || 'N/A' }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">固件Key:</span>
-                        <span class="value font-mono text-xs">{{ currentDetailRow.firmwareKey || 'N/A' }}</span>
-                    </div>
-                </div>
+        <ExpFirmwareVerifyModal v-model="isVerifyVisible" :firmware="currentVerifyRow" :product="product"
+            @success="refreshData" />
 
-                <el-form :model="currentDetailRow" label-position="top">
-                    <el-form-item label="固件Key (系统标识)">
-                        <el-input v-model="currentDetailRow.firmwareKey" placeholder="例如: FW_KEY_ESP32_MAIN" />
-                    </el-form-item>
-
-                    <el-form-item label="覆盖国家/地区">
-                        <el-select v-model="currentDetailRow.country" placeholder="默认所有" class="w-full">
-                            <el-option label="全球 (Global)" value="Global" />
-                            <el-option label="中国 (CN)" value="CN" />
-                        </el-select>
-                    </el-form-item>
-
-                    <el-form-item label="更新说明">
-                        <el-input v-model="currentDetailRow.releaseNotes" type="textarea" :rows="6" resize="none" />
-                    </el-form-item>
-                </el-form>
-
-                <div class="drawer-footer">
-                    <el-button @click="isDrawerVisible = false">取消</el-button>
-                    <el-button type="primary" @click="handleSaveDrawer">保存修改</el-button>
-                </div>
-            </div>
-        </el-drawer>
+        <ExpCreateTaskWizard v-model="isTaskWizardVisible" :product="product" :preselected-firmware="taskWizardParams"
+            @success="handleTaskCreated" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
-import { Upload, InfoFilled, Check, Delete, Select, Promotion, EditPen, Key } from '@element-plus/icons-vue'
+import { ref, watch, reactive } from 'vue'
+import {
+    Upload, InfoFilled, Check, Delete, Promotion, EditPen, Key,
+    VideoPause, CaretRight // ✅ Fix: 使用 CaretRight 替代 VideoPlay
+} from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/formatters'
-import type { Product } from '@/types'
+import type { Product, Firmware } from '@/types'
 import { useFirmwareManagement } from '@/composables/useFirmwareManagement'
 import AppPagination from '@/components/AppPagination.vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
+// API
+import { queryOTATasks, pausePublish, publishFull, type OTATaskDto } from '@/api/modules/iot-ota'
+
+// Components
 import ExpFirmwareUploadWizard from './ExpFirmwareUploadWizard.vue'
-import ExpFirmwareVerifyModal from './ExpFirmwareVerifyModal.vue'
 import ExpFirmwareDeleteModal from './ExpFirmwareDeleteModal.vue'
+import ExpFirmwareEditDrawer from './ExpFirmwareEditDrawer.vue'
+import ExpCreateTaskWizard from './ExpCreateTaskWizard.vue'
+import ExpFirmwareVerifyModal from './ExpFirmwareVerifyModal.vue'
 
 const props = defineProps<{
     product: Product
 }>()
 
+// UI State
 const isUploadVisible = ref(false)
-const isVerifyVisible = ref(false)
 const isDeleteVisible = ref(false)
-const isDrawerVisible = ref(false)
+const isEditVisible = ref(false)
+const isTaskWizardVisible = ref(false)
+const isVerifyVisible = ref(false)
 
-const currentVerifyRow = ref<any>(null)
-const currentDeleteRow = ref<any>(null)
-const currentDetailRow = ref<any>(null)
+// Data Selection
+const currentDeleteRow = ref<Firmware | null>(null)
+const currentEditRow = ref<Firmware | null>(null)
+const currentVerifyRow = ref<Firmware | null>(null)
+const taskWizardParams = ref<{ repoId: string, version: string, repoType: number } | null>(null)
+
+// 任务状态管理
+const activeTasksMap = reactive<Record<string, OTATaskDto>>({})
 
 const {
     loading,
-    firmwareList, // 这是数据源
+    firmwareList,
     pagination,
     getFirmwares,
     handlePaginationChange
 } = useFirmwareManagement()
 
-// 🔍 [Debug] 监听数据变化并打印，帮助排查字段问题
-watch(firmwareList, (newList) => {
-    if (newList && newList.length > 0) {
-        console.group('🔥 [FirmwarePanel] 数据探针');
-        console.log('📦 收到的完整列表:', newList);
-        console.log('🕵️ 第一条数据详情:', newList[0]);
-        console.log('🕒 时间字段检查 (uploadedAt):', newList[0].uploadedAt);
-        console.log('🔑 Key字段检查 (firmwareKey):', newList[0].firmwareKey);
-        console.groupEnd();
-    } else {
-        console.log('⚠️ [FirmwarePanel] 列表为空');
-    }
-}, { deep: true })
-
-const refreshData = () => {
+// 1. 数据加载
+const refreshData = async () => {
     if (props.product?.id) {
-        console.log('🔄 刷新数据, ProductID:', props.product.id);
-        getFirmwares(props.product.id)
+        await Promise.all([
+            getFirmwares(props.product.id),
+            loadActiveTasks(props.product.id)
+        ])
+    }
+}
+
+const loadActiveTasks = async (productId: string) => {
+    try {
+        const res = await queryOTATasks({
+            pageIndex: 1,
+            pageSize: 50,
+            productId: productId
+        })
+        const items = (res.data as any)?.items || (res.data as any)?.data?.items || []
+
+        // 清理旧数据
+        for (const key in activeTasksMap) delete activeTasksMap[key]
+
+        // 重新映射：status 1(发布中) 或 2(暂停)
+        items.forEach((task: OTATaskDto) => {
+            if (task.status === 1 || task.status === 2) {
+                const existing = activeTasksMap[task.firmwareVersion]
+                if (!existing || new Date(task.createTime) > new Date(existing.createTime)) {
+                    activeTasksMap[task.firmwareVersion] = task
+                }
+            }
+        })
+    } catch (e) {
+        console.error('加载任务状态失败', e)
     }
 }
 
 const onPageChange = () => {
-    if (props.product?.id) {
-        handlePaginationChange(props.product.id)
-    }
+    if (props.product?.id) handlePaginationChange(props.product.id)
 }
 
 watch(() => props.product.id, (newId) => {
@@ -242,33 +244,63 @@ watch(() => props.product.id, (newId) => {
     }
 }, { immediate: true })
 
+const getActiveTask = (version: string) => activeTasksMap[version]
+
 // --- Operations ---
 
-const openVerifyDialog = (row: any) => {
-    currentVerifyRow.value = row
-    isVerifyVisible.value = true
-}
-
-const openDeleteDialog = (row: any) => {
+const openDeleteDialog = (row: Firmware) => {
     currentDeleteRow.value = row
     isDeleteVisible.value = true
 }
 
-const openDetailDrawer = (row: any) => {
-    currentDetailRow.value = JSON.parse(JSON.stringify(row))
-    isDrawerVisible.value = true
+const openEditDrawer = (row: Firmware) => {
+    currentEditRow.value = row
+    isEditVisible.value = true
 }
 
-const handleSaveDrawer = async () => {
-    console.log('💾 保存修改:', currentDetailRow.value)
-    ElMessage.success('保存功能待对接 API')
-    isDrawerVisible.value = false
+const openVerifyDialog = (row: Firmware) => {
+    currentVerifyRow.value = row
+    isVerifyVisible.value = true
 }
 
-const handlePublish = (row: any) => {
-    ElMessage.info(`准备发布版本 v${row.version}`)
+const handlePublishWizard = (row: any) => {
+    taskWizardParams.value = {
+        repoId: row.repoId,
+        version: row.version,
+        repoType: row.type || 1
+    }
+    isTaskWizardVisible.value = true
 }
 
+const handlePauseTask = async (task: OTATaskDto) => {
+    try {
+        await ElMessageBox.confirm(`暂停 v${task.firmwareVersion} 发布？`, '暂停', { type: 'warning' })
+        await pausePublish(task.otaTaskId)
+        ElMessage.success('已暂停')
+        refreshData()
+    } catch (e) {
+        if (e !== 'cancel') ElMessage.error('操作失败')
+    }
+}
+
+const handleResumeTask = async (task: OTATaskDto) => {
+    try {
+        await ElMessageBox.confirm(`恢复 v${task.firmwareVersion} 发布？`, '恢复', { type: 'success' })
+
+        // ✅ Fix: 使用 publishFull 恢复所有任务，规避灰度参数问题
+        // 后端逻辑通常是: 如果任务已经是灰度模式 (UpgradeMode=1), publishFull 只是将 Status 置为 1 (发布中)
+        await publishFull(task.otaTaskId)
+
+        ElMessage.success('已恢复')
+        refreshData()
+    } catch (e) {
+        if (e !== 'cancel') ElMessage.error('操作失败')
+    }
+}
+
+const handleTaskCreated = () => refreshData()
+
+// Styles
 const headerStyle = {
     background: 'var(--bg-hover)',
     color: 'var(--text-secondary)',
@@ -280,7 +312,7 @@ const tableRowClassName = () => 'modern-row'
 </script>
 
 <style scoped>
-/* 保持原有样式，新增 Key 列样式 */
+/* 核心布局 */
 .exp-panel {
     display: flex;
     flex-direction: column;
@@ -308,6 +340,7 @@ const tableRowClassName = () => 'modern-row'
     margin-right: 6px;
 }
 
+/* 按钮 */
 .tech-btn {
     background: linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%);
     border: none;
@@ -336,7 +369,7 @@ const tableRowClassName = () => 'modern-row'
     padding-bottom: 10px;
 }
 
-/* Version & Key Styles */
+/* 文本与图标 */
 .version-wrapper,
 .key-wrapper {
     display: flex;
@@ -379,42 +412,7 @@ const tableRowClassName = () => 'modern-row'
     font-size: 13px;
 }
 
-.status-dot-wrapper {
-    display: flex;
-    align-items: center;
-}
-
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-    position: relative;
-}
-
-.status-dot-wrapper.is-success .dot {
-    background-color: var(--color-success);
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-}
-
-.status-dot-wrapper.is-success .status-text {
-    color: var(--color-success);
-}
-
-.status-dot-wrapper.is-pending .dot {
-    background-color: var(--color-warning);
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
-}
-
-.status-dot-wrapper.is-pending .status-text {
-    color: var(--color-warning);
-}
-
-.status-text {
-    font-size: 13px;
-    font-weight: 500;
-}
-
+/* Actions */
 .actions {
     display: flex;
     justify-content: flex-end;
@@ -448,65 +446,11 @@ const tableRowClassName = () => 'modern-row'
     color: var(--text-primary);
 }
 
-.verified-mark {
-    color: var(--text-placeholder);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-}
-
 :deep(.el-table__row) {
     transition: background-color 0.2s;
 }
 
 :deep(.el-table__row:hover) {
     background-color: var(--bg-hover) !important;
-}
-
-:deep(.el-table__inner-wrapper::before) {
-    display: none;
-}
-
-/* Drawer Styles */
-.drawer-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.info-card {
-    background: var(--bg-hover);
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color-light);
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 13px;
-}
-
-.info-row:last-child {
-    margin-bottom: 0;
-}
-
-.info-row .label {
-    color: var(--text-secondary);
-}
-
-.info-row .value {
-    color: var(--text-primary);
-}
-
-.drawer-footer {
-    margin-top: auto;
-    padding-top: 24px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
 }
 </style>
