@@ -22,7 +22,7 @@ export interface OTATaskDto {
   firmwareVersion: string
   country: string
   upgradeMode: number // 0: 全量, 1: 灰度/验证
-  status: number // 0: 草稿, 1: 发布中, 2: 暂停, 3: 结束
+  status: number // 0: 草稿, 1: 暂停, 2: 发布中, 3: 结束
   releaseNote?: string
   remark?: string
   createTime: string

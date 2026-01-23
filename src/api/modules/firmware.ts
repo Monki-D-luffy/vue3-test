@@ -1,5 +1,6 @@
 import { service } from '@/api/core/request'
 import { Api } from '@/api/generated/business'
+import { queryOTATasks, type OTATaskDto } from '@/api/modules/iot-ota'
 
 const client = new Api({ baseURL: '' })
 client.instance = service
@@ -43,7 +44,7 @@ const getRepoDetail = async (repoId: string, fallbackName?: string) => {
 }
 
 /**
- * [列表] 获取产品已绑定的所有固件库
+ * [列表] 获取产品已绑定的所有固件库 (用于构建 Type 字典)
  */
 export const fetchLinkedRepos = async (productId: string) => {
   try {
@@ -80,85 +81,95 @@ export const fetchLinkedRepos = async (productId: string) => {
 }
 
 /**
- * [列表] 获取固件版本列表 (聚合所有关联库)
- * 核心改动：遍历所有 linkedRepos，而不是只查第一个
+ * [列表] 获取固件版本列表 (重构：直接使用 OTATaskManage/Query 数据源)
+ * @description 遵循用户指令：OTATaskManage/Query 的数据是完整的，以此为准。
  */
-export const fetchFirmwaresByProduct = async (productId: string) => {
+export const fetchFirmwaresByProduct = async (
+  productId: string,
+  knownRepos?: Array<{ id: string; name: string; type: number }>
+) => {
   try {
-    // 1. 获取所有关联库
-    const repos = await fetchLinkedRepos(productId)
-
-    if (repos.length === 0) {
-      return []
+    // 1. 准备辅助字典：RepoId -> Type (MCU/Module)
+    // 任务数据里只有 RepoId，没有 Type，所以我们需要先拿到 Repo 列表来建立映射
+    let repos = knownRepos
+    if (!repos || repos.length === 0) {
+      repos = await fetchLinkedRepos(productId)
     }
 
-    // 2. 并行请求每个库的固件列表
-    const promises = repos.map(async (repo) => {
-      try {
-        const res = await client.api.firmwaresQueryFirmwaresCreate({
-          repoId: repo.id,
-          pageIndex: 1,
-          pageSize: 100,
-        })
+    const repoTypeMap = new Map<string, number>()
+    const repoNameMap = new Map<string, string>()
 
-        const rawData = res.data as any
-        const innerData = rawData?.data || rawData?.Data || rawData
-        let items: any[] = []
+    repos?.forEach(r => {
+      repoTypeMap.set(r.id, r.type)
+      repoNameMap.set(r.id, r.name)
+    })
 
-        if (Array.isArray(innerData)) items = innerData
-        else items = innerData?.items || innerData?.Items || []
+    console.log(`🔍 [FirmwareAPI] 切换至任务源模式，已加载 ${repos?.length} 个仓库类型映射`)
 
-        // 映射数据
-        return items.map((item: any) => ({
-          // 关联信息
-          repoId: repo.id,
-          repoName: repo.name,
-          type: repo.type, // 将库的类型带入固件信息中
+    // 2. 核心请求：直接查 OTATaskManage/Query
+    // 使用用户指定的参数结构
+    const res = await queryOTATasks({
+      pageIndex: 1,
+      pageSize: 100, // 放大 PageSize 确保能拿到那 8 条数据
+      productId: productId
+    })
 
-          // 固件本身信息 (广谱映射)
-          version: item.Version || item.version || item.FirmwareVersion || item.firmwareVersion,
-          fileName: item.FileName || item.fileName,
-          releaseNotes: item.ReleaseNote || item.releaseNote || '',
-          fileSize: item.FileSize || item.fileSize || 0,
+    const rawData = res.data as any
+    const innerData = rawData?.data || rawData?.Data || rawData
+    let tasks: OTATaskDto[] = []
 
-          // ⚠️ 时间字段重点兼容
-          uploadedAt:
-            item.CreateTime || item.createTime || item.UploadTime || item.uploadTime || new Date(),
+    if (Array.isArray(innerData)) {
+      tasks = innerData
+    } else if (Array.isArray(innerData?.items)) {
+      tasks = innerData.items
+    } else if (Array.isArray(innerData?.Items)) {
+      tasks = innerData.Items
+    }
 
-          // 状态 (兼容后端大小写)
-          verified: !!(item.Verified || item.verified),
+    console.log(`✅ [FirmwareAPI] 任务源获取成功，共 ${tasks.length} 条数据`)
 
-          // ⚠️ Key 字段 (如果没有则尝试用 ID 或空字符串)
-          firmwareKey:
-            item.FirmwareKey ||
-            item.firmwareKey ||
-            item.Key ||
-            item.key ||
-            item.FirmwareId ||
-            item.firmwareId ||
-            item.Id ||
-            item.id ||
-            item._id ||
-            item.uid ||
-            item.uuid ||
-            '',
-        }))
-      } catch (innerError) {
-        console.warn(`⚠️ 拉取库 ${repo.name} 失败:`, innerError)
-        return []
+    // 3. 映射为 UI 列表数据
+    const list = tasks.map((task) => {
+      // 确定类型：查字典，查不到默认 MCU(1)
+      const type = repoTypeMap.get(task.firmwaresRepoId) ?? 1
+      const repoName = repoNameMap.get(task.firmwaresRepoId) || task.repoName || 'Unknown Repo'
+
+      return {
+        // --- 核心标识 ---
+        firmwareKey: task.otaTaskId, // ⭐️ 强制使用 otaTaskId 作为 Key
+        otaTaskId: task.otaTaskId,
+
+        // --- 基础信息 ---
+        version: task.firmwareVersion,
+        repoId: task.firmwaresRepoId,
+        repoName: repoName,
+        type: type, // 决定了前端显示的标签是 MCU 还是 Module
+
+        // --- 时间与状态 ---
+        uploadedAt: task.createTime || task.publishTime || new Date(),
+        verified: task.upgradeMode === 1, // 譬如：如果是灰度模式/验证模式，视为"待验证"或"已验证"逻辑(视业务而定)
+        status: task.status, // 将原始状态带出去
+
+        // --- 完整数据透传 (供详情页使用) ---
+        ...task,
+
+        // --- 兼容字段 (任务接口不含文件信息，给默认值) ---
+        fileName: '',
+        fileSize: 0,
+        releaseNotes: task.releaseNote || ''
       }
     })
 
-    // 3. 等待所有请求完成并扁平化
-    const results = await Promise.all(promises)
-    const allFirmwares = results.flat()
+    // 按创建时间倒序
+    return list.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
 
-    return allFirmwares
   } catch (error) {
-    console.error('fetchFirmwaresByProduct Error:', error)
+    console.error('❌ [FirmwareAPI] fetchFirmwaresByProduct 失败:', error)
     return []
   }
 }
+
+// ... 下面的辅助函数保持不变 ...
 
 export const getRepoIdByProduct = async (productId: string): Promise<string | null> => {
   const repos = await fetchLinkedRepos(productId)
@@ -215,12 +226,6 @@ export const uploadFirmware = async (repoId: string, version: string, note: stri
   })
 }
 
-/**
- * 验证固件
- * @param repoId 仓库ID
- * @param version 版本号
- * @param note 验证备注 (可选，如果为空则使用默认文案)
- */
 export const verifyFirmware = async (repoId: string, version: string, note?: string) => {
   const finalNote = note || 'Verified via Product Dashboard'
   return await client.api.firmwaresUpdateFirmwareCreate({
@@ -230,12 +235,6 @@ export const verifyFirmware = async (repoId: string, version: string, note?: str
   })
 }
 
-/**
- * 更新固件信息 (如修改 ReleaseNote)
- * @param repoId 仓库ID
- * @param version 版本号
- * @param note 新的备注
- */
 export const updateFirmware = async (repoId: string, version: string, note: string) => {
   return await client.api.firmwaresUpdateFirmwareCreate({
     repoId,

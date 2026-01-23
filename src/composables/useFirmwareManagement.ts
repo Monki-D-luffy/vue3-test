@@ -1,3 +1,5 @@
+// src/composables/useFirmwareManagement.ts
+
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { Firmware } from '@/types'
@@ -7,16 +9,18 @@ import { createOTATaskDraft, type CreateOTATaskDraftRequest } from '@/api/module
 export function useFirmwareManagement() {
     const loading = ref(false)
     const firmwareList = ref<Firmware[]>([])
+
+    // 状态标记：unknown=未检查, linked=有关联库, unlinked=无关联库
     const repoStatus = ref<'unlinked' | 'linked' | 'unknown'>('unknown')
-    const linkedRepos = ref<Array<{ id: string, name: string, type: number, channel: number }>>([])
+    const linkedRepos = ref<Array<{ id: string; name: string; type: number; channel: number }>>([])
 
     const pagination = reactive({
         currentPage: 1,
         pageSize: 10,
-        total: 0
+        total: 0,
     })
 
-    // 1. 初始化检查
+    // 1. 初始化检查 (Context Check)
     const checkProductContext = async (productId: string) => {
         // console.log(`🧠 [Logic] 开始检查产品上下文: ${productId}`)
         repoStatus.value = 'unknown'
@@ -25,11 +29,10 @@ export function useFirmwareManagement() {
             linkedRepos.value = repos
 
             if (repos.length > 0) {
-                // console.log(`🧠 [Logic] 发现 ${repos.length} 个关联库，状态 -> linked`)
                 repoStatus.value = 'linked'
-                await getFirmwares(productId)
+                // 上下文检查完毕，顺便拉取一次固件（此时 repos 肯定有值）
+                await getFirmwares(productId, repos)
             } else {
-                // console.warn(`🧠 [Logic] 未发现关联库，状态 -> unlinked`)
                 repoStatus.value = 'unlinked'
                 firmwareList.value = []
             }
@@ -38,16 +41,36 @@ export function useFirmwareManagement() {
         }
     }
 
-    // 2. 获取列表 (前端分页)
-    const getFirmwares = async (productId: string) => {
+    // 2. 获取列表 (前端伪分页)
+    const getFirmwares = async (
+        productId: string,
+        knownRepos?: Array<{ id: string; name: string; type: number }>,
+    ) => {
         loading.value = true
         try {
-            // 获取全量数据 (API 已经做了聚合)
-            const allList = await FirmwareApi.fetchFirmwaresByProduct(productId)
+            // 🛑 核心修复点：不要盲目信任 linkedRepos 的初始空数组
+            // 只有当明确传入了 knownRepos，或者当前状态确认为 'linked' 时，才使用缓存
+            let reposToUse = knownRepos
 
-            // 简单的内存分页 (因为 API 是聚合拉取，后端分页在多库场景下较难处理，暂由前端切片)
-            // 如果列表变得非常大，后续需要在 API 层优化聚合逻辑
+            if (!reposToUse) {
+                if (repoStatus.value === 'linked' && linkedRepos.value.length > 0) {
+                    // 缓存命中：确实有关联库，直接用
+                    reposToUse = linkedRepos.value
+                    console.log('🧠 [Logic] 命中仓库缓存，跳过重复请求')
+                } else {
+                    // 缓存未命中（状态是 unknown 或 unlinked），传 undefined 给 API，强制 API 重新拉取
+                    reposToUse = undefined
+                    console.log('🧠 [Logic] 无有效缓存，通知 API 重新拉取仓库列表')
+                }
+            }
+
+            // API 调用：如果 reposToUse 是 undefined，API 内部会自己去 fetchLinkedRepos
+            const allList = await FirmwareApi.fetchFirmwaresByProduct(productId, reposToUse)
+
+            // 更新总数
             pagination.total = allList.length
+
+            // 内存分页切片
             const start = (pagination.currentPage - 1) * pagination.pageSize
             const end = start + pagination.pageSize
             firmwareList.value = allList.slice(start, end)
@@ -60,14 +83,18 @@ export function useFirmwareManagement() {
         }
     }
 
-    // 分页处理
     const handlePaginationChange = (productId: string) => {
         getFirmwares(productId)
     }
 
-    // --- Actions (纯函数，供 UI 组件调用) ---
+    // --- Actions ---
 
-    const createRepoAction = async (params: { name: string, type: number, channel: number, note?: string }) => {
+    const createRepoAction = async (params: {
+        name: string
+        type: number
+        channel: number
+        note?: string
+    }) => {
         return await FirmwareApi.createRepoAndGetId(params)
     }
 
@@ -83,25 +110,14 @@ export function useFirmwareManagement() {
         return await createOTATaskDraft(taskPayload)
     }
 
-    /**
-     * [纯净版] 验证固件
-     * 供 ExpFirmwareVerifyModal 调用
-     */
     const verifyFirmwarePure = async (repoId: string, version: string, note?: string) => {
         await FirmwareApi.verifyFirmware(repoId, version, note)
     }
 
-    /**
-     * [纯净版] 删除固件
-     * 供 ExpFirmwareDeleteModal 调用
-     */
     const removeFirmwarePure = async (repoId: string, version: string) => {
         await FirmwareApi.deleteFirmware(repoId, version)
     }
 
-    /**
-     * [新增] 更新固件信息 (用于侧边栏保存)
-     */
     const updateAction = async (row: any, newNote: string) => {
         try {
             loading.value = true
@@ -132,6 +148,6 @@ export function useFirmwareManagement() {
         createTaskAction,
         verifyFirmwarePure,
         removeFirmwarePure,
-        updateAction
+        updateAction,
     }
 }
