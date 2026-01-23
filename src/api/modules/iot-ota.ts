@@ -95,7 +95,7 @@ export const createOTATaskDraft = (data: CreateOTATaskDraftRequest) => {
 export const createTaskAndGetId = async (data: CreateOTATaskDraftRequest): Promise<string> => {
   await createOTATaskDraft(data)
   // 给后端一点时间落库
-  await new Promise(resolve => setTimeout(resolve, 500))
+  await new Promise((resolve) => setTimeout(resolve, 500))
   const res = await queryOTATasks({
     pageIndex: 1,
     pageSize: 1,
@@ -104,7 +104,11 @@ export const createTaskAndGetId = async (data: CreateOTATaskDraftRequest): Promi
   } as any)
 
   const listData = (res.data as any)?.data || (res.data as any)?.Data || res.data
-  const items = Array.isArray(listData?.items) ? listData.items : (Array.isArray(listData) ? listData : [])
+  const items = Array.isArray(listData?.items)
+    ? listData.items
+    : Array.isArray(listData)
+      ? listData
+      : []
 
   if (items.length > 0) {
     return items[0].otaTaskId || (items[0] as any).id
@@ -143,9 +147,9 @@ export const addVerifyDevice = (otaTaskId: string, uuid: string) => {
 }
 
 export const removeVerifyDevice = (otaTaskId: string, uuid: string) => {
-  return request.post<boolean>('/api/OTATaskManage/Verify/Remove', null, {
-    params: { otaTaskId, uuid },
-  })
+  return request.post<boolean>(
+    `/api/OTATaskManage/Verify/Remove?otaTaskId=${otaTaskId}&uuid=${uuid}`,
+  )
 }
 
 export const queryVerifyDevices = (otaTaskId: string, pageIndex = 1, pageSize = 100) => {

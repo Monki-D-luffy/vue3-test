@@ -12,13 +12,13 @@ const getRepoDetail = async (repoId: string, fallbackName?: string) => {
     id: repoId,
     name: fallbackName || `未知仓库 (${repoId.substring(0, 6)}...)`,
     type: 1, // 默认 MCU
-    channel: 0
+    channel: 0,
   }
 
   try {
     const res = await client.api.firmwaresRepoFindFirmwaresRepoByIdCreate({
       id: repoId,
-      firmwaresRepoId: repoId
+      firmwaresRepoId: repoId,
     } as any)
 
     const data = (res.data as any)?.data || (res.data as any)?.Data || res.data
@@ -28,8 +28,12 @@ const getRepoDetail = async (repoId: string, fallbackName?: string) => {
       return {
         id: repo.FirmwaresRepoId || repo.firmwaresRepoId,
         name: repo.FirmwaresRepoName || repo.firmwaresRepoName || fallbackRepo.name,
-        type: repo.FirmwaresRepoType !== undefined ? repo.FirmwaresRepoType : repo.firmwaresRepoType,
-        channel: repo.FirmwaresRepoChannel !== undefined ? repo.FirmwaresRepoChannel : repo.firmwaresRepoChannel
+        type:
+          repo.FirmwaresRepoType !== undefined ? repo.FirmwaresRepoType : repo.firmwaresRepoType,
+        channel:
+          repo.FirmwaresRepoChannel !== undefined
+            ? repo.FirmwaresRepoChannel
+            : repo.firmwaresRepoChannel,
       }
     }
   } catch (e) {
@@ -46,10 +50,10 @@ export const fetchLinkedRepos = async (productId: string) => {
     const res = await client.api.productFirmwaresQueryProductFirmwaresCreate({
       productId,
       pageIndex: 1,
-      pageSize: 100
+      pageSize: 100,
     })
 
-    const rawData = (res.data as any)
+    const rawData = res.data as any
     const innerData = rawData?.data || rawData?.Data || rawData
     let links: any[] = []
 
@@ -60,11 +64,13 @@ export const fetchLinkedRepos = async (productId: string) => {
     if (links.length === 0) return []
 
     // 并行注水：获取详情
-    const details = await Promise.all(links.map(item => {
-      const id = item.FirmwaresRepoId || item.firmwaresRepoId
-      const nameHint = item.FirmwaresRepoName || item.firmwaresRepoName
-      return getRepoDetail(id, nameHint)
-    }))
+    const details = await Promise.all(
+      links.map((item) => {
+        const id = item.FirmwaresRepoId || item.firmwaresRepoId
+        const nameHint = item.FirmwaresRepoName || item.firmwaresRepoName
+        return getRepoDetail(id, nameHint)
+      }),
+    )
 
     return details
   } catch (error) {
@@ -92,10 +98,10 @@ export const fetchFirmwaresByProduct = async (productId: string) => {
         const res = await client.api.firmwaresQueryFirmwaresCreate({
           repoId: repo.id,
           pageIndex: 1,
-          pageSize: 100
+          pageSize: 100,
         })
 
-        const rawData = (res.data as any)
+        const rawData = res.data as any
         const innerData = rawData?.data || rawData?.Data || rawData
         let items: any[] = []
 
@@ -116,13 +122,26 @@ export const fetchFirmwaresByProduct = async (productId: string) => {
           fileSize: item.FileSize || item.fileSize || 0,
 
           // ⚠️ 时间字段重点兼容
-          uploadedAt: item.CreateTime || item.createTime || item.UploadTime || item.uploadTime || new Date(),
+          uploadedAt:
+            item.CreateTime || item.createTime || item.UploadTime || item.uploadTime || new Date(),
 
           // 状态 (兼容后端大小写)
           verified: !!(item.Verified || item.verified),
 
           // ⚠️ Key 字段 (如果没有则尝试用 ID 或空字符串)
-          firmwareKey: item.FirmwareKey || item.firmwareKey || item.Key || item.key || ''
+          firmwareKey:
+            item.FirmwareKey ||
+            item.firmwareKey ||
+            item.Key ||
+            item.key ||
+            item.FirmwareId ||
+            item.firmwareId ||
+            item.Id ||
+            item.id ||
+            item._id ||
+            item.uid ||
+            item.uuid ||
+            '',
         }))
       } catch (innerError) {
         console.warn(`⚠️ 拉取库 ${repo.name} 失败:`, innerError)
@@ -135,7 +154,6 @@ export const fetchFirmwaresByProduct = async (productId: string) => {
     const allFirmwares = results.flat()
 
     return allFirmwares
-
   } catch (error) {
     console.error('fetchFirmwaresByProduct Error:', error)
     return []
@@ -148,9 +166,9 @@ export const getRepoIdByProduct = async (productId: string): Promise<string | nu
 }
 
 export const createRepoAndGetId = async (params: {
-  name: string,
-  type: number,
-  channel: number,
+  name: string
+  type: number
+  channel: number
   note?: string
 }): Promise<string> => {
   await client.api.firmwaresRepoCreateFirmwaresRepoCreate({
@@ -158,16 +176,16 @@ export const createRepoAndGetId = async (params: {
     firmwaresRepoType: params.type,
     firmwaresRepoChannel: params.channel,
     updateTimeoutValue: 600,
-    releaseNote: params.note
+    releaseNote: params.note,
   })
 
   const queryRes = await client.api.firmwaresRepoQueryFirmwaresReposCreate({
     firmwaresRepoName: params.name,
     pageIndex: 1,
-    pageSize: 1
+    pageSize: 1,
   })
 
-  const rawData = (queryRes.data as any)
+  const rawData = queryRes.data as any
   const innerData = rawData?.data || rawData?.Data || rawData
   let items: any[] = []
   if (Array.isArray(innerData)) items = innerData
@@ -183,7 +201,7 @@ export const createRepoAndGetId = async (params: {
 export const linkRepoToProduct = async (productId: string, repoId: string) => {
   return await client.api.productFirmwaresAddProductFirmwareCreate({
     productId,
-    firmwaresRepoId: repoId
+    firmwaresRepoId: repoId,
   })
 }
 
@@ -193,7 +211,7 @@ export const uploadFirmware = async (repoId: string, version: string, note: stri
     version,
     mandatoryVersion: 0,
     releaseNote: note,
-    file: file
+    file: file,
   })
 }
 
@@ -208,7 +226,7 @@ export const verifyFirmware = async (repoId: string, version: string, note?: str
   return await client.api.firmwaresUpdateFirmwareCreate({
     repoId,
     firmwareVersion: version,
-    releaseNote: finalNote
+    releaseNote: finalNote,
   })
 }
 
@@ -222,13 +240,13 @@ export const updateFirmware = async (repoId: string, version: string, note: stri
   return await client.api.firmwaresUpdateFirmwareCreate({
     repoId,
     firmwareVersion: version,
-    releaseNote: note
+    releaseNote: note,
   })
 }
 
 export const deleteFirmware = async (repoId: string, version: string) => {
   return await client.api.firmwaresDeleteFirmwareCreate({
     repoId,
-    version
+    version,
   })
 }
